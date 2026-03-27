@@ -6,6 +6,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.embervault.domain.DomainException;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
@@ -164,6 +165,18 @@ class ArchitectureTest {
                 .resideInAPackage("com.embervault.adapter.out..")
                 .because("ADR-0013 mandates that Views do not reference infrastructure "
                         + "(outbound adapter) packages")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0016: Domain exceptions must extend DomainException")
+    void domainExceptionsShouldExtendDomainException() {
+        classes()
+                .that().resideInAPackage("com.embervault.domain..")
+                .and().areAssignableTo(Exception.class)
+                .should().beAssignableTo(DomainException.class)
+                .because("ADR-0016 mandates that all domain exceptions extend DomainException")
                 .allowEmptyShould(true)
                 .check(classes);
     }
