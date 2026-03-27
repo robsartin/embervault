@@ -194,4 +194,163 @@ class OutlineViewModelTest {
 
         assertFalse(result);
     }
+
+    // --- Drill-down navigation tests ---
+
+    @Test
+    @DisplayName("drillDown() changes baseNoteId and reloads children")
+    void drillDown_shouldChangeBaseAndReload() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertEquals(child.getId(), viewModel.getBaseNoteId());
+        assertEquals(1, viewModel.getRootItems().size());
+        assertEquals("Grandchild", viewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("drillDown() updates tab title to drilled-down note")
+    void drillDown_shouldUpdateTabTitle() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertEquals("Outline: Child", viewModel.tabTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateBack() returns to previous base note")
+    void navigateBack_shouldReturnToPreviousBase() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateBack();
+
+        assertEquals(root.getId(), viewModel.getBaseNoteId());
+        assertEquals(1, viewModel.getRootItems().size());
+        assertEquals("Child", viewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("navigateBack() restores tab title to root note title")
+    void navigateBack_shouldRestoreTabTitle() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateBack();
+
+        assertEquals("Outline: My Note", viewModel.tabTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("canNavigateBack() is false initially")
+    void canNavigateBack_shouldBeFalseInitially() {
+        assertFalse(viewModel.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("canNavigateBack() is true after drillDown")
+    void canNavigateBack_shouldBeTrueAfterDrillDown() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertTrue(viewModel.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("canNavigateBack() is false after navigating back to root")
+    void canNavigateBack_shouldBeFalseAfterBack() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateBack();
+
+        assertFalse(viewModel.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateBack() does nothing when history is empty")
+    void navigateBack_shouldDoNothingWhenHistoryEmpty() {
+        Note root = noteService.createNote("Root", "");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.navigateBack();
+
+        assertEquals(root.getId(), viewModel.getBaseNoteId());
+    }
+
+    @Test
+    @DisplayName("multiple drillDown and navigateBack traverses stack correctly")
+    void drillDown_multipleLevels_shouldTraverseStackCorrectly() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        Note grandchild = noteService.createChildNote(child.getId(), "Grandchild");
+        noteService.createChildNote(grandchild.getId(), "GreatGrandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+        viewModel.drillDown(grandchild.getId());
+
+        assertEquals(grandchild.getId(), viewModel.getBaseNoteId());
+        assertEquals("Outline: Grandchild", viewModel.tabTitleProperty().get());
+        assertTrue(viewModel.canNavigateBackProperty().get());
+
+        viewModel.navigateBack();
+
+        assertEquals(child.getId(), viewModel.getBaseNoteId());
+        assertEquals("Outline: Child", viewModel.tabTitleProperty().get());
+        assertTrue(viewModel.canNavigateBackProperty().get());
+
+        viewModel.navigateBack();
+
+        assertEquals(root.getId(), viewModel.getBaseNoteId());
+        assertEquals("Outline: My Note", viewModel.tabTitleProperty().get());
+        assertFalse(viewModel.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("tabTitle does not update from rootNoteTitle when drilled down")
+    void tabTitle_shouldNotUpdateFromRootNoteTitleWhenDrilledDown() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        noteTitle.set("Changed Root Title");
+
+        assertEquals("Outline: Child", viewModel.tabTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("tabTitle updates from rootNoteTitle when at root level")
+    void tabTitle_shouldUpdateFromRootNoteTitleWhenAtRootLevel() {
+        noteTitle.set("New Root Title");
+
+        assertEquals("Outline: New Root Title", viewModel.tabTitleProperty().get());
+    }
 }

@@ -215,9 +215,13 @@ public class MapViewController {
             }
         });
 
-        // Cancel on focus lost
+        // Commit on focus lost (same as pressing Enter)
         textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
             if (!isFocused && notePane.getChildren().contains(textField)) {
+                String newTitle = textField.getText().trim();
+                if (!newTitle.isEmpty() && viewModel.renameNote(item.getId(), newTitle)) {
+                    titleLabel.setText(newTitle);
+                }
                 notePane.getChildren().remove(textField);
                 if (!notePane.getChildren().contains(titleLabel)) {
                     notePane.getChildren().add(titleLabel);
