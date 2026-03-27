@@ -1,5 +1,8 @@
 package com.embervault.architecture;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -9,9 +12,6 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 /**
  * Architecture fitness tests enforcing ADR compliance via ArchUnit.
@@ -62,6 +62,69 @@ class ArchitectureTest {
                 .should().dependOnClassesThat()
                 .haveNameMatching(".*javax\\.inject\\.Inject|.*com\\.google\\.inject\\.Inject")
                 .because("field injection is discouraged; use constructor injection instead")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0009: Domain must not depend on adapter packages")
+    void domainShouldNotDependOnAdapters() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.domain..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.embervault.adapter..")
+                .because("ADR-0009 mandates that domain logic is isolated from adapters "
+                        + "(dependency flows inward only)")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0009: Domain must not depend on application packages")
+    void domainShouldNotDependOnApplication() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.domain..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.embervault.application..")
+                .because("ADR-0009 mandates that domain logic does not depend on the "
+                        + "application layer (dependency flows inward only)")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0009: Domain must not depend on JavaFX")
+    void domainShouldNotDependOnJavaFx() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.domain..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("javafx..")
+                .because("ADR-0009 mandates that domain logic is free of UI framework dependencies")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0009: Domain must not depend on Spring Framework")
+    void domainShouldNotDependOnSpring() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.domain..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("org.springframework..")
+                .because("ADR-0009 mandates that domain logic is free of infrastructure "
+                        + "framework dependencies")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0009: Adapter classes should not be accessed by domain")
+    void adaptersShouldNotBeAccessedByDomain() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.adapter..")
+                .should().onlyBeAccessed().byClassesThat()
+                .resideInAPackage("com.embervault.domain..")
+                .because("ADR-0009 mandates that adapters are not accessed directly by domain code")
                 .allowEmptyShould(true)
                 .check(classes);
     }

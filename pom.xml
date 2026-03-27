@@ -159,6 +159,7 @@
                         <failsOnError>true</failsOnError>
                         <includeTestSourceDirectory>true</includeTestSourceDirectory>
                         <violationSeverity>error</violationSeverity>
+                        <excludes>**/module-info.java</excludes>
                     </configuration>
                 </plugin>
             </plugins>

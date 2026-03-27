@@ -1,9 +1,9 @@
 package com.embervault;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Smoke test to verify JUnit 5 is correctly configured and tests are discovered
