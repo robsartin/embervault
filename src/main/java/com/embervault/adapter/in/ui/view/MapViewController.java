@@ -6,7 +6,10 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
@@ -15,6 +18,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FXML controller for the Map view.
@@ -25,6 +30,7 @@ import javafx.scene.text.TextAlignment;
  */
 public class MapViewController {
 
+    private static final Logger LOG = LoggerFactory.getLogger(MapViewController.class);
     private static final double SELECTED_BORDER_WIDTH = 3.0;
     private static final double NORMAL_BORDER_WIDTH = 1.0;
     private static final double FONT_SIZE = 12.0;
@@ -63,12 +69,31 @@ public class MapViewController {
             }
         });
 
+        // Context menu
+        ContextMenu contextMenu = createContextMenu();
+        mapCanvas.setOnContextMenuRequested(event -> {
+            contextMenu.getItems().get(0).setOnAction(e ->
+                    viewModel.createChildNoteAt("Untitled", event.getX(), event.getY()));
+            contextMenu.show(mapCanvas, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
+
         mapCanvas.setFocusTraversable(true);
     }
 
     /** Returns the associated ViewModel. */
     public MapViewModel getViewModel() {
         return viewModel;
+    }
+
+    private ContextMenu createContextMenu() {
+        MenuItem createNote = new MenuItem("Create Note");
+        // Action is set dynamically in the context menu request handler to capture coordinates
+
+        MenuItem outlineView = new MenuItem("Outline View");
+        outlineView.setOnAction(e -> LOG.debug("Outline View placeholder selected"));
+
+        return new ContextMenu(createNote, new SeparatorMenuItem(), outlineView);
     }
 
     private void renderAllNotes() {

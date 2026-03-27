@@ -117,6 +117,24 @@ public final class MapViewModel {
     }
 
     /**
+     * Creates a new child note at the specified canvas position.
+     *
+     * @param title the title for the new note
+     * @param xpos  the x position on the canvas
+     * @param ypos  the y position on the canvas
+     * @return the display item for the created note
+     */
+    public NoteDisplayItem createChildNoteAt(String title, double xpos, double ypos) {
+        Objects.requireNonNull(baseNoteId, "baseNoteId must be set before creating children");
+        Note child = noteService.createChildNote(baseNoteId, title);
+        child.setAttribute("$Xpos", new AttributeValue.NumberValue(xpos / SCALE_X));
+        child.setAttribute("$Ypos", new AttributeValue.NumberValue(ypos / SCALE_Y));
+        NoteDisplayItem item = toDisplayItem(child);
+        noteItems.add(item);
+        return item;
+    }
+
+    /**
      * Updates a note's position by setting its $Xpos and $Ypos attributes.
      *
      * @param noteId the note id

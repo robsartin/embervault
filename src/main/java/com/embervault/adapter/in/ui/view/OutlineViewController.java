@@ -6,11 +6,16 @@ import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.text.TextAlignment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FXML controller for the Outline view.
@@ -19,6 +24,8 @@ import javafx.scene.text.TextAlignment;
  * New child notes can be created by pressing Return.</p>
  */
 public class OutlineViewController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OutlineViewController.class);
 
     @FXML private TreeView<NoteDisplayItem> outlineTreeView;
 
@@ -69,11 +76,24 @@ public class OutlineViewController {
                 event.consume();
             }
         });
+
+        // Context menu
+        outlineTreeView.setContextMenu(createContextMenu());
     }
 
     /** Returns the associated ViewModel. */
     public OutlineViewModel getViewModel() {
         return viewModel;
+    }
+
+    private ContextMenu createContextMenu() {
+        MenuItem createNote = new MenuItem("Create Note");
+        createNote.setOnAction(e -> createChildUnderSelected());
+
+        MenuItem mapView = new MenuItem("Map View");
+        mapView.setOnAction(e -> LOG.debug("Map View placeholder selected"));
+
+        return new ContextMenu(createNote, new SeparatorMenuItem(), mapView);
     }
 
     private void buildTree() {
