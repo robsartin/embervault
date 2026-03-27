@@ -19,8 +19,8 @@ import com.embervault.domain.Note;
  */
 public final class NoteServiceImpl implements NoteService {
 
-    private static final double MAX_XPOS = 500.0;
-    private static final double MAX_YPOS = 400.0;
+    private static final double MAX_XPOS = 12.0;
+    private static final double MAX_YPOS = 8.0;
 
     private final NoteRepository repository;
     private final Random random;

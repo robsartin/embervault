@@ -6,5 +6,6 @@
 <StackPane xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.embervault.adapter.in.ui.view.MapViewController">
 
-    <Pane fx:id="mapCanvas" style="-fx-background-color: #F5F5F5;"/>
+    <Pane fx:id="mapCanvas" style="-fx-background-color: #F5F5F5;"
+          minWidth="400" minHeight="300"/>
 </StackPane>

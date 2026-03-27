@@ -51,6 +51,9 @@ public class App extends Application {
         // Save root note to repository so children can reference it
         noteRepository.save(project.getRootNote());
 
+        // Create a welcome note so the views have something to display
+        noteService.createChildNote(project.getRootNote().getId(), "Welcome to EmberVault");
+
         // Observable note title for binding to ViewModels
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
@@ -76,13 +79,25 @@ public class App extends Application {
         OutlineViewController outlineController = outlineLoader.getController();
         outlineController.initViewModel(outlineViewModel);
 
-        // Synchronize: when map creates a note, refresh outline and vice versa
+        // Synchronize: when map creates a note, refresh outline and vice versa.
+        // Use a flag to prevent infinite listener loops.
+        final boolean[] syncing = {false};
         mapViewModel.getNoteItems().addListener(
-                (javafx.collections.ListChangeListener<Object>) change ->
-                        outlineViewModel.loadNotes());
+                (javafx.collections.ListChangeListener<Object>) change -> {
+                    if (!syncing[0]) {
+                        syncing[0] = true;
+                        outlineViewModel.loadNotes();
+                        syncing[0] = false;
+                    }
+                });
         outlineViewModel.getRootItems().addListener(
-                (javafx.collections.ListChangeListener<Object>) change ->
-                        mapViewModel.loadNotes());
+                (javafx.collections.ListChangeListener<Object>) change -> {
+                    if (!syncing[0]) {
+                        syncing[0] = true;
+                        mapViewModel.loadNotes();
+                        syncing[0] = false;
+                    }
+                });
 
         // SplitPane with Map on left, Outline on right
         SplitPane splitPane = new SplitPane(mapView, outlineView);
