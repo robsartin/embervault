@@ -2,21 +2,41 @@ package com.embervault.domain;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
- * A note entity representing a titled piece of content.
+ * A note entity backed by a type-safe attribute map.
+ *
+ * <p>Provides backward-compatible convenience methods ({@code getName()},
+ * {@code getText()}, etc.) that delegate to the underlying attribute map.
+ * Core Tinderbox attributes are stored as {@code $Name}, {@code $Text},
+ * {@code $Created}, and {@code $Modified}.</p>
  */
 public final class Note {
 
     private final UUID id;
-    private String title;
-    private String content;
-    private final Instant createdAt;
-    private Instant updatedAt;
+    private final AttributeMap attributes;
+    private UUID prototypeId;
+
+    /**
+     * Creates a new Note with the given id and pre-populated attribute map.
+     *
+     * @param id         the unique identifier
+     * @param attributes the attribute map
+     */
+    public Note(UUID id, AttributeMap attributes) {
+        Objects.requireNonNull(id, "id must not be null");
+        Objects.requireNonNull(attributes, "attributes must not be null");
+        this.id = id;
+        this.attributes = attributes;
+    }
 
     /**
      * Creates a new Note with the given id, title, content, and timestamps.
+     *
+     * <p>This constructor provides backward compatibility with the original
+     * Note API.</p>
      */
     public Note(UUID id, String title, String content,
             Instant createdAt, Instant updatedAt) {
@@ -31,10 +51,11 @@ public final class Note {
         }
 
         this.id = id;
-        this.title = title;
-        this.content = content;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
+        this.attributes = new AttributeMap();
+        this.attributes.set("$Name", new AttributeValue.StringValue(title));
+        this.attributes.set("$Text", new AttributeValue.StringValue(content));
+        this.attributes.set("$Created", new AttributeValue.DateValue(createdAt));
+        this.attributes.set("$Modified", new AttributeValue.DateValue(updatedAt));
     }
 
     /**
@@ -50,24 +71,90 @@ public final class Note {
         return id;
     }
 
-    /** Returns the title. */
+    /** Returns the title ($Name attribute). */
     public String getTitle() {
-        return title;
+        return attributes.get("$Name")
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .orElse("");
     }
 
-    /** Returns the content. */
+    /** Returns the title ($Name attribute). Alias for getTitle(). */
+    public String getName() {
+        return getTitle();
+    }
+
+    /** Returns the content ($Text attribute). */
     public String getContent() {
-        return content;
+        return attributes.get("$Text")
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .orElse("");
     }
 
-    /** Returns the creation timestamp. */
+    /** Returns the content ($Text attribute). Alias for getContent(). */
+    public String getText() {
+        return getContent();
+    }
+
+    /** Returns the creation timestamp ($Created attribute). */
     public Instant getCreatedAt() {
-        return createdAt;
+        return attributes.get("$Created")
+                .map(v -> ((AttributeValue.DateValue) v).value())
+                .orElse(Instant.EPOCH);
     }
 
-    /** Returns the last-updated timestamp. */
+    /** Returns the last-updated timestamp ($Modified attribute). */
     public Instant getUpdatedAt() {
-        return updatedAt;
+        return attributes.get("$Modified")
+                .map(v -> ((AttributeValue.DateValue) v).value())
+                .orElse(Instant.EPOCH);
+    }
+
+    /** Returns the underlying attribute map. */
+    public AttributeMap getAttributes() {
+        return attributes;
+    }
+
+    /**
+     * Gets a specific attribute value by name.
+     *
+     * @param name the attribute name
+     * @return an optional containing the value, or empty
+     */
+    public Optional<AttributeValue> getAttribute(String name) {
+        return attributes.get(name);
+    }
+
+    /**
+     * Sets a specific attribute value by name.
+     *
+     * @param name  the attribute name
+     * @param value the value to set
+     */
+    public void setAttribute(String name, AttributeValue value) {
+        attributes.set(name, value);
+    }
+
+    /**
+     * Removes a local attribute value.
+     *
+     * @param name the attribute name
+     */
+    public void removeAttribute(String name) {
+        attributes.remove(name);
+    }
+
+    /** Returns the prototype note id, if set. */
+    public Optional<UUID> getPrototypeId() {
+        return Optional.ofNullable(prototypeId);
+    }
+
+    /**
+     * Sets the prototype note id.
+     *
+     * @param protoId the prototype note id, or null to clear
+     */
+    public void setPrototypeId(UUID protoId) {
+        this.prototypeId = protoId;
     }
 
     /**
@@ -81,9 +168,9 @@ public final class Note {
             throw new IllegalArgumentException("title must not be blank");
         }
 
-        this.title = newTitle;
-        this.content = newContent;
-        this.updatedAt = Instant.now();
+        this.attributes.set("$Name", new AttributeValue.StringValue(newTitle));
+        this.attributes.set("$Text", new AttributeValue.StringValue(newContent));
+        this.attributes.set("$Modified", new AttributeValue.DateValue(Instant.now()));
     }
 
     @Override
@@ -104,6 +191,6 @@ public final class Note {
 
     @Override
     public String toString() {
-        return "Note{id=" + id + ", title='" + title + "'}";
+        return "Note{id=" + id + ", title='" + getTitle() + "'}";
     }
 }
