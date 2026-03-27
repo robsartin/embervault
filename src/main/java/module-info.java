@@ -5,6 +5,9 @@ module com.embervault {
     opens com.embervault to javafx.fxml;
     exports com.embervault;
 
+    // Domain exception hierarchy (ADR-0016).
+    exports com.embervault.domain;
+
     // Hexagonal architecture packages (ADR-0009).
     // Exports will be added as classes are introduced in each package.
     // Package structure:
