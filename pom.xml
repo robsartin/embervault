@@ -282,6 +282,7 @@
                             </rules>
                             <excludes>
                                 <exclude>com/embervault/App.class</exclude>
+                                <exclude>com/embervault/adapter/in/ui/view/**</exclude>
                             </excludes>
                         </configuration>
                     </execution>

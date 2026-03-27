@@ -9,16 +9,16 @@ module com.embervault {
     exports com.embervault.domain;
 
     // Hexagonal architecture packages (ADR-0009).
-    // Exports will be added as classes are introduced in each package.
-    // Package structure:
-    //   com.embervault.domain                    - core domain model
-    //   com.embervault.application.port.in       - inbound ports (use cases)
-    //   com.embervault.application.port.out      - outbound ports (repositories)
-    //   com.embervault.adapter.in.ui             - inbound adapters (JavaFX)
-    //   com.embervault.adapter.out.persistence   - outbound adapters (storage)
+    exports com.embervault.domain;
+    exports com.embervault.application.port.in;
+    exports com.embervault.application.port.out;
+    exports com.embervault.application;
+    exports com.embervault.adapter.out.persistence;
+    exports com.embervault.adapter.in.ui.viewmodel;
+    exports com.embervault.adapter.in.ui.view;
 
     // MVVM sub-packages within the UI adapter (ADR-0013).
-    //   com.embervault.adapter.in.ui.view        - FXML views and controllers
-    //   com.embervault.adapter.in.ui.viewmodel   - ViewModels with observable properties
+    // Open to javafx.fxml so FXMLLoader can reflectively instantiate controllers.
     opens com.embervault.adapter.in.ui.view to javafx.fxml;
+    opens com.embervault.domain to javafx.base;
 }
