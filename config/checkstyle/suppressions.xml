@@ -8,6 +8,9 @@
     Add suppressions here for intentional style exceptions.
 -->
 <suppressions>
+    <!-- module-info.java cannot be parsed by Checkstyle with Java 25 -->
+    <suppress checks=".*" files="module-info\.java$"/>
+
     <!-- Allow longer test files -->
     <suppress checks="FileLength" files=".*Test\.java$"/>
 
