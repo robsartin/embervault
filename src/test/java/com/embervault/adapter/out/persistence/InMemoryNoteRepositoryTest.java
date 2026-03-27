@@ -96,4 +96,44 @@ class InMemoryNoteRepositoryTest {
         assertEquals("New", found.getTitle());
         assertEquals("New content", found.getContent());
     }
+
+    @Test
+    @DisplayName("findChildren() returns children of a parent note")
+    void findChildren_shouldReturnChildren() {
+        Note parent = Note.create("Parent", "");
+        Note child1 = Note.create("Child1", "");
+        Note child2 = Note.create("Child2", "");
+
+        parent.addChild(child1.getId());
+        parent.addChild(child2.getId());
+
+        repository.save(parent);
+        repository.save(child1);
+        repository.save(child2);
+
+        List<Note> children = repository.findChildren(parent.getId());
+
+        assertEquals(2, children.size());
+        assertEquals(child1, children.get(0));
+        assertEquals(child2, children.get(1));
+    }
+
+    @Test
+    @DisplayName("findChildren() returns empty list for unknown parent")
+    void findChildren_shouldReturnEmptyForUnknownParent() {
+        List<Note> children = repository.findChildren(UUID.randomUUID());
+
+        assertTrue(children.isEmpty());
+    }
+
+    @Test
+    @DisplayName("findChildren() returns empty list for parent with no children")
+    void findChildren_shouldReturnEmptyForParentWithNoChildren() {
+        Note parent = Note.create("Parent", "");
+        repository.save(parent);
+
+        List<Note> children = repository.findChildren(parent.getId());
+
+        assertTrue(children.isEmpty());
+    }
 }

@@ -1,6 +1,7 @@
 module com.embervault {
     requires javafx.controls;
     requires javafx.fxml;
+    requires org.slf4j;
 
     opens com.embervault to javafx.fxml;
     exports com.embervault;

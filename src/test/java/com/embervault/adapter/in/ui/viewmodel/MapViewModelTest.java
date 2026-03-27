@@ -1,30 +1,48 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.UUID;
+
+import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
+import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class MapViewModelTest {
 
+    private MapViewModel viewModel;
+    private NoteService noteService;
+    private InMemoryNoteRepository repository;
+    private StringProperty noteTitle;
+
+    @BeforeEach
+    void setUp() {
+        repository = new InMemoryNoteRepository();
+        noteService = new NoteServiceImpl(repository);
+        noteTitle = new SimpleStringProperty("My Note");
+        viewModel = new MapViewModel(noteTitle, noteService);
+    }
+
     @Test
     @DisplayName("tabTitle reflects the note title with Map prefix")
     void tabTitle_shouldReflectNoteTitleWithMapPrefix() {
-        StringProperty noteTitle = new SimpleStringProperty("My Note");
-        MapViewModel viewModel = new MapViewModel(noteTitle);
-
         assertEquals("Map: My Note", viewModel.tabTitleProperty().get());
     }
 
     @Test
     @DisplayName("tabTitle updates when note title changes")
     void tabTitle_shouldUpdateWhenNoteTitleChanges() {
-        StringProperty noteTitle = new SimpleStringProperty("Original");
-        MapViewModel viewModel = new MapViewModel(noteTitle);
-
         noteTitle.set("Updated");
 
         assertEquals("Map: Updated", viewModel.tabTitleProperty().get());
@@ -34,6 +52,120 @@ class MapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(null));
+                () -> new MapViewModel(null, noteService));
+    }
+
+    @Test
+    @DisplayName("Constructor rejects null noteService")
+    void constructor_shouldRejectNullNoteService() {
+        assertThrows(NullPointerException.class,
+                () -> new MapViewModel(noteTitle, null));
+    }
+
+    @Test
+    @DisplayName("loadNotes() populates items from base note children")
+    void loadNotes_shouldPopulateFromBaseNoteChildren() {
+        Note parent = noteService.createNote("Parent", "");
+        noteService.createChildNote(parent.getId(), "Child1");
+        noteService.createChildNote(parent.getId(), "Child2");
+        viewModel.setBaseNoteId(parent.getId());
+
+        viewModel.loadNotes();
+
+        assertEquals(2, viewModel.getNoteItems().size());
+        assertEquals("Child1", viewModel.getNoteItems().get(0).getTitle());
+        assertEquals("Child2", viewModel.getNoteItems().get(1).getTitle());
+    }
+
+    @Test
+    @DisplayName("loadNotes() clears items when baseNoteId is null")
+    void loadNotes_shouldClearWhenBaseNoteIdNull() {
+        viewModel.loadNotes();
+
+        assertTrue(viewModel.getNoteItems().isEmpty());
+    }
+
+    @Test
+    @DisplayName("createChildNote() adds item to list and returns it")
+    void createChildNote_shouldAddAndReturn() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+
+        NoteDisplayItem item = viewModel.createChildNote("New Child");
+
+        assertNotNull(item);
+        assertEquals("New Child", item.getTitle());
+        assertEquals(1, viewModel.getNoteItems().size());
+        assertEquals(item, viewModel.getNoteItems().get(0));
+    }
+
+    @Test
+    @DisplayName("createChildNote() sets position values on display item")
+    void createChildNote_shouldSetPosition() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+
+        NoteDisplayItem item = viewModel.createChildNote("Child");
+
+        // Positions should be set (scaled from attribute values)
+        assertTrue(item.getXpos() >= 0);
+        assertTrue(item.getYpos() >= 0);
+    }
+
+    @Test
+    @DisplayName("selectNote() sets selectedNoteId")
+    void selectNote_shouldSetSelectedNoteId() {
+        UUID noteId = UUID.randomUUID();
+
+        viewModel.selectNote(noteId);
+
+        assertEquals(noteId, viewModel.selectedNoteIdProperty().get());
+    }
+
+    @Test
+    @DisplayName("selectNote(null) clears selection")
+    void selectNote_null_shouldClearSelection() {
+        viewModel.selectNote(UUID.randomUUID());
+
+        viewModel.selectNote(null);
+
+        assertNull(viewModel.selectedNoteIdProperty().get());
+    }
+
+    @Test
+    @DisplayName("updateNotePosition() updates display item position")
+    void updateNotePosition_shouldUpdateDisplayItem() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote("Child");
+
+        viewModel.updateNotePosition(item.getId(), 100.0, 200.0);
+
+        NoteDisplayItem updated = viewModel.getNoteItems().get(0);
+        assertEquals(100.0, updated.getXpos(), 0.01);
+        assertEquals(200.0, updated.getYpos(), 0.01);
+    }
+
+    @Test
+    @DisplayName("setBaseNoteId and getBaseNoteId work correctly")
+    void baseNoteId_shouldBeSettableAndGettable() {
+        UUID id = UUID.randomUUID();
+        viewModel.setBaseNoteId(id);
+
+        assertEquals(id, viewModel.getBaseNoteId());
+    }
+
+    @Test
+    @DisplayName("loadNotes() includes color hex from note attributes")
+    void loadNotes_shouldIncludeColorHex() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        viewModel.createChildNote("Child");
+
+        viewModel.loadNotes();
+
+        NoteDisplayItem item = viewModel.getNoteItems().get(0);
+        assertNotNull(item.getColorHex());
+        assertFalse(item.getColorHex().isEmpty());
     }
 }

@@ -8,10 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -95,5 +97,73 @@ class NoteServiceImplTest {
         service.deleteNote(created.getId());
 
         assertTrue(service.getNote(created.getId()).isEmpty());
+    }
+
+    @Test
+    @DisplayName("createChildNote() creates a child and links to parent")
+    void createChildNote_shouldCreateAndLink() {
+        Note parent = service.createNote("Parent", "");
+
+        Note child = service.createChildNote(parent.getId(), "Child");
+
+        assertNotNull(child);
+        assertEquals("Child", child.getTitle());
+        assertTrue(repository.findById(child.getId()).isPresent());
+
+        Note updatedParent = repository.findById(parent.getId()).orElseThrow();
+        assertTrue(updatedParent.getChildIds().contains(child.getId()));
+    }
+
+    @Test
+    @DisplayName("createChildNote() sets random Xpos and Ypos")
+    void createChildNote_shouldSetRandomPosition() {
+        // Use a seeded random for deterministic test
+        Random seeded = new Random(42L);
+        NoteService seededService = new NoteServiceImpl(repository, seeded);
+
+        Note parent = seededService.createNote("Parent", "");
+        Note child = seededService.createChildNote(parent.getId(), "Child");
+
+        Optional<AttributeValue> xpos = child.getAttribute("$Xpos");
+        Optional<AttributeValue> ypos = child.getAttribute("$Ypos");
+
+        assertTrue(xpos.isPresent());
+        assertTrue(ypos.isPresent());
+
+        double x = ((AttributeValue.NumberValue) xpos.get()).value();
+        double y = ((AttributeValue.NumberValue) ypos.get()).value();
+        assertTrue(x >= 0 && x <= 500, "Xpos should be 0-500, was " + x);
+        assertTrue(y >= 0 && y <= 400, "Ypos should be 0-400, was " + y);
+    }
+
+    @Test
+    @DisplayName("createChildNote() throws when parent does not exist")
+    void createChildNote_shouldThrowForMissingParent() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.createChildNote(UUID.randomUUID(), "Child"));
+    }
+
+    @Test
+    @DisplayName("getChildren() returns children of a parent note")
+    void getChildren_shouldReturnChildren() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+
+        List<Note> children = service.getChildren(parent.getId());
+
+        assertEquals(2, children.size());
+        assertEquals(child1, children.get(0));
+        assertEquals(child2, children.get(1));
+    }
+
+    @Test
+    @DisplayName("getChildren() returns empty for note with no children")
+    void getChildren_shouldReturnEmptyForNoChildren() {
+        Note parent = service.createNote("Parent", "");
+
+        List<Note> children = service.getChildren(parent.getId());
+
+        assertTrue(children.isEmpty());
     }
 }

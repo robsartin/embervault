@@ -1,6 +1,9 @@
 package com.embervault.domain;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +20,7 @@ public final class Note {
 
     private final UUID id;
     private final AttributeMap attributes;
+    private final List<UUID> childIds;
     private UUID prototypeId;
 
     /**
@@ -30,6 +34,7 @@ public final class Note {
         Objects.requireNonNull(attributes, "attributes must not be null");
         this.id = id;
         this.attributes = attributes;
+        this.childIds = new ArrayList<>();
     }
 
     /**
@@ -51,6 +56,7 @@ public final class Note {
         }
 
         this.id = id;
+        this.childIds = new ArrayList<>();
         this.attributes = new AttributeMap();
         this.attributes.set("$Name", new AttributeValue.StringValue(title));
         this.attributes.set("$Text", new AttributeValue.StringValue(content));
@@ -155,6 +161,43 @@ public final class Note {
      */
     public void setPrototypeId(UUID protoId) {
         this.prototypeId = protoId;
+    }
+
+    /**
+     * Adds a child note id to the end of the children list.
+     *
+     * @param childId the child note id
+     */
+    public void addChild(UUID childId) {
+        Objects.requireNonNull(childId, "childId must not be null");
+        childIds.add(childId);
+    }
+
+    /**
+     * Removes a child note id from the children list.
+     *
+     * @param childId the child note id
+     */
+    public void removeChild(UUID childId) {
+        childIds.remove(childId);
+    }
+
+    /**
+     * Returns an unmodifiable view of the child note ids.
+     *
+     * @return unmodifiable list of child ids
+     */
+    public List<UUID> getChildIds() {
+        return Collections.unmodifiableList(childIds);
+    }
+
+    /**
+     * Returns whether this note has any children.
+     *
+     * @return true if this note has children
+     */
+    public boolean hasChildren() {
+        return !childIds.isEmpty();
     }
 
     /**

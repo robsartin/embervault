@@ -34,6 +34,18 @@ public final class InMemoryNoteRepository implements NoteRepository {
     }
 
     @Override
+    public List<Note> findChildren(UUID parentId) {
+        Note parent = store.get(parentId);
+        if (parent == null) {
+            return List.of();
+        }
+        return parent.getChildIds().stream()
+                .map(store::get)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+    }
+
+    @Override
     public void delete(UUID id) {
         store.remove(id);
     }

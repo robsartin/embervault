@@ -1,14 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.StackPane?>
 
 <StackPane xmlns:fx="http://javafx.com/fxml"
            fx:controller="com.embervault.adapter.in.ui.view.MapViewController">
-    <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
-    </padding>
 
-    <Label fx:id="mapLabel" text="Map View" style="-fx-font-size: 18;"/>
+    <Pane fx:id="mapCanvas" style="-fx-background-color: #F5F5F5;"
+          minWidth="400" minHeight="300"/>
 </StackPane>

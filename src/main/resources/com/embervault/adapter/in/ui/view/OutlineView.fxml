@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox alignment="CENTER" xmlns:fx="http://javafx.com/fxml"
+<VBox xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.embervault.adapter.in.ui.view.OutlineViewController">
-    <padding>
-        <Insets top="10" right="10" bottom="10" left="10"/>
-    </padding>
 
-    <Label fx:id="outlineLabel" text="Outline View" style="-fx-font-size: 18;"/>
+    <TreeView fx:id="outlineTreeView" VBox.vgrow="ALWAYS"/>
 </VBox>
