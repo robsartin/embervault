@@ -128,4 +128,43 @@ class ArchitectureTest {
                 .allowEmptyShould(true)
                 .check(classes);
     }
+
+    @Test
+    @DisplayName("ADR-0013: ViewModels must not reference javafx.scene classes")
+    void viewModelsShouldNotReferenceJavaFxScene() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.adapter.in.ui.viewmodel..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("javafx.scene..")
+                .because("ADR-0013 mandates that ViewModels use observable properties "
+                        + "(javafx.beans/javafx.collections) but not scene-graph nodes")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0013: Views must not access domain packages directly")
+    void viewsShouldNotAccessDomainDirectly() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.adapter.in.ui.view..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.embervault.domain..")
+                .because("ADR-0013 mandates that Views interact with the domain only "
+                        + "through ViewModels, not directly")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0013: Views must not access infrastructure packages directly")
+    void viewsShouldNotAccessInfrastructureDirectly() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.adapter.in.ui.view..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.embervault.adapter.out..")
+                .because("ADR-0013 mandates that Views do not reference infrastructure "
+                        + "(outbound adapter) packages")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
 }
