@@ -1,5 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -7,10 +9,12 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import com.embervault.domain.TbxColor;
-import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -21,7 +25,7 @@ import javafx.collections.ObservableList;
  *
  * <p>Computes a tab title of the form "Outline: &lt;note title&gt;" that updates
  * reactively when the underlying note title changes. Manages a tree structure
- * of notes for hierarchical display.</p>
+ * of notes for hierarchical display and supports drill-down navigation.</p>
  */
 public final class OutlineViewModel {
 
@@ -30,7 +34,11 @@ public final class OutlineViewModel {
             FXCollections.observableArrayList();
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
+    private final BooleanProperty canNavigateBack =
+            new SimpleBooleanProperty(false);
     private final NoteService noteService;
+    private final StringProperty rootNoteTitle;
+    private final Deque<UUID> navigationHistory = new ArrayDeque<>();
     private UUID baseNoteId;
 
     /**
@@ -43,7 +51,14 @@ public final class OutlineViewModel {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
-        tabTitle.bind(Bindings.concat("Outline: ", noteTitle));
+        this.rootNoteTitle = noteTitle;
+        updateTabTitle(noteTitle.get());
+        // When the root note title changes and we're at the root level, update tab title
+        noteTitle.addListener((obs, oldVal, newVal) -> {
+            if (navigationHistory.isEmpty()) {
+                updateTabTitle(newVal);
+            }
+        });
     }
 
     /** Returns the tab title property. */
@@ -139,6 +154,43 @@ public final class OutlineViewModel {
         return true;
     }
 
+    /** Returns the canNavigateBack property. */
+    public ReadOnlyBooleanProperty canNavigateBackProperty() {
+        return canNavigateBack;
+    }
+
+    /**
+     * Drills down into a child note, making it the new base note.
+     *
+     * @param noteId the note id to drill into
+     */
+    public void drillDown(UUID noteId) {
+        navigationHistory.push(baseNoteId);
+        canNavigateBack.set(true);
+        baseNoteId = noteId;
+        noteService.getNote(noteId).ifPresent(note ->
+                updateTabTitle(note.getTitle()));
+        loadNotes();
+    }
+
+    /**
+     * Navigates back to the previous base note.
+     */
+    public void navigateBack() {
+        if (navigationHistory.isEmpty()) {
+            return;
+        }
+        baseNoteId = navigationHistory.pop();
+        canNavigateBack.set(!navigationHistory.isEmpty());
+        if (navigationHistory.isEmpty()) {
+            updateTabTitle(rootNoteTitle.get());
+        } else {
+            noteService.getNote(baseNoteId).ifPresent(note ->
+                    updateTabTitle(note.getTitle()));
+        }
+        loadNotes();
+    }
+
     /**
      * Returns the children of the given note as display items.
      *
@@ -150,6 +202,10 @@ public final class OutlineViewModel {
                 noteService.getChildren(parentId).stream()
                         .map(this::toDisplayItem)
                         .toList());
+    }
+
+    private void updateTabTitle(String title) {
+        tabTitle.set("Outline: " + title);
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {

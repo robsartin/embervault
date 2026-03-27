@@ -3,7 +3,7 @@
 <?import javafx.scene.control.TreeView?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox xmlns:fx="http://javafx.com/fxml"
+<VBox fx:id="outlineRoot" xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.embervault.adapter.in.ui.view.OutlineViewController">
 
     <TreeView fx:id="outlineTreeView" VBox.vgrow="ALWAYS"/>
