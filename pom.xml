@@ -61,6 +61,20 @@
                 <logback.profile>logback-prod.xml</logback.profile>
             </properties>
         </profile>
+        <profile>
+            <id>skip-ui-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludedGroups>ui</excludedGroups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <dependencyManagement>
@@ -156,8 +170,9 @@
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <argLine>
-                            ${argLine}
+                            @{argLine}
                             --add-exports javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
+                            --enable-native-access=javafx.graphics
                         </argLine>
                     </configuration>
                 </plugin>
@@ -187,6 +202,9 @@
                     <version>${javafx-maven-plugin.version}</version>
                     <configuration>
                         <mainClass>com.embervault/com.embervault.App</mainClass>
+                        <options>
+                            <option>--enable-native-access=javafx.graphics</option>
+                        </options>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -303,21 +321,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>skip-ui-tests</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <excludedGroups>ui</excludedGroups>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>
