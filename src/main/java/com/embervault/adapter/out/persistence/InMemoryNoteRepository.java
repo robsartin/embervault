@@ -1,6 +1,7 @@
 package com.embervault.adapter.out.persistence;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.embervault.application.port.out.NoteRepository;
+import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 
 /**
@@ -35,13 +37,17 @@ public final class InMemoryNoteRepository implements NoteRepository {
 
     @Override
     public List<Note> findChildren(UUID parentId) {
-        Note parent = store.get(parentId);
-        if (parent == null) {
-            return List.of();
-        }
-        return parent.getChildIds().stream()
-                .map(store::get)
-                .filter(java.util.Objects::nonNull)
+        String parentIdStr = parentId.toString();
+        return store.values().stream()
+                .filter(note -> note.getAttribute("$Container")
+                        .filter(v -> v instanceof AttributeValue.StringValue sv
+                                && parentIdStr.equals(sv.value()))
+                        .isPresent())
+                .sorted(Comparator.comparingDouble(note ->
+                        note.getAttribute("$OutlineOrder")
+                                .filter(v -> v instanceof AttributeValue.NumberValue)
+                                .map(v -> ((AttributeValue.NumberValue) v).value())
+                                .orElse(0.0)))
                 .toList();
     }
 

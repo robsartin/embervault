@@ -41,12 +41,38 @@ public interface NoteService {
     Note createChildNote(UUID parentId, String title);
 
     /**
-     * Returns the children of the note with the given id.
+     * Returns the children of the note with the given id, ordered by $OutlineOrder.
      *
      * @param parentId the parent note id
      * @return the list of child notes
      */
     List<Note> getChildren(UUID parentId);
+
+    /**
+     * Returns whether the note with the given id has any children.
+     *
+     * @param noteId the note id
+     * @return true if the note has children
+     */
+    boolean hasChildren(UUID noteId);
+
+    /**
+     * Moves a note to a new parent by changing its $Container attribute.
+     *
+     * @param noteId      the note to move
+     * @param newParentId the new parent note id
+     * @return the updated note
+     */
+    Note moveNote(UUID noteId, UUID newParentId);
+
+    /**
+     * Renames the note with the given id.
+     *
+     * @param noteId   the note id
+     * @param newTitle the new title (must not be blank)
+     * @return the updated note
+     */
+    Note renameNote(UUID noteId, String newTitle);
 
     /**
      * Deletes the note with the given id.

@@ -168,4 +168,120 @@ class MapViewModelTest {
         assertNotNull(item.getColorHex());
         assertFalse(item.getColorHex().isEmpty());
     }
+
+    @Test
+    @DisplayName("renameNote() updates the display item title")
+    void renameNote_shouldUpdateDisplayItemTitle() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote("Old Title");
+
+        viewModel.renameNote(item.getId(), "New Title");
+
+        assertEquals("New Title", viewModel.getNoteItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("renameNote() returns false for blank title")
+    void renameNote_shouldReturnFalseForBlankTitle() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote("Title");
+
+        boolean result = viewModel.renameNote(item.getId(), "");
+
+        assertFalse(result);
+        assertEquals("Title", viewModel.getNoteItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("renameNote() returns true on success")
+    void renameNote_shouldReturnTrueOnSuccess() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote("Title");
+
+        boolean result = viewModel.renameNote(item.getId(), "New");
+
+        assertTrue(result);
+    }
+
+    @Test
+    @DisplayName("drillDown() changes baseNoteId and reloads children")
+    void drillDown_shouldChangeBaseAndReload() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertEquals(child.getId(), viewModel.getBaseNoteId());
+        assertEquals(1, viewModel.getNoteItems().size());
+        assertEquals("Grandchild", viewModel.getNoteItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("drillDown() updates tab title to drilled-down note")
+    void drillDown_shouldUpdateTabTitle() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertEquals("Map: Child", viewModel.tabTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateBack() returns to previous base note")
+    void navigateBack_shouldReturnToPreviousBase() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateBack();
+
+        assertEquals(root.getId(), viewModel.getBaseNoteId());
+        assertEquals(1, viewModel.getNoteItems().size());
+        assertEquals("Child", viewModel.getNoteItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("canNavigateBack() is false initially")
+    void canNavigateBack_shouldBeFalseInitially() {
+        assertFalse(viewModel.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("canNavigateBack() is true after drillDown")
+    void canNavigateBack_shouldBeTrueAfterDrillDown() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertTrue(viewModel.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("canNavigateBack() is false after navigating back")
+    void canNavigateBack_shouldBeFalseAfterBack() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateBack();
+
+        assertFalse(viewModel.canNavigateBackProperty().get());
+    }
 }

@@ -4,12 +4,15 @@ import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
@@ -35,15 +38,27 @@ public class MapViewController {
     private static final double NORMAL_BORDER_WIDTH = 1.0;
     private static final double FONT_SIZE = 12.0;
 
+    private static final double BACK_BUTTON_PADDING = 5.0;
+
     @FXML private Pane mapCanvas;
 
     private MapViewModel viewModel;
+    private Button backButton;
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
      */
     public void initViewModel(MapViewModel viewModel) {
         this.viewModel = viewModel;
+
+        // Back navigation button
+        backButton = new Button("\u2190 Back");
+        backButton.setVisible(false);
+        backButton.setOnAction(e -> viewModel.navigateBack());
+        backButton.setLayoutX(BACK_BUTTON_PADDING);
+        backButton.setLayoutY(BACK_BUTTON_PADDING);
+        viewModel.canNavigateBackProperty().addListener(
+                (obs, oldVal, newVal) -> backButton.setVisible(newVal));
 
         // Render existing notes
         viewModel.loadNotes();
@@ -62,10 +77,13 @@ public class MapViewController {
             }
         });
 
-        // Return key to create new note
+        // Return key to create new note; Escape to navigate back
         mapCanvas.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 viewModel.createChildNote("Untitled");
+            } else if (event.getCode() == KeyCode.ESCAPE
+                    && viewModel.canNavigateBackProperty().get()) {
+                viewModel.navigateBack();
             }
         });
 
@@ -102,6 +120,8 @@ public class MapViewController {
             StackPane noteNode = createNoteNode(item);
             mapCanvas.getChildren().add(noteNode);
         }
+        // Keep back button on top
+        mapCanvas.getChildren().add(backButton);
     }
 
     private StackPane createNoteNode(NoteDisplayItem item) {
@@ -118,18 +138,36 @@ public class MapViewController {
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setMaxWidth(item.getWidth() - 8);
         titleLabel.setWrapText(true);
-        titleLabel.setMouseTransparent(true);
+        titleLabel.setMouseTransparent(false);
+        titleLabel.setPadding(new Insets(2, 4, 2, 4));
 
         StackPane notePane = new StackPane(rect, titleLabel);
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
         notePane.setCursor(Cursor.HAND);
 
-        // Click to select
-        notePane.setOnMouseClicked(event -> {
-            viewModel.selectNote(item.getId());
-            highlightSelected(notePane);
-            event.consume();
+        // Double-click on title label -> inline edit
+        titleLabel.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && event.getButton() == MouseButton.PRIMARY) {
+                startInlineEdit(notePane, titleLabel, rect, item);
+                event.consume();
+            } else {
+                viewModel.selectNote(item.getId());
+                highlightSelected(notePane);
+                event.consume();
+            }
+        });
+
+        // Double-click on rectangle body (not title) -> drill down
+        rect.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2 && event.getButton() == MouseButton.PRIMARY) {
+                viewModel.drillDown(item.getId());
+                event.consume();
+            } else {
+                viewModel.selectNote(item.getId());
+                highlightSelected(notePane);
+                event.consume();
+            }
         });
 
         // Drag support
@@ -142,6 +180,50 @@ public class MapViewController {
         }
 
         return notePane;
+    }
+
+    private void startInlineEdit(StackPane notePane, Label titleLabel,
+            Rectangle rect, NoteDisplayItem item) {
+        String originalTitle = titleLabel.getText();
+        TextField textField = new TextField(originalTitle);
+        textField.setFont(Font.font(FONT_SIZE));
+        textField.setAlignment(Pos.CENTER);
+        textField.setMaxWidth(rect.getWidth() - 8);
+        textField.selectAll();
+
+        // Replace label with text field
+        notePane.getChildren().remove(titleLabel);
+        notePane.getChildren().add(textField);
+        textField.requestFocus();
+
+        // Commit on Enter
+        textField.setOnAction(e -> {
+            String newTitle = textField.getText().trim();
+            if (!newTitle.isEmpty() && viewModel.renameNote(item.getId(), newTitle)) {
+                titleLabel.setText(newTitle);
+            }
+            notePane.getChildren().remove(textField);
+            notePane.getChildren().add(titleLabel);
+        });
+
+        // Cancel on Escape
+        textField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.ESCAPE) {
+                notePane.getChildren().remove(textField);
+                notePane.getChildren().add(titleLabel);
+                e.consume();
+            }
+        });
+
+        // Cancel on focus lost
+        textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (!isFocused && notePane.getChildren().contains(textField)) {
+                notePane.getChildren().remove(textField);
+                if (!notePane.getChildren().contains(titleLabel)) {
+                    notePane.getChildren().add(titleLabel);
+                }
+            }
+        });
     }
 
     private void enableDrag(StackPane notePane, NoteDisplayItem item) {

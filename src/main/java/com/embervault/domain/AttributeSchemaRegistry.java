@@ -87,6 +87,10 @@ public final class AttributeSchemaRegistry {
         systemAttr("$Name", AttributeType.STRING, new AttributeValue.StringValue(""));
         systemAttr("$IsPrototype", AttributeType.BOOLEAN, new AttributeValue.BooleanValue(false));
         systemAttr("$Prototype", AttributeType.STRING, new AttributeValue.StringValue(""));
+        intrinsicAttr("$Container", AttributeType.STRING,
+                new AttributeValue.StringValue(""), false);
+        intrinsicAttr("$OutlineOrder", AttributeType.NUMBER,
+                new AttributeValue.NumberValue(0), false);
 
         // Content
         systemAttr("$Text", AttributeType.STRING, new AttributeValue.StringValue(""));

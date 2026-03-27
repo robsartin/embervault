@@ -1,6 +1,7 @@
 package com.embervault.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -100,8 +101,8 @@ class NoteServiceImplTest {
     }
 
     @Test
-    @DisplayName("createChildNote() creates a child and links to parent")
-    void createChildNote_shouldCreateAndLink() {
+    @DisplayName("createChildNote() creates a child with $Container set to parent id")
+    void createChildNote_shouldSetContainerToParentId() {
         Note parent = service.createNote("Parent", "");
 
         Note child = service.createChildNote(parent.getId(), "Child");
@@ -110,8 +111,39 @@ class NoteServiceImplTest {
         assertEquals("Child", child.getTitle());
         assertTrue(repository.findById(child.getId()).isPresent());
 
+        // $Container on child should reference the parent
+        String container = ((AttributeValue.StringValue)
+                child.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(parent.getId().toString(), container);
+    }
+
+    @Test
+    @DisplayName("createChildNote() sets $OutlineOrder sequentially")
+    void createChildNote_shouldSetOutlineOrder() {
+        Note parent = service.createNote("Parent", "");
+
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+
+        double order1 = ((AttributeValue.NumberValue)
+                child1.getAttribute("$OutlineOrder").orElseThrow()).value();
+        double order2 = ((AttributeValue.NumberValue)
+                child2.getAttribute("$OutlineOrder").orElseThrow()).value();
+
+        assertEquals(0.0, order1);
+        assertEquals(1.0, order2);
+    }
+
+    @Test
+    @DisplayName("createChildNote() does not modify parent note")
+    void createChildNote_shouldNotModifyParent() {
+        Note parent = service.createNote("Parent", "");
+        int attrCountBefore = parent.getAttributes().size();
+
+        service.createChildNote(parent.getId(), "Child");
+
         Note updatedParent = repository.findById(parent.getId()).orElseThrow();
-        assertTrue(updatedParent.getChildIds().contains(child.getId()));
+        assertEquals(attrCountBefore, updatedParent.getAttributes().size());
     }
 
     @Test
@@ -165,5 +197,95 @@ class NoteServiceImplTest {
         List<Note> children = service.getChildren(parent.getId());
 
         assertTrue(children.isEmpty());
+    }
+
+    @Test
+    @DisplayName("hasChildren() returns true when note has children")
+    void hasChildren_shouldReturnTrueWhenHasChildren() {
+        Note parent = service.createNote("Parent", "");
+        service.createChildNote(parent.getId(), "Child");
+
+        assertTrue(service.hasChildren(parent.getId()));
+    }
+
+    @Test
+    @DisplayName("hasChildren() returns false when note has no children")
+    void hasChildren_shouldReturnFalseWhenNoChildren() {
+        Note note = service.createNote("Lonely", "");
+
+        assertFalse(service.hasChildren(note.getId()));
+    }
+
+    @Test
+    @DisplayName("moveNote() changes $Container to new parent")
+    void moveNote_shouldChangeContainer() {
+        Note parent1 = service.createNote("Parent1", "");
+        Note parent2 = service.createNote("Parent2", "");
+        Note child = service.createChildNote(parent1.getId(), "Child");
+
+        Note moved = service.moveNote(child.getId(), parent2.getId());
+
+        String container = ((AttributeValue.StringValue)
+                moved.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(parent2.getId().toString(), container);
+
+        // Old parent should have no children
+        assertTrue(service.getChildren(parent1.getId()).isEmpty());
+        // New parent should have the child
+        assertEquals(1, service.getChildren(parent2.getId()).size());
+    }
+
+    @Test
+    @DisplayName("moveNote() throws when note does not exist")
+    void moveNote_shouldThrowForMissingNote() {
+        Note parent = service.createNote("Parent", "");
+
+        assertThrows(NoSuchElementException.class,
+                () -> service.moveNote(UUID.randomUUID(), parent.getId()));
+    }
+
+    @Test
+    @DisplayName("moveNote() throws when new parent does not exist")
+    void moveNote_shouldThrowForMissingParent() {
+        Note note = service.createNote("Note", "");
+
+        assertThrows(NoSuchElementException.class,
+                () -> service.moveNote(note.getId(), UUID.randomUUID()));
+    }
+
+    @Test
+    @DisplayName("renameNote() updates $Name attribute")
+    void renameNote_shouldUpdateName() {
+        Note note = service.createNote("Old Title", "Content");
+
+        Note renamed = service.renameNote(note.getId(), "New Title");
+
+        assertEquals("New Title", renamed.getTitle());
+        assertEquals("Content", renamed.getContent());
+    }
+
+    @Test
+    @DisplayName("renameNote() throws when note does not exist")
+    void renameNote_shouldThrowForMissing() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.renameNote(UUID.randomUUID(), "Title"));
+    }
+
+    @Test
+    @DisplayName("renameNote() rejects empty title")
+    void renameNote_shouldRejectEmptyTitle() {
+        Note note = service.createNote("Title", "Content");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.renameNote(note.getId(), ""));
+    }
+
+    @Test
+    @DisplayName("renameNote() rejects blank title")
+    void renameNote_shouldRejectBlankTitle() {
+        Note note = service.createNote("Title", "Content");
+
+        assertThrows(IllegalArgumentException.class,
+                () -> service.renameNote(note.getId(), "   "));
     }
 }

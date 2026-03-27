@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -98,14 +99,18 @@ class InMemoryNoteRepositoryTest {
     }
 
     @Test
-    @DisplayName("findChildren() returns children of a parent note")
-    void findChildren_shouldReturnChildren() {
+    @DisplayName("findChildren() returns notes whose $Container matches parent id")
+    void findChildren_shouldReturnByContainerAttribute() {
         Note parent = Note.create("Parent", "");
         Note child1 = Note.create("Child1", "");
         Note child2 = Note.create("Child2", "");
 
-        parent.addChild(child1.getId());
-        parent.addChild(child2.getId());
+        child1.setAttribute("$Container",
+                new AttributeValue.StringValue(parent.getId().toString()));
+        child1.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(0));
+        child2.setAttribute("$Container",
+                new AttributeValue.StringValue(parent.getId().toString()));
+        child2.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(1));
 
         repository.save(parent);
         repository.save(child1);
@@ -116,6 +121,31 @@ class InMemoryNoteRepositoryTest {
         assertEquals(2, children.size());
         assertEquals(child1, children.get(0));
         assertEquals(child2, children.get(1));
+    }
+
+    @Test
+    @DisplayName("findChildren() returns children sorted by $OutlineOrder")
+    void findChildren_shouldSortByOutlineOrder() {
+        Note parent = Note.create("Parent", "");
+        Note childA = Note.create("A", "");
+        Note childB = Note.create("B", "");
+
+        childA.setAttribute("$Container",
+                new AttributeValue.StringValue(parent.getId().toString()));
+        childA.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(2));
+        childB.setAttribute("$Container",
+                new AttributeValue.StringValue(parent.getId().toString()));
+        childB.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(1));
+
+        repository.save(parent);
+        repository.save(childA);
+        repository.save(childB);
+
+        List<Note> children = repository.findChildren(parent.getId());
+
+        assertEquals(2, children.size());
+        assertEquals(childB, children.get(0));
+        assertEquals(childA, children.get(1));
     }
 
     @Test

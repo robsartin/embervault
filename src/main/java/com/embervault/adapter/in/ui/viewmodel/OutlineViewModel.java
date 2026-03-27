@@ -92,7 +92,7 @@ public final class OutlineViewModel {
         }
         rootItems.setAll(
                 noteService.getChildren(baseNoteId).stream()
-                        .map(OutlineViewModel::toDisplayItem)
+                        .map(this::toDisplayItem)
                         .toList());
     }
 
@@ -114,6 +114,32 @@ public final class OutlineViewModel {
     }
 
     /**
+     * Renames a note, updating the display item in the root items list if present.
+     *
+     * @param noteId   the note id
+     * @param newTitle the new title
+     * @return true if the rename succeeded, false if the title was blank
+     */
+    public boolean renameNote(UUID noteId, String newTitle) {
+        if (newTitle == null || newTitle.isBlank()) {
+            return false;
+        }
+        noteService.renameNote(noteId, newTitle);
+        for (int i = 0; i < rootItems.size(); i++) {
+            NoteDisplayItem item = rootItems.get(i);
+            if (item.getId().equals(noteId)) {
+                rootItems.set(i, new NoteDisplayItem(
+                        item.getId(), newTitle, item.getContent(),
+                        item.getXpos(), item.getYpos(),
+                        item.getWidth(), item.getHeight(),
+                        item.getColorHex(), item.isHasChildren()));
+                break;
+            }
+        }
+        return true;
+    }
+
+    /**
      * Returns the children of the given note as display items.
      *
      * @param parentId the parent note id
@@ -122,11 +148,11 @@ public final class OutlineViewModel {
     public ObservableList<NoteDisplayItem> getChildren(UUID parentId) {
         return FXCollections.observableArrayList(
                 noteService.getChildren(parentId).stream()
-                        .map(OutlineViewModel::toDisplayItem)
+                        .map(this::toDisplayItem)
                         .toList());
     }
 
-    private static NoteDisplayItem toDisplayItem(Note note) {
+    private NoteDisplayItem toDisplayItem(Note note) {
         String colorHex = note.getAttribute("$Color")
                 .map(v -> ((AttributeValue.ColorValue) v).value())
                 .map(TbxColor::toHex)
@@ -134,6 +160,7 @@ public final class OutlineViewModel {
 
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
-                0, 0, 0, 0, colorHex, note.hasChildren());
+                0, 0, 0, 0, colorHex,
+                noteService.hasChildren(note.getId()));
     }
 }

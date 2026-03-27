@@ -1,14 +1,12 @@
 package com.embervault.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -191,92 +189,48 @@ class NoteTest {
         assertTrue(str.contains("Test"));
     }
 
-    // --- Child note tests ---
+    // --- $Container attribute tests ---
 
     @Test
-    @DisplayName("new note has no children")
-    void newNote_shouldHaveNoChildren() {
+    @DisplayName("new note has no $Container attribute set")
+    void newNote_shouldHaveNoContainer() {
         Note note = Note.create("Title", "Content");
 
-        assertTrue(note.getChildIds().isEmpty());
-        assertFalse(note.hasChildren());
+        assertTrue(note.getAttribute("$Container").isEmpty());
     }
 
     @Test
-    @DisplayName("addChild() adds a child id to the list")
-    void addChild_shouldAddChildId() {
-        Note note = Note.create("Parent", "");
-        UUID childId = UUID.randomUUID();
+    @DisplayName("$Container can be set to reference a parent note id")
+    void container_canBeSetToParentId() {
+        Note note = Note.create("Child", "");
+        UUID parentId = UUID.randomUUID();
 
-        note.addChild(childId);
+        note.setAttribute("$Container",
+                new AttributeValue.StringValue(parentId.toString()));
 
-        assertEquals(1, note.getChildIds().size());
-        assertEquals(childId, note.getChildIds().get(0));
-        assertTrue(note.hasChildren());
+        assertEquals(parentId.toString(),
+                ((AttributeValue.StringValue) note.getAttribute("$Container").get())
+                        .value());
     }
 
     @Test
-    @DisplayName("addChild() preserves order")
-    void addChild_shouldPreserveOrder() {
-        Note note = Note.create("Parent", "");
-        UUID first = UUID.randomUUID();
-        UUID second = UUID.randomUUID();
+    @DisplayName("$OutlineOrder can be set as a number attribute")
+    void outlineOrder_canBeSetAsNumber() {
+        Note note = Note.create("Child", "");
 
-        note.addChild(first);
-        note.addChild(second);
+        note.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(3));
 
-        assertEquals(List.of(first, second), note.getChildIds());
+        assertEquals(3.0,
+                ((AttributeValue.NumberValue) note.getAttribute("$OutlineOrder").get())
+                        .value());
     }
 
     @Test
-    @DisplayName("addChild() rejects null")
-    void addChild_shouldRejectNull() {
-        Note note = Note.create("Parent", "");
-
-        assertThrows(NullPointerException.class, () -> note.addChild(null));
-    }
-
-    @Test
-    @DisplayName("removeChild() removes a child id")
-    void removeChild_shouldRemoveChildId() {
-        Note note = Note.create("Parent", "");
-        UUID childId = UUID.randomUUID();
-        note.addChild(childId);
-
-        note.removeChild(childId);
-
-        assertTrue(note.getChildIds().isEmpty());
-        assertFalse(note.hasChildren());
-    }
-
-    @Test
-    @DisplayName("removeChild() is safe for unknown ids")
-    void removeChild_shouldBeSafeForUnknownId() {
-        Note note = Note.create("Parent", "");
-
-        note.removeChild(UUID.randomUUID());
-
-        assertTrue(note.getChildIds().isEmpty());
-    }
-
-    @Test
-    @DisplayName("getChildIds() returns unmodifiable list")
-    void getChildIds_shouldReturnUnmodifiableList() {
-        Note note = Note.create("Parent", "");
-        note.addChild(UUID.randomUUID());
-
-        List<UUID> children = note.getChildIds();
-
-        assertThrows(UnsupportedOperationException.class,
-                () -> children.add(UUID.randomUUID()));
-    }
-
-    @Test
-    @DisplayName("Note created with AttributeMap constructor has empty children")
-    void attributeMapConstructor_shouldHaveEmptyChildren() {
+    @DisplayName("Note created with AttributeMap constructor works without childIds")
+    void attributeMapConstructor_shouldWork() {
         Note note = new Note(UUID.randomUUID(), new AttributeMap());
 
-        assertTrue(note.getChildIds().isEmpty());
-        assertFalse(note.hasChildren());
+        assertNotNull(note.getId());
+        assertNotNull(note.getAttributes());
     }
 }
