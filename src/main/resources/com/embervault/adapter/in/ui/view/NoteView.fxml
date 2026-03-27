@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+<HBox spacing="10" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.embervault.adapter.in.ui.view.NoteViewController">
+    <padding>
+        <Insets top="10" right="10" bottom="10" left="10"/>
+    </padding>
+
+    <!-- Left: note list -->
+    <ListView fx:id="noteListView" prefWidth="250" HBox.hgrow="NEVER"/>
+
+    <!-- Right: editor -->
+    <VBox spacing="8" HBox.hgrow="ALWAYS">
+        <TextField fx:id="titleField" promptText="Title"/>
+        <TextArea fx:id="contentArea" promptText="Content" VBox.vgrow="ALWAYS"/>
+        <HBox spacing="8">
+            <Button fx:id="addButton" text="Add" onAction="#onAdd"/>
+            <Button fx:id="saveButton" text="Save" onAction="#onSave"/>
+            <Button fx:id="deleteButton" text="Delete" onAction="#onDelete"/>
+        </HBox>
+    </VBox>
+</HBox>
