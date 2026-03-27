@@ -2,16 +2,20 @@ package com.embervault;
 
 import java.io.IOException;
 
-import com.embervault.adapter.in.ui.view.NoteViewController;
-import com.embervault.adapter.in.ui.viewmodel.NoteViewModel;
-import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
-import com.embervault.application.NoteServiceImpl;
-import com.embervault.application.port.in.NoteService;
-import com.embervault.application.port.out.NoteRepository;
+import com.embervault.adapter.in.ui.view.MapViewController;
+import com.embervault.adapter.in.ui.view.OutlineViewController;
+import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
+import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import com.embervault.application.ProjectServiceImpl;
+import com.embervault.application.port.in.ProjectService;
+import com.embervault.domain.Project;
 import javafx.application.Application;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.SplitPane;
 import javafx.stage.Stage;
 
 /**
@@ -21,20 +25,38 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        // Manual dependency injection
-        NoteRepository repository = new InMemoryNoteRepository();
-        NoteService noteService = new NoteServiceImpl(repository);
-        NoteViewModel viewModel = new NoteViewModel(noteService);
+        // Create an empty project on startup
+        ProjectService projectService = new ProjectServiceImpl();
+        Project project = projectService.createEmptyProject();
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/NoteView.fxml"));
-        Parent root = loader.load();
+        // Observable note title for binding to ViewModels
+        StringProperty rootNoteTitle = new SimpleStringProperty(
+                project.getRootNote().getTitle());
 
-        NoteViewController controller = loader.getController();
-        controller.initViewModel(viewModel);
+        // Create ViewModels
+        MapViewModel mapViewModel = new MapViewModel(rootNoteTitle);
+        OutlineViewModel outlineViewModel = new OutlineViewModel(rootNoteTitle);
 
-        Scene scene = new Scene(root, 800, 600);
-        stage.setTitle("EmberVault");
+        // Load MapView
+        FXMLLoader mapLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/MapView.fxml"));
+        Parent mapView = mapLoader.load();
+        MapViewController mapController = mapLoader.getController();
+        mapController.initViewModel(mapViewModel);
+
+        // Load OutlineView
+        FXMLLoader outlineLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/OutlineView.fxml"));
+        Parent outlineView = outlineLoader.load();
+        OutlineViewController outlineController = outlineLoader.getController();
+        outlineController.initViewModel(outlineViewModel);
+
+        // SplitPane with Map on left, Outline on right
+        SplitPane splitPane = new SplitPane(mapView, outlineView);
+        splitPane.setDividerPositions(0.5);
+
+        Scene scene = new Scene(splitPane, 1024, 768);
+        stage.setTitle("EmberVault - " + project.getName());
         stage.setScene(scene);
         stage.show();
     }
