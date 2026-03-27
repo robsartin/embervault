@@ -71,26 +71,64 @@ public final class NoteServiceImpl implements NoteService {
 
     @Override
     public Note createChildNote(UUID parentId, String title) {
-        Note parent = repository.findById(parentId)
+        repository.findById(parentId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Parent note not found: " + parentId));
 
+        int nextOrder = repository.findChildren(parentId).size();
+
         Note child = Note.create(title, "");
+        child.setAttribute("$Container",
+                new AttributeValue.StringValue(parentId.toString()));
+        child.setAttribute("$OutlineOrder",
+                new AttributeValue.NumberValue(nextOrder));
         child.setAttribute("$Xpos",
                 new AttributeValue.NumberValue(random.nextDouble() * MAX_XPOS));
         child.setAttribute("$Ypos",
                 new AttributeValue.NumberValue(random.nextDouble() * MAX_YPOS));
 
-        repository.save(child);
-        parent.addChild(child.getId());
-        repository.save(parent);
+        return repository.save(child);
+    }
 
-        return child;
+    @Override
+    public Note renameNote(UUID noteId, String newTitle) {
+        Objects.requireNonNull(newTitle, "newTitle must not be null");
+        if (newTitle.isBlank()) {
+            throw new IllegalArgumentException("title must not be blank");
+        }
+        Note note = repository.findById(noteId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Note not found: " + noteId));
+        note.setAttribute("$Name", new AttributeValue.StringValue(newTitle));
+        return repository.save(note);
     }
 
     @Override
     public List<Note> getChildren(UUID parentId) {
         return repository.findChildren(parentId);
+    }
+
+    @Override
+    public boolean hasChildren(UUID noteId) {
+        return !repository.findChildren(noteId).isEmpty();
+    }
+
+    @Override
+    public Note moveNote(UUID noteId, UUID newParentId) {
+        Note note = repository.findById(noteId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Note not found: " + noteId));
+        repository.findById(newParentId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Parent note not found: " + newParentId));
+
+        int nextOrder = repository.findChildren(newParentId).size();
+        note.setAttribute("$Container",
+                new AttributeValue.StringValue(newParentId.toString()));
+        note.setAttribute("$OutlineOrder",
+                new AttributeValue.NumberValue(nextOrder));
+
+        return repository.save(note);
     }
 
     @Override

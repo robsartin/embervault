@@ -1,5 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -7,10 +9,12 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import com.embervault.domain.TbxColor;
-import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -36,7 +40,11 @@ public final class MapViewModel {
             FXCollections.observableArrayList();
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
+    private final BooleanProperty canNavigateBack =
+            new SimpleBooleanProperty(false);
     private final NoteService noteService;
+    private final StringProperty rootNoteTitle;
+    private final Deque<UUID> navigationHistory = new ArrayDeque<>();
     private UUID baseNoteId;
 
     /**
@@ -49,7 +57,14 @@ public final class MapViewModel {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
-        tabTitle.bind(Bindings.concat("Map: ", noteTitle));
+        this.rootNoteTitle = noteTitle;
+        updateTabTitle(noteTitle.get());
+        // When the root note title changes and we're at the root level, update tab title
+        noteTitle.addListener((obs, oldVal, newVal) -> {
+            if (navigationHistory.isEmpty()) {
+                updateTabTitle(newVal);
+            }
+        });
     }
 
     /** Returns the tab title property. */
@@ -98,7 +113,7 @@ public final class MapViewModel {
         }
         noteItems.setAll(
                 noteService.getChildren(baseNoteId).stream()
-                        .map(MapViewModel::toDisplayItem)
+                        .map(this::toDisplayItem)
                         .toList());
     }
 
@@ -134,6 +149,73 @@ public final class MapViewModel {
         return item;
     }
 
+    /** Returns the canNavigateBack property. */
+    public ReadOnlyBooleanProperty canNavigateBackProperty() {
+        return canNavigateBack;
+    }
+
+    /**
+     * Renames a note, updating the display item in the list.
+     *
+     * @param noteId   the note id
+     * @param newTitle the new title
+     * @return true if the rename succeeded, false if the title was blank
+     */
+    public boolean renameNote(UUID noteId, String newTitle) {
+        if (newTitle == null || newTitle.isBlank()) {
+            return false;
+        }
+        noteService.renameNote(noteId, newTitle);
+        for (int i = 0; i < noteItems.size(); i++) {
+            NoteDisplayItem item = noteItems.get(i);
+            if (item.getId().equals(noteId)) {
+                noteItems.set(i, new NoteDisplayItem(
+                        item.getId(), newTitle, item.getContent(),
+                        item.getXpos(), item.getYpos(),
+                        item.getWidth(), item.getHeight(),
+                        item.getColorHex(), item.isHasChildren()));
+                break;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Drills down into a child note, making it the new base note.
+     *
+     * @param noteId the note id to drill into
+     */
+    public void drillDown(UUID noteId) {
+        navigationHistory.push(baseNoteId);
+        canNavigateBack.set(true);
+        baseNoteId = noteId;
+        noteService.getNote(noteId).ifPresent(note ->
+                updateTabTitle(note.getTitle()));
+        loadNotes();
+    }
+
+    /**
+     * Navigates back to the previous base note.
+     */
+    public void navigateBack() {
+        if (navigationHistory.isEmpty()) {
+            return;
+        }
+        baseNoteId = navigationHistory.pop();
+        canNavigateBack.set(!navigationHistory.isEmpty());
+        if (navigationHistory.isEmpty()) {
+            updateTabTitle(rootNoteTitle.get());
+        } else {
+            noteService.getNote(baseNoteId).ifPresent(note ->
+                    updateTabTitle(note.getTitle()));
+        }
+        loadNotes();
+    }
+
+    private void updateTabTitle(String title) {
+        tabTitle.set("Map: " + title);
+    }
+
     /**
      * Updates a note's position by setting its $Xpos and $Ypos attributes.
      *
@@ -160,7 +242,7 @@ public final class MapViewModel {
         }
     }
 
-    private static NoteDisplayItem toDisplayItem(Note note) {
+    private NoteDisplayItem toDisplayItem(Note note) {
         double xpos = note.getAttribute("$Xpos")
                 .map(v -> ((AttributeValue.NumberValue) v).value() * SCALE_X)
                 .orElse(0.0);
@@ -180,6 +262,7 @@ public final class MapViewModel {
 
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
-                xpos, ypos, width, height, colorHex, note.hasChildren());
+                xpos, ypos, width, height, colorHex,
+                noteService.hasChildren(note.getId()));
     }
 }

@@ -1,6 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -154,5 +155,43 @@ class OutlineViewModelTest {
         viewModel.setBaseNoteId(id);
 
         assertEquals(id, viewModel.getBaseNoteId());
+    }
+
+    @Test
+    @DisplayName("renameNote() updates the display item title in root items")
+    void renameNote_shouldUpdateDisplayItemTitle() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote(parent.getId(), "Old Title");
+
+        boolean result = viewModel.renameNote(item.getId(), "New Title");
+
+        assertTrue(result);
+        assertEquals("New Title", viewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("renameNote() returns false for blank title")
+    void renameNote_shouldReturnFalseForBlankTitle() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote(parent.getId(), "Title");
+
+        boolean result = viewModel.renameNote(item.getId(), "");
+
+        assertFalse(result);
+        assertEquals("Title", viewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("renameNote() returns false for null title")
+    void renameNote_shouldReturnFalseForNullTitle() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem item = viewModel.createChildNote(parent.getId(), "Title");
+
+        boolean result = viewModel.renameNote(item.getId(), null);
+
+        assertFalse(result);
     }
 }

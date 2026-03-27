@@ -9,11 +9,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.text.TextAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,19 +37,11 @@ public class OutlineViewController {
     public void initViewModel(OutlineViewModel viewModel) {
         this.viewModel = viewModel;
 
-        // Set up cell factory for single-line display with ellipsis
-        outlineTreeView.setCellFactory(tv -> new TreeCell<>() {
-            @Override
-            protected void updateItem(NoteDisplayItem item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.getTitle());
-                    setTextAlignment(TextAlignment.LEFT);
-                }
-            }
-        });
+        // Enable editing on the tree view
+        outlineTreeView.setEditable(true);
+
+        // Set up cell factory with editable support
+        outlineTreeView.setCellFactory(tv -> new EditableNoteTreeCell());
 
         // Load initial data
         viewModel.loadNotes();
@@ -134,6 +126,75 @@ public class OutlineViewController {
         }
         if (parentId != null) {
             viewModel.createChildNote(parentId, "Untitled");
+        }
+    }
+
+    /**
+     * Custom TreeCell that supports inline editing of note titles.
+     */
+    private final class EditableNoteTreeCell extends TreeCell<NoteDisplayItem> {
+
+        private TextField textField;
+
+        @Override
+        public void startEdit() {
+            super.startEdit();
+            if (getItem() == null) {
+                return;
+            }
+            textField = new TextField(getItem().getTitle());
+            textField.selectAll();
+            textField.setOnAction(e -> commitEdit(getItem()));
+            textField.setOnKeyPressed(e -> {
+                if (e.getCode() == KeyCode.ESCAPE) {
+                    cancelEdit();
+                    e.consume();
+                }
+            });
+            textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+                if (!isFocused) {
+                    cancelEdit();
+                }
+            });
+
+            setText(null);
+            setGraphic(textField);
+            textField.requestFocus();
+        }
+
+        @Override
+        public void commitEdit(NoteDisplayItem item) {
+            String newTitle = textField.getText().trim();
+            if (!newTitle.isEmpty()) {
+                viewModel.renameNote(item.getId(), newTitle);
+            }
+            super.commitEdit(item);
+            setText(item.getTitle());
+            setGraphic(null);
+        }
+
+        @Override
+        public void cancelEdit() {
+            super.cancelEdit();
+            if (getItem() != null) {
+                setText(getItem().getTitle());
+            }
+            setGraphic(null);
+        }
+
+        @Override
+        protected void updateItem(NoteDisplayItem item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+            } else if (isEditing()) {
+                setText(null);
+                setGraphic(textField);
+            } else {
+                setText(item.getTitle());
+                setGraphic(null);
+            }
         }
     }
 }
