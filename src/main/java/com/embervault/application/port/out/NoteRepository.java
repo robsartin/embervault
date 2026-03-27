@@ -27,6 +27,14 @@ public interface NoteRepository {
     List<Note> findAll();
 
     /**
+     * Returns the children of the note with the given parent id.
+     *
+     * @param parentId the parent note id
+     * @return the list of child notes
+     */
+    List<Note> findChildren(UUID parentId);
+
+    /**
      * Deletes the note with the given id.
      */
     void delete(UUID id);

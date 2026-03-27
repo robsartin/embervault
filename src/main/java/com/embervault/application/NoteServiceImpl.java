@@ -4,10 +4,12 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Random;
 import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.out.NoteRepository;
+import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 
 /**
@@ -17,14 +19,29 @@ import com.embervault.domain.Note;
  */
 public final class NoteServiceImpl implements NoteService {
 
+    private static final double MAX_XPOS = 500.0;
+    private static final double MAX_YPOS = 400.0;
+
     private final NoteRepository repository;
+    private final Random random;
 
     /**
      * Constructs a NoteServiceImpl backed by the given repository.
      */
     public NoteServiceImpl(NoteRepository repository) {
+        this(repository, new Random());
+    }
+
+    /**
+     * Constructs a NoteServiceImpl backed by the given repository and random source.
+     *
+     * @param repository the repository
+     * @param random     the random source for position generation
+     */
+    public NoteServiceImpl(NoteRepository repository, Random random) {
         this.repository = Objects.requireNonNull(repository,
                 "repository must not be null");
+        this.random = Objects.requireNonNull(random, "random must not be null");
     }
 
     @Override
@@ -50,6 +67,30 @@ public final class NoteServiceImpl implements NoteService {
                         "Note not found: " + id));
         note.update(title, content);
         return repository.save(note);
+    }
+
+    @Override
+    public Note createChildNote(UUID parentId, String title) {
+        Note parent = repository.findById(parentId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Parent note not found: " + parentId));
+
+        Note child = Note.create(title, "");
+        child.setAttribute("$Xpos",
+                new AttributeValue.NumberValue(random.nextDouble() * MAX_XPOS));
+        child.setAttribute("$Ypos",
+                new AttributeValue.NumberValue(random.nextDouble() * MAX_YPOS));
+
+        repository.save(child);
+        parent.addChild(child.getId());
+        repository.save(parent);
+
+        return child;
+    }
+
+    @Override
+    public List<Note> getChildren(UUID parentId) {
+        return repository.findChildren(parentId);
     }
 
     @Override

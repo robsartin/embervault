@@ -6,8 +6,12 @@ import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
+import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
+import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.ProjectService;
+import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.Project;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
@@ -29,13 +33,23 @@ public class App extends Application {
         ProjectService projectService = new ProjectServiceImpl();
         Project project = projectService.createEmptyProject();
 
+        // Create shared NoteRepository and NoteService
+        NoteRepository noteRepository = new InMemoryNoteRepository();
+        NoteService noteService = new NoteServiceImpl(noteRepository);
+
+        // Save root note to repository so children can reference it
+        noteRepository.save(project.getRootNote());
+
         // Observable note title for binding to ViewModels
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
 
-        // Create ViewModels
-        MapViewModel mapViewModel = new MapViewModel(rootNoteTitle);
-        OutlineViewModel outlineViewModel = new OutlineViewModel(rootNoteTitle);
+        // Create ViewModels with shared NoteService
+        MapViewModel mapViewModel = new MapViewModel(rootNoteTitle, noteService);
+        mapViewModel.setBaseNoteId(project.getRootNote().getId());
+
+        OutlineViewModel outlineViewModel = new OutlineViewModel(rootNoteTitle, noteService);
+        outlineViewModel.setBaseNoteId(project.getRootNote().getId());
 
         // Load MapView
         FXMLLoader mapLoader = new FXMLLoader(getClass().getResource(
@@ -50,6 +64,14 @@ public class App extends Application {
         Parent outlineView = outlineLoader.load();
         OutlineViewController outlineController = outlineLoader.getController();
         outlineController.initViewModel(outlineViewModel);
+
+        // Synchronize: when map creates a note, refresh outline and vice versa
+        mapViewModel.getNoteItems().addListener(
+                (javafx.collections.ListChangeListener<Object>) change ->
+                        outlineViewModel.loadNotes());
+        outlineViewModel.getRootItems().addListener(
+                (javafx.collections.ListChangeListener<Object>) change ->
+                        mapViewModel.loadNotes());
 
         // SplitPane with Map on left, Outline on right
         SplitPane splitPane = new SplitPane(mapView, outlineView);
