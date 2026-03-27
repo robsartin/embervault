@@ -31,6 +31,7 @@
         <checkstyle.version>10.21.4</checkstyle.version>
 
         <!-- Dependency versions -->
+        <archunit-junit5.version>1.4.1</archunit-junit5.version>
         <junit-jupiter.version>5.11.4</junit-jupiter.version>
         <slf4j.version>2.0.16</slf4j.version>
         <logback.version>1.5.16</logback.version>
@@ -76,6 +77,12 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>${archunit-junit5.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
