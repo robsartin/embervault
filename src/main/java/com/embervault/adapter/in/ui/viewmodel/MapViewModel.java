@@ -295,7 +295,6 @@ public final class MapViewModel {
                 break;
             }
         }
-        notifyDataChanged();
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
