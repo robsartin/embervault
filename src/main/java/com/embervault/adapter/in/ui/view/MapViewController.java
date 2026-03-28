@@ -79,12 +79,12 @@ public class MapViewController {
         viewModel.getNoteItems().addListener(
                 (ListChangeListener<NoteDisplayItem>) this::onNoteItemsChanged);
 
-        // Double-click background to create new note
+        // Double-click background to create new note at click position
         mapCanvas.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
                     && event.getTarget() == mapCanvas) {
-                viewModel.createChildNote("Untitled");
+                viewModel.createChildNoteAt("Untitled", event.getX(), event.getY());
             }
         });
 
