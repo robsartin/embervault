@@ -14,13 +14,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests that MapViewModel and OutlineViewModel stay in sync when they
- * share the same NoteService and are wired with an onDataChanged callback.
+ * Tests that MapViewModel, OutlineViewModel, and TreemapViewModel stay
+ * in sync when they share the same NoteService and are wired with an
+ * onDataChanged callback.
  */
 class ViewSyncTest {
 
     private MapViewModel mapViewModel;
     private OutlineViewModel outlineViewModel;
+    private TreemapViewModel treemapViewModel;
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private Note root;
@@ -33,21 +35,26 @@ class ViewSyncTest {
 
         mapViewModel = new MapViewModel(noteTitle, noteService);
         outlineViewModel = new OutlineViewModel(noteTitle, noteService);
+        treemapViewModel = new TreemapViewModel(noteTitle, noteService);
 
         root = noteService.createNote("Root", "");
         mapViewModel.setBaseNoteId(root.getId());
         outlineViewModel.setBaseNoteId(root.getId());
+        treemapViewModel.setBaseNoteId(root.getId());
 
         // Wire the shared refresh callback (same pattern as App.java)
         Runnable refreshAll = () -> {
             mapViewModel.loadNotes();
             outlineViewModel.loadNotes();
+            treemapViewModel.loadNotes();
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
+        treemapViewModel.setOnDataChanged(refreshAll);
 
         mapViewModel.loadNotes();
         outlineViewModel.loadNotes();
+        treemapViewModel.loadNotes();
     }
 
     @Test
@@ -185,6 +192,44 @@ class ViewSyncTest {
         mapViewModel.createChildNoteAt("Placed Note", 50.0, 75.0);
 
         assertEquals(1, outlineViewModel.getRootItems().size());
-        assertEquals("Placed Note", outlineViewModel.getRootItems().get(0).getTitle());
+        assertEquals("Placed Note",
+                outlineViewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("Creating a note in Map refreshes Treemap view")
+    void createInMap_shouldRefreshTreemap() {
+        mapViewModel.createChildNote("New Note");
+
+        assertEquals(1, treemapViewModel.getNoteItems().size());
+        assertEquals("New Note",
+                treemapViewModel.getNoteItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("Creating a note in Treemap refreshes Map and Outline")
+    void createInTreemap_shouldRefreshMapAndOutline() {
+        treemapViewModel.createChildNote("Treemap Note");
+
+        assertEquals(1, mapViewModel.getNoteItems().size());
+        assertEquals("Treemap Note",
+                mapViewModel.getNoteItems().get(0).getTitle());
+        assertEquals(1, outlineViewModel.getRootItems().size());
+        assertEquals("Treemap Note",
+                outlineViewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("DrillDown in Treemap notifies data changed")
+    void drillDownInTreemap_shouldNotifyDataChanged() {
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        treemapViewModel.loadNotes();
+
+        treemapViewModel.drillDown(child.getId());
+
+        assertEquals(1, treemapViewModel.getNoteItems().size());
+        assertEquals("Grandchild",
+                treemapViewModel.getNoteItems().get(0).getTitle());
     }
 }
