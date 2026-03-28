@@ -14,15 +14,17 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests that MapViewModel, OutlineViewModel, and TreemapViewModel stay
- * in sync when they share the same NoteService and are wired with an
- * onDataChanged callback.
+ * Tests that MapViewModel, OutlineViewModel, TreemapViewModel,
+ * SearchViewModel, and SelectedNoteViewModel stay in sync when they
+ * share the same NoteService and are wired with an onDataChanged callback.
  */
 class ViewSyncTest {
 
     private MapViewModel mapViewModel;
     private OutlineViewModel outlineViewModel;
     private TreemapViewModel treemapViewModel;
+    private SearchViewModel searchViewModel;
+    private SelectedNoteViewModel selectedNoteViewModel;
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private Note root;
@@ -36,6 +38,8 @@ class ViewSyncTest {
         mapViewModel = new MapViewModel(noteTitle, noteService);
         outlineViewModel = new OutlineViewModel(noteTitle, noteService);
         treemapViewModel = new TreemapViewModel(noteTitle, noteService);
+        searchViewModel = new SearchViewModel(noteService);
+        selectedNoteViewModel = new SelectedNoteViewModel(noteService);
 
         root = noteService.createNote("Root", "");
         mapViewModel.setBaseNoteId(root.getId());
@@ -47,10 +51,17 @@ class ViewSyncTest {
             mapViewModel.loadNotes();
             outlineViewModel.loadNotes();
             treemapViewModel.loadNotes();
+            searchViewModel.refreshResults();
+            var selId = selectedNoteViewModel.selectedNoteIdProperty().get();
+            if (selId != null) {
+                selectedNoteViewModel.setSelectedNoteId(selId);
+            }
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
         treemapViewModel.setOnDataChanged(refreshAll);
+        searchViewModel.setOnDataChanged(refreshAll);
+        selectedNoteViewModel.setOnDataChanged(refreshAll);
 
         mapViewModel.loadNotes();
         outlineViewModel.loadNotes();
@@ -264,5 +275,92 @@ class ViewSyncTest {
         assertEquals(1, treemapViewModel.getNoteItems().size());
         assertEquals("Grandchild",
                 treemapViewModel.getNoteItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("Renaming a note in Map refreshes visible search results")
+    void renameInMap_shouldRefreshSearchResults() {
+        Note child = noteService.createChildNote(root.getId(), "Original");
+        mapViewModel.loadNotes();
+
+        // Simulate open search with matching query
+        searchViewModel.toggleVisible();
+        searchViewModel.queryProperty().set("original");
+        searchViewModel.search("original");
+        assertEquals(1, searchViewModel.getResults().size());
+
+        // Rename the note via map
+        mapViewModel.renameNote(child.getId(), "Renamed");
+
+        // Search results should have been refreshed — "original" no longer matches
+        assertEquals(0, searchViewModel.getResults().size());
+    }
+
+    @Test
+    @DisplayName("Creating a note refreshes search results when search is visible")
+    void createInOutline_shouldRefreshSearchResults() {
+        // Open search for "child"
+        searchViewModel.toggleVisible();
+        searchViewModel.queryProperty().set("child");
+        searchViewModel.search("child");
+        assertEquals(0, searchViewModel.getResults().size());
+
+        // Create a matching note
+        outlineViewModel.createChildNote(root.getId(), "Child Note");
+
+        // Search should now find it
+        assertEquals(1, searchViewModel.getResults().size());
+        assertEquals("Child Note", searchViewModel.getResults().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("Renaming a note in Outline refreshes SelectedNoteViewModel title")
+    void renameInOutline_shouldRefreshSelectedNote() {
+        Note child = noteService.createChildNote(root.getId(), "Original");
+        mapViewModel.loadNotes();
+        outlineViewModel.loadNotes();
+
+        // Select the note in the text pane
+        selectedNoteViewModel.setSelectedNoteId(child.getId());
+        assertEquals("Original", selectedNoteViewModel.titleProperty().get());
+
+        // Rename via outline
+        outlineViewModel.renameNote(child.getId(), "Renamed");
+
+        // Text pane should reflect the new title
+        assertEquals("Renamed", selectedNoteViewModel.titleProperty().get());
+    }
+
+    @Test
+    @DisplayName("Saving title in SelectedNoteViewModel refreshes Map and Outline")
+    void saveTitleInSelectedNote_shouldRefreshMapAndOutline() {
+        Note child = noteService.createChildNote(root.getId(), "Original");
+        mapViewModel.loadNotes();
+        outlineViewModel.loadNotes();
+        selectedNoteViewModel.setSelectedNoteId(child.getId());
+
+        selectedNoteViewModel.saveTitle("Updated Title");
+
+        assertEquals("Updated Title", mapViewModel.getNoteItems().get(0).getTitle());
+        assertEquals("Updated Title", outlineViewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("Deleting a note in Outline refreshes all views including search")
+    void deleteInOutline_shouldRefreshAllViews() {
+        Note child = noteService.createChildNote(root.getId(), "ToDelete");
+        mapViewModel.loadNotes();
+        outlineViewModel.loadNotes();
+
+        searchViewModel.toggleVisible();
+        searchViewModel.queryProperty().set("delete");
+        searchViewModel.search("delete");
+        assertEquals(1, searchViewModel.getResults().size());
+
+        outlineViewModel.deleteNote(child.getId());
+
+        assertEquals(0, mapViewModel.getNoteItems().size());
+        assertEquals(0, treemapViewModel.getNoteItems().size());
+        assertEquals(0, searchViewModel.getResults().size());
     }
 }

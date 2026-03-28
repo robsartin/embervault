@@ -170,4 +170,53 @@ class SearchViewModelTest {
                 NullPointerException.class,
                 () -> new SearchViewModel(null));
     }
+
+    @Test
+    @DisplayName("refreshResults() re-runs the current search when visible")
+    void refreshResults_shouldRerunSearchWhenVisible() {
+        noteService.createNote("Alpha", "");
+        viewModel.toggleVisible();
+        viewModel.queryProperty().set("alpha");
+        viewModel.search("alpha");
+        assertEquals(1, viewModel.getResults().size());
+
+        // Add another matching note and refresh
+        noteService.createNote("Alpha Two", "");
+        viewModel.refreshResults();
+
+        assertEquals(2, viewModel.getResults().size());
+    }
+
+    @Test
+    @DisplayName("refreshResults() does nothing when search is hidden")
+    void refreshResults_shouldDoNothingWhenHidden() {
+        noteService.createNote("Alpha", "");
+        viewModel.queryProperty().set("alpha");
+        viewModel.search("alpha");
+        assertEquals(1, viewModel.getResults().size());
+
+        // Hidden by default — refresh should not update results
+        noteService.createNote("Alpha Two", "");
+        viewModel.refreshResults();
+
+        assertEquals(1, viewModel.getResults().size());
+    }
+
+    @Test
+    @DisplayName("refreshResults() does nothing when query is blank")
+    void refreshResults_shouldDoNothingWhenQueryBlank() {
+        noteService.createNote("Alpha", "");
+        viewModel.toggleVisible();
+        viewModel.refreshResults();
+
+        assertTrue(viewModel.getResults().isEmpty());
+    }
+
+    @Test
+    @DisplayName("setOnDataChanged() callback is invoked (not used by SearchViewModel mutations, but is wirable)")
+    void setOnDataChanged_shouldAcceptCallback() {
+        // SearchViewModel has no local mutations that call notifyDataChanged,
+        // but the method should exist and not throw.
+        viewModel.setOnDataChanged(() -> { });
+    }
 }
