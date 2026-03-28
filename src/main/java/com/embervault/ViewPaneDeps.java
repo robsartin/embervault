@@ -1,0 +1,27 @@
+package com.embervault;
+
+import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
+import com.embervault.application.port.in.LinkService;
+import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.AttributeSchemaRegistry;
+import javafx.beans.property.StringProperty;
+
+/**
+ * Shared dependencies needed by {@link ViewPaneContext} to create
+ * view models and wire views during a view-type switch.
+ *
+ * @param noteService    the note service
+ * @param linkService    the link service
+ * @param schemaRegistry the attribute schema registry
+ * @param refreshAll     the global refresh callback
+ * @param selectedNoteVm the shared selected-note view model
+ * @param rootNoteTitle  the root note title property
+ */
+public record ViewPaneDeps(
+        NoteService noteService,
+        LinkService linkService,
+        AttributeSchemaRegistry schemaRegistry,
+        Runnable refreshAll,
+        SelectedNoteViewModel selectedNoteVm,
+        StringProperty rootNoteTitle) {
+}
