@@ -6,10 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
-import com.embervault.domain.AttributeValue;
-import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Note;
-import com.embervault.domain.TbxColor;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -307,22 +304,11 @@ public final class OutlineViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        String colorHex = note.getAttribute("$Color")
-                .map(v -> ((AttributeValue.ColorValue) v).value())
-                .map(TbxColor::toHex)
-                .orElse("#808080");
-        String badge = resolveBadge(note);
-
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
-                0, 0, 0, 0, colorHex,
-                noteService.hasChildren(note.getId()), badge);
-    }
-
-    private static String resolveBadge(Note note) {
-        return note.getAttribute("$Badge")
-                .map(v -> ((AttributeValue.StringValue) v).value())
-                .flatMap(BadgeRegistry::getBadgeSymbol)
-                .orElse("");
+                0, 0, 0, 0,
+                NoteDisplayHelper.resolveColorHex(note),
+                noteService.hasChildren(note.getId()),
+                NoteDisplayHelper.resolveBadge(note));
     }
 }
