@@ -223,6 +223,69 @@ class MapViewModelTest {
     }
 
     @Test
+    @DisplayName("createSiblingNote() delegates to service and adds item to list")
+    void createSiblingNote_shouldDelegateAndAddItem() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem existing = viewModel.createChildNote("First");
+
+        NoteDisplayItem sibling = viewModel.createSiblingNote(
+                existing.getId(), "Second");
+
+        assertNotNull(sibling);
+        assertEquals("Second", sibling.getTitle());
+        assertEquals(2, viewModel.getNoteItems().size());
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() positions new note near the original sibling")
+    void createSiblingNote_shouldPositionNearSibling() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem existing = viewModel.createChildNote("First");
+        viewModel.updateNotePosition(existing.getId(), 100.0, 50.0);
+        // Re-fetch the updated item after position change
+        NoteDisplayItem updated = viewModel.getNoteItems().get(0);
+
+        NoteDisplayItem sibling = viewModel.createSiblingNote(
+                updated.getId(), "Second");
+
+        // New note should share the sibling's x position
+        assertEquals(100.0, sibling.getXpos(), 0.01);
+        // New note should be offset below the sibling
+        assertTrue(sibling.getYpos() > updated.getYpos(),
+                "Sibling should be positioned below the original note");
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() notifies data changed")
+    void createSiblingNote_shouldNotifyDataChanged() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem existing = viewModel.createChildNote("First");
+        boolean[] notified = {false};
+        viewModel.setOnDataChanged(() -> notified[0] = true);
+
+        viewModel.createSiblingNote(existing.getId(), "Second");
+
+        assertTrue(notified[0]);
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() with empty title creates note")
+    void createSiblingNote_withEmptyTitle_shouldCreateNote() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        NoteDisplayItem existing = viewModel.createChildNote("First");
+
+        NoteDisplayItem sibling = viewModel.createSiblingNote(
+                existing.getId(), "");
+
+        assertNotNull(sibling);
+        assertEquals(2, viewModel.getNoteItems().size());
+    }
+
+    @Test
     @DisplayName("drillDown() changes baseNoteId and reloads children")
     void drillDown_shouldChangeBaseAndReload() {
         Note root = noteService.createNote("Root", "");

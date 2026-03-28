@@ -168,6 +168,39 @@ public final class MapViewModel {
         return item;
     }
 
+    /**
+     * Creates a new sibling note after the given sibling, positioned slightly below it.
+     *
+     * @param siblingId the id of the note to create a sibling after
+     * @param title     the title for the new note (may be empty for rapid entry)
+     * @return the display item for the created note
+     */
+    public NoteDisplayItem createSiblingNote(UUID siblingId, String title) {
+        Note sibling = noteService.createSiblingNote(siblingId, title);
+        // Position the new note near the original sibling
+        NoteDisplayItem siblingItem = findItemById(siblingId);
+        if (siblingItem != null) {
+            double offsetY = siblingItem.getYpos() + siblingItem.getHeight() + 20;
+            sibling.setAttribute("$Xpos",
+                    new AttributeValue.NumberValue(siblingItem.getXpos() / SCALE_X));
+            sibling.setAttribute("$Ypos",
+                    new AttributeValue.NumberValue(offsetY / SCALE_Y));
+        }
+        NoteDisplayItem item = toDisplayItem(sibling);
+        noteItems.add(item);
+        notifyDataChanged();
+        return item;
+    }
+
+    private NoteDisplayItem findItemById(UUID noteId) {
+        for (NoteDisplayItem item : noteItems) {
+            if (item.getId().equals(noteId)) {
+                return item;
+            }
+        }
+        return null;
+    }
+
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
         return canNavigateBack;
