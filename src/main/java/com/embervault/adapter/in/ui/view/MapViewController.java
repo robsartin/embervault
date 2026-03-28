@@ -2,11 +2,13 @@ package com.embervault.adapter.in.ui.view;
 
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -171,6 +173,7 @@ public class MapViewController {
         textBox.setClip(clip);
 
         StackPane notePane = new StackPane(rect, textBox);
+        notePane.setUserData(item.getId());
         notePane.setAlignment(Pos.TOP_LEFT);
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
@@ -241,8 +244,21 @@ public class MapViewController {
             }
         };
 
-        // Commit on Enter
-        textField.setOnAction(e -> commitEdit.run());
+        // Commit on Enter, then create sibling and start editing it
+        textField.setOnAction(e -> {
+            commitEdit.run();
+            NoteDisplayItem newItem = viewModel.createSiblingNote(
+                    item.getId(), "");
+            Platform.runLater(() -> {
+                for (Node child : mapCanvas.getChildren()) {
+                    if (child instanceof StackPane sp
+                            && newItem.getId().equals(sp.getUserData())) {
+                        startInlineEditOnNode(sp, newItem);
+                        break;
+                    }
+                }
+            });
+        });
 
         // Cancel on Escape
         textField.setOnKeyPressed(e -> {
@@ -261,6 +277,17 @@ public class MapViewController {
     }
 
     /**
+     * Starts inline editing on a note pane found by ID after a re-render.
+     */
+    private void startInlineEditOnNode(StackPane notePane,
+            NoteDisplayItem item) {
+        VBox textBox = (VBox) notePane.getChildren().get(1);
+        Label titleLabel = (Label) textBox.getChildren().get(0);
+        Rectangle rect = (Rectangle) notePane.getChildren().get(0);
+        startInlineEdit(notePane, titleLabel, rect, item);
+    }
+
+    /**
      * Installs drag handlers on the note pane while allowing click events to
      * propagate to children (title label, rectangle).
      *
@@ -276,6 +303,7 @@ public class MapViewController {
             dragDelta[0] = notePane.getLayoutX() - event.getSceneX();
             dragDelta[1] = notePane.getLayoutY() - event.getSceneY();
             dragging[0] = false;
+            notePane.toFront();
             viewModel.selectNote(item.getId());
             highlightSelected(notePane);
             // Do NOT consume – let the event reach child click handlers
@@ -320,7 +348,7 @@ public class MapViewController {
     }
 
     private void highlightSelected(StackPane selected) {
-        for (javafx.scene.Node child : mapCanvas.getChildren()) {
+        for (Node child : mapCanvas.getChildren()) {
             if (child instanceof StackPane sp && !sp.getChildren().isEmpty()
                     && sp.getChildren().get(0) instanceof Rectangle r) {
                 r.setStrokeWidth(NORMAL_BORDER_WIDTH);
