@@ -230,6 +230,7 @@ public class OutlineViewController {
 
         private TextField textField;
         private boolean editing;
+        private boolean escapeCancelled;
 
         OutlineNoteTreeCell() {
             setOnMouseClicked(event -> {
@@ -255,16 +256,21 @@ public class OutlineViewController {
                 return;
             }
             editing = true;
+            escapeCancelled = false;
             textField = new TextField(getItem().getTitle());
             textField.selectAll();
 
             // Key handling on the text field
             textField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEditKeyPress);
 
-            // Commit on focus lost
+            // Focus lost: commit unless Escape was pressed
             textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
                 if (!isFocused && editing) {
-                    commitInlineEdit();
+                    if (escapeCancelled) {
+                        cancelInlineEdit();
+                    } else {
+                        commitInlineEdit();
+                    }
                 }
             });
 
@@ -296,6 +302,7 @@ public class OutlineViewController {
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.ESCAPE) {
+                escapeCancelled = true;
                 cancelInlineEdit();
                 event.consume();
             }
@@ -336,9 +343,14 @@ public class OutlineViewController {
         protected void updateItem(NoteDisplayItem item, boolean empty) {
             super.updateItem(item, empty);
             if (empty || item == null) {
+                // Cell recycled — commit any in-progress edit before clearing
+                if (editing && textField != null && !escapeCancelled) {
+                    commitInlineEdit();
+                }
                 setText(null);
                 setGraphic(null);
                 editing = false;
+                escapeCancelled = false;
             } else if (editing && textField != null) {
                 setText(null);
                 setGraphic(textField);
