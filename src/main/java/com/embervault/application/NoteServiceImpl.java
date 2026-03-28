@@ -11,12 +11,16 @@ import static com.embervault.domain.Attributes.YPOS;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
@@ -124,6 +128,19 @@ public final class NoteServiceImpl implements NoteService {
     @Override
     public boolean hasChildren(UUID noteId) {
         return !repository.findChildren(noteId).isEmpty();
+    }
+
+    @Override
+    public Map<UUID, Boolean> hasChildrenBatch(Collection<UUID> noteIds) {
+        if (noteIds.isEmpty()) {
+            return Map.of();
+        }
+        Set<UUID> withChildren = repository.findNoteIdsWithChildren(noteIds);
+        Map<UUID, Boolean> result = new HashMap<>();
+        for (UUID id : noteIds) {
+            result.put(id, withChildren.contains(id));
+        }
+        return result;
     }
 
     @Override

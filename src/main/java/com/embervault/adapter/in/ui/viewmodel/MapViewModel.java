@@ -1,5 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -116,9 +118,13 @@ public final class MapViewModel {
             noteItems.clear();
             return;
         }
+        List<Note> children = noteService.getChildren(baseNoteId);
+        Map<UUID, Boolean> hasChildrenMap = noteService.hasChildrenBatch(
+                children.stream().map(Note::getId).toList());
         noteItems.setAll(
-                noteService.getChildren(baseNoteId).stream()
-                        .map(this::toDisplayItem)
+                children.stream()
+                        .map(note -> toDisplayItem(note,
+                                hasChildrenMap.getOrDefault(note.getId(), false)))
                         .toList());
     }
 
@@ -287,6 +293,10 @@ public final class MapViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
+        return toDisplayItem(note, noteService.hasChildren(note.getId()));
+    }
+
+    private NoteDisplayItem toDisplayItem(Note note, boolean hasChildren) {
         double xpos = NoteDisplayHelper.resolveNumber(
                 note, Attributes.XPOS, 0.0) * SCALE_X;
         double ypos = NoteDisplayHelper.resolveNumber(
@@ -300,7 +310,7 @@ public final class MapViewModel {
                 note.getId(), note.getTitle(), note.getContent(),
                 xpos, ypos, width, height,
                 NoteDisplayHelper.resolveColorHex(note),
-                noteService.hasChildren(note.getId()),
+                hasChildren,
                 NoteDisplayHelper.resolveBadge(note));
     }
 }

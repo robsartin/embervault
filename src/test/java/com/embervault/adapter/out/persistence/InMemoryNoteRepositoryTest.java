@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.embervault.domain.AttributeValue;
@@ -165,5 +166,99 @@ class InMemoryNoteRepositoryTest {
         List<Note> children = repository.findChildren(parent.getId());
 
         assertTrue(children.isEmpty());
+    }
+
+    // --- findNoteIdsWithChildren tests ---
+
+    @Test
+    @DisplayName("findNoteIdsWithChildren() returns ids that have at least one child")
+    void findNoteIdsWithChildren_shouldReturnIdsWithChildren() {
+        Note parent = Note.create("Parent", "");
+        Note childless = Note.create("Childless", "");
+        Note child = Note.create("Child", "");
+        child.setAttribute("$Container",
+                new AttributeValue.StringValue(parent.getId().toString()));
+        child.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(0));
+
+        repository.save(parent);
+        repository.save(childless);
+        repository.save(child);
+
+        Set<UUID> result = repository.findNoteIdsWithChildren(
+                List.of(parent.getId(), childless.getId()));
+
+        assertEquals(1, result.size());
+        assertTrue(result.contains(parent.getId()));
+        assertFalse(result.contains(childless.getId()));
+    }
+
+    @Test
+    @DisplayName("findNoteIdsWithChildren() returns empty set when no ids have children")
+    void findNoteIdsWithChildren_shouldReturnEmptyWhenNoneHaveChildren() {
+        Note noteA = Note.create("A", "");
+        Note noteB = Note.create("B", "");
+        repository.save(noteA);
+        repository.save(noteB);
+
+        Set<UUID> result = repository.findNoteIdsWithChildren(
+                List.of(noteA.getId(), noteB.getId()));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("findNoteIdsWithChildren() returns empty set for empty input")
+    void findNoteIdsWithChildren_shouldReturnEmptyForEmptyInput() {
+        Set<UUID> result = repository.findNoteIdsWithChildren(List.of());
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("findNoteIdsWithChildren() ignores children of notes not in the input set")
+    void findNoteIdsWithChildren_shouldIgnoreNonRequestedParents() {
+        Note parentA = Note.create("ParentA", "");
+        Note parentB = Note.create("ParentB", "");
+        Note childOfA = Note.create("ChildOfA", "");
+        childOfA.setAttribute("$Container",
+                new AttributeValue.StringValue(parentA.getId().toString()));
+        childOfA.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(0));
+
+        repository.save(parentA);
+        repository.save(parentB);
+        repository.save(childOfA);
+
+        // Only ask about parentB
+        Set<UUID> result = repository.findNoteIdsWithChildren(
+                List.of(parentB.getId()));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("findNoteIdsWithChildren() handles multiple parents with children")
+    void findNoteIdsWithChildren_shouldHandleMultipleParentsWithChildren() {
+        Note parentA = Note.create("ParentA", "");
+        Note parentB = Note.create("ParentB", "");
+        Note childOfA = Note.create("ChildOfA", "");
+        childOfA.setAttribute("$Container",
+                new AttributeValue.StringValue(parentA.getId().toString()));
+        childOfA.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(0));
+        Note childOfB = Note.create("ChildOfB", "");
+        childOfB.setAttribute("$Container",
+                new AttributeValue.StringValue(parentB.getId().toString()));
+        childOfB.setAttribute("$OutlineOrder", new AttributeValue.NumberValue(0));
+
+        repository.save(parentA);
+        repository.save(parentB);
+        repository.save(childOfA);
+        repository.save(childOfB);
+
+        Set<UUID> result = repository.findNoteIdsWithChildren(
+                List.of(parentA.getId(), parentB.getId()));
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(parentA.getId()));
+        assertTrue(result.contains(parentB.getId()));
     }
 }

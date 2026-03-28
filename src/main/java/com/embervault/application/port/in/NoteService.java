@@ -1,6 +1,8 @@
 package com.embervault.application.port.in;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,6 +57,17 @@ public interface NoteService {
      * @return true if the note has children
      */
     boolean hasChildren(UUID noteId);
+
+    /**
+     * Batch-checks which of the given note ids have children.
+     *
+     * <p>Performs a single repository scan instead of one per id, making it
+     * O(M) where M is the total number of notes, regardless of input size.</p>
+     *
+     * @param noteIds the note ids to check
+     * @return a map from each input id to whether it has children
+     */
+    Map<UUID, Boolean> hasChildrenBatch(Collection<UUID> noteIds);
 
     /**
      * Moves a note to a new parent by changing its $Container attribute.
