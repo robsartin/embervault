@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
@@ -28,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
+import org.testfx.util.WaitForAsyncUtils;
 
 /**
  * Tests for {@link MapViewController} incremental node update behavior.
@@ -253,9 +255,11 @@ class MapViewControllerTest {
 
     @Test
     @DisplayName("OVERVIEW tier renders note as rectangle only, no labels")
-    void overviewTier_shouldRenderRectangleOnly() {
+    void overviewTier_shouldRenderRectangleOnly() throws Exception {
         viewModel.createChildNote("Test Note");
         viewModel.setZoomLevel(0.2); // OVERVIEW tier
+        WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
+        WaitForAsyncUtils.waitForFxEvents();
 
         StackPane node = findNodeByTitle("Test Note");
         // In OVERVIEW, there should be no title label visible
@@ -280,10 +284,11 @@ class MapViewControllerTest {
 
     @Test
     @DisplayName("TITLES_ONLY tier renders rectangle with title but no content")
-    void titlesOnlyTier_shouldRenderTitleOnly() {
+    void titlesOnlyTier_shouldRenderTitleOnly() throws Exception {
         viewModel.createChildNote("My Title");
-        // Force content on the note
         viewModel.setZoomLevel(0.5); // TITLES_ONLY tier
+        WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
+        WaitForAsyncUtils.waitForFxEvents();
 
         StackPane noteNode = findNodeByUserData(
                 viewModel.getNoteItems().get(0).getId());
@@ -324,9 +329,11 @@ class MapViewControllerTest {
 
     @Test
     @DisplayName("DETAILED tier renders with larger font size")
-    void detailedTier_shouldRenderWithLargerFont() {
+    void detailedTier_shouldRenderWithLargerFont() throws Exception {
         viewModel.createChildNote("Detailed Note");
         viewModel.setZoomLevel(2.0); // DETAILED tier
+        WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
+        WaitForAsyncUtils.waitForFxEvents();
 
         StackPane noteNode = findNodeByUserData(
                 viewModel.getNoteItems().get(0).getId());
@@ -342,7 +349,7 @@ class MapViewControllerTest {
 
     @Test
     @DisplayName("tier change triggers re-render of notes")
-    void tierChange_shouldReRenderNotes() {
+    void tierChange_shouldReRenderNotes() throws Exception {
         viewModel.createChildNote("Re-render Test");
         StackPane nodeAtNormal = findNodeByUserData(
                 viewModel.getNoteItems().get(0).getId());
@@ -350,6 +357,8 @@ class MapViewControllerTest {
 
         // Change to OVERVIEW tier
         viewModel.setZoomLevel(0.2);
+        WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
+        WaitForAsyncUtils.waitForFxEvents();
 
         // After tier change, node should be re-rendered
         StackPane nodeAtOverview = findNodeByUserData(

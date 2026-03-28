@@ -9,6 +9,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.ZoomTier;
+import javafx.animation.PauseTransition;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -33,16 +34,11 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Scale;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * FXML controller for the Map view.
- *
- * <p>Renders notes as colored rectangles on a spatial canvas. Notes are
- * draggable and selectable. New notes can be created by pressing Return
- * or double-clicking the background.</p>
- */
+/** FXML controller for the Map view. */
 public class MapViewController {
 
     private static final Logger LOG = LoggerFactory.getLogger(MapViewController.class);
@@ -63,17 +59,14 @@ public class MapViewController {
     private final Map<UUID, StackPane> nodeMap = new HashMap<>();
     private Scale zoomScale;
     private Label zoomLabel;
+    private PauseTransition zoomRenderDebounce;
+    private boolean rendering;
 
-    /**
-     * Injects the ViewModel and binds UI controls to its properties.
-     */
+    /** Injects the ViewModel and binds UI controls. */
     public void initViewModel(MapViewModel viewModel) {
         this.viewModel = viewModel;
-
-        // Set up zoom transform on a wrapper Group
         setupZoom();
 
-        // Back navigation button
         backButton = new Button("\u2190 Back");
         backButton.setVisible(false);
         backButton.setOnAction(e -> viewModel.navigateBack());
@@ -82,19 +75,17 @@ public class MapViewController {
         viewModel.canNavigateBackProperty().addListener(
                 (obs, oldVal, newVal) -> backButton.setVisible(newVal));
 
-        // Render existing notes
         viewModel.loadNotes();
         renderAllNotes();
 
-        // Incrementally update when note list changes
         viewModel.getNoteItems().addListener(
                 (ListChangeListener<NoteDisplayItem>) this::onNoteItemsChanged);
 
-        // Re-render when zoom tier changes
+        zoomRenderDebounce = new PauseTransition(Duration.millis(150));
+        zoomRenderDebounce.setOnFinished(e -> renderAllNotes());
         viewModel.currentTierProperty().addListener(
-                (obs, oldTier, newTier) -> renderAllNotes());
+                (obs, oldTier, newTier) -> zoomRenderDebounce.playFromStart());
 
-        // Double-click background to create new note at click position
         mapCanvas.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
@@ -192,20 +183,29 @@ public class MapViewController {
     }
 
     private void renderAllNotes() {
-        mapCanvas.getChildren().clear();
-        nodeMap.clear();
-        for (NoteDisplayItem item : viewModel.getNoteItems()) {
-            StackPane noteNode = createNoteNode(item);
-            nodeMap.put(item.getId(), noteNode);
-            mapCanvas.getChildren().add(noteNode);
+        if (rendering) {
+            return;
         }
-        // Keep back button on top
-        mapCanvas.getChildren().add(backButton);
+        rendering = true;
+        try {
+            mapCanvas.getChildren().clear();
+            nodeMap.clear();
+            for (NoteDisplayItem item : viewModel.getNoteItems()) {
+                StackPane n = createNoteNode(item);
+                nodeMap.put(item.getId(), n);
+                mapCanvas.getChildren().add(n);
+            }
+            mapCanvas.getChildren().add(backButton);
+        } finally {
+            rendering = false;
+        }
     }
 
-    /** Processes incremental changes from the observable note items list. */
     private void onNoteItemsChanged(
             ListChangeListener.Change<? extends NoteDisplayItem> change) {
+        if (rendering) {
+            return;
+        }
         while (change.next()) {
             if (change.wasPermutated()) {
                 renderAllNotes();
@@ -258,7 +258,7 @@ public class MapViewController {
         }
     }
 
-    /** Updates an existing node in-place for changed display properties. */
+    /** Updates an existing node in-place. */
     private void updateNoteNode(StackPane notePane, NoteDisplayItem item) {
         // Update position
         notePane.setLayoutX(item.getXpos());
@@ -433,7 +433,7 @@ public class MapViewController {
         return notePane;
     }
 
-    /** Installs drag handlers; returns a flag array that is true during drag. */
+    /** Installs drag handlers; returns flag array true during drag. */
     private boolean[] enableDrag(StackPane notePane, NoteDisplayItem item) {
         final double[] dragDelta = new double[2];
         final boolean[] dragging = {false};
@@ -468,7 +468,7 @@ public class MapViewController {
         return dragging;
     }
 
-    /** Returns true if target is a descendant of ancestor in the scene graph. */
+    /** Checks if target is a descendant of ancestor. */
     private static boolean isDescendantOf(Object target, javafx.scene.Node ancestor) {
         if (!(target instanceof javafx.scene.Node node)) {
             return false;
