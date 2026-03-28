@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.TreeView?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="browserRoot" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.embervault.adapter.in.ui.view.AttributeBrowserViewController"
+      spacing="4">
+
+    <ComboBox fx:id="attributeComboBox" maxWidth="Infinity" promptText="Select attribute..."/>
+    <TreeView fx:id="categoryTreeView" VBox.vgrow="ALWAYS"/>
+</VBox>

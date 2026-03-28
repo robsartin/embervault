@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="editorRoot" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.embervault.adapter.in.ui.view.NoteEditorViewController"
+      spacing="4">
+
+    <padding>
+        <Insets top="4" right="8" bottom="4" left="8"/>
+    </padding>
+
+    <Label text="Title:" style="-fx-font-weight: bold;"/>
+    <TextField fx:id="titleField" promptText="Note title"/>
+
+    <Label text="Text:" style="-fx-font-weight: bold;"/>
+    <TextArea fx:id="textArea" promptText="Note content" wrapText="true" VBox.vgrow="ALWAYS"/>
+
+    <Label text="Attributes:" style="-fx-font-weight: bold;"/>
+    <VBox fx:id="attributesBox" spacing="2"/>
+</VBox>
