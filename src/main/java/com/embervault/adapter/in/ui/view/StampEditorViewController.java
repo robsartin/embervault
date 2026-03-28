@@ -8,20 +8,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * FXML controller for the Stamp Editor dialog.
  *
  * <p>Provides a simple CRUD interface for managing stamps. The left panel
  * shows a list of stamps, the right panel allows editing name and action.
- * All domain access is mediated through the {@link StampEditorViewModel}.</p>
+ * All domain access is mediated through the {@link StampEditorViewModel}.
+ * Contains no business logic; validation is handled by the ViewModel.</p>
  */
 public class StampEditorViewController {
-
-    private static final Logger LOG = LoggerFactory.getLogger(
-            StampEditorViewController.class);
 
     @FXML private SplitPane editorRoot;
     @FXML private ListView<String> stampListView;
@@ -53,16 +49,11 @@ public class StampEditorViewController {
     void onAddStamp() {
         String name = nameField.getText();
         String action = actionField.getText();
-        if (name == null || name.isBlank()
-                || action == null || action.isBlank()) {
-            LOG.warn("Cannot create stamp: name and action "
-                    + "must not be blank");
-            return;
+        if (viewModel.createStamp(name, action)) {
+            nameField.clear();
+            actionField.clear();
+            selectedStampId = null;
         }
-        viewModel.createStamp(name, action);
-        nameField.clear();
-        actionField.clear();
-        selectedStampId = null;
     }
 
     @FXML
@@ -83,14 +74,9 @@ public class StampEditorViewController {
         }
         String name = nameField.getText();
         String action = actionField.getText();
-        if (name == null || name.isBlank()
-                || action == null || action.isBlank()) {
-            LOG.warn("Cannot save stamp: name and action "
-                    + "must not be blank");
-            return;
+        if (viewModel.updateStamp(selectedStampId, name, action)) {
+            selectedStampId = null;
         }
-        viewModel.updateStamp(selectedStampId, name, action);
-        selectedStampId = null;
     }
 
     private void onStampSelected(String name) {
