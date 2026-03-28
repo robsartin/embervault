@@ -180,22 +180,19 @@ public class MapViewController {
         // whether the gesture was a drag rather than a click.
         final boolean[] dragging = enableDrag(notePane, item);
 
-        // Double-click on title label -> inline edit
-        titleLabel.setOnMouseClicked(event -> {
+        // Double-click handler at the notePane (StackPane) level so the VBox
+        // cannot intercept events that should reach the rectangle.
+        // Target check: title label → inline edit; anything else → drill down.
+        notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
                     && !dragging[0]) {
-                startInlineEdit(notePane, titleLabel, rect, item);
-                event.consume();
-            }
-        });
-
-        // Double-click on rectangle body (not title) -> drill down
-        rect.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2
-                    && event.getButton() == MouseButton.PRIMARY
-                    && !dragging[0]) {
-                viewModel.drillDown(item.getId());
+                if (event.getTarget() == titleLabel
+                        || isDescendantOf(event.getTarget(), titleLabel)) {
+                    startInlineEdit(notePane, titleLabel, rect, item);
+                } else {
+                    viewModel.drillDown(item.getId());
+                }
                 event.consume();
             }
         });
@@ -302,6 +299,24 @@ public class MapViewController {
         });
 
         return dragging;
+    }
+
+    /**
+     * Returns {@code true} if {@code target} is a descendant of {@code ancestor}
+     * in the JavaFX scene graph.
+     */
+    private static boolean isDescendantOf(Object target, javafx.scene.Node ancestor) {
+        if (!(target instanceof javafx.scene.Node node)) {
+            return false;
+        }
+        javafx.scene.Node current = node.getParent();
+        while (current != null) {
+            if (current == ancestor) {
+                return true;
+            }
+            current = current.getParent();
+        }
+        return false;
     }
 
     private void highlightSelected(StackPane selected) {
