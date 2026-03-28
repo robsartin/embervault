@@ -50,6 +50,24 @@ class OutlineViewModelTest {
     }
 
     @Test
+    @DisplayName("tabTitle truncates long note titles to 20 characters with ellipsis")
+    void tabTitle_shouldTruncateLongTitles() {
+        noteTitle.set("Welcome to EmberVault Application");
+
+        assertEquals("Outline: Welcome to EmberVaul\u2026",
+                viewModel.tabTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("tabTitle does not truncate titles at exactly 20 characters")
+    void tabTitle_shouldNotTruncateExactly20Chars() {
+        noteTitle.set("12345678901234567890"); // exactly 20 chars
+
+        assertEquals("Outline: 12345678901234567890",
+                viewModel.tabTitleProperty().get());
+    }
+
+    @Test
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
@@ -224,6 +242,21 @@ class OutlineViewModelTest {
         viewModel.drillDown(child.getId());
 
         assertEquals("Outline: Child", viewModel.tabTitleProperty().get());
+    }
+
+    @Test
+    @DisplayName("drillDown() truncates long drilled-down note title")
+    void drillDown_shouldTruncateLongDrilledDownTitle() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(),
+                "A Very Long Child Note Title Here");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertEquals("Outline: A Very Long Child No\u2026",
+                viewModel.tabTitleProperty().get());
     }
 
     @Test

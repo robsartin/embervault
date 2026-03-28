@@ -29,6 +29,8 @@ import javafx.collections.ObservableList;
  */
 public final class OutlineViewModel {
 
+    private static final int MAX_TITLE_LENGTH = 20;
+
     private final ReadOnlyStringWrapper tabTitle = new ReadOnlyStringWrapper();
     private final ObservableList<NoteDisplayItem> rootItems =
             FXCollections.observableArrayList();
@@ -205,7 +207,7 @@ public final class OutlineViewModel {
     }
 
     private void updateTabTitle(String title) {
-        tabTitle.set("Outline: " + title);
+        tabTitle.set("Outline: " + TextUtils.truncate(title, MAX_TITLE_LENGTH));
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {

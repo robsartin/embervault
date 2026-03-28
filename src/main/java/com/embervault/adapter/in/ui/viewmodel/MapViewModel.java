@@ -29,6 +29,7 @@ import javafx.collections.ObservableList;
  */
 public final class MapViewModel {
 
+    private static final int MAX_TITLE_LENGTH = 20;
     private static final double SCALE_X = 40.0;
     private static final double SCALE_Y = 40.0;
     private static final double DEFAULT_WIDTH = 6.0;
@@ -213,7 +214,7 @@ public final class MapViewModel {
     }
 
     private void updateTabTitle(String title) {
-        tabTitle.set("Map: " + title);
+        tabTitle.set("Map: " + TextUtils.truncate(title, MAX_TITLE_LENGTH));
     }
 
     /**
