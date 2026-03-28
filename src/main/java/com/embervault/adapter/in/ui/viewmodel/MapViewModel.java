@@ -7,9 +7,8 @@ import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
-import com.embervault.domain.BadgeRegistry;
+import com.embervault.domain.Attributes;
 import com.embervault.domain.Note;
-import com.embervault.domain.TbxColor;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -161,8 +160,8 @@ public final class MapViewModel {
     public NoteDisplayItem createChildNoteAt(String title, double xpos, double ypos) {
         Objects.requireNonNull(baseNoteId, "baseNoteId must be set before creating children");
         Note child = noteService.createChildNote(baseNoteId, title);
-        child.setAttribute("$Xpos", new AttributeValue.NumberValue(xpos / SCALE_X));
-        child.setAttribute("$Ypos", new AttributeValue.NumberValue(ypos / SCALE_Y));
+        child.setAttribute(Attributes.XPOS, new AttributeValue.NumberValue(xpos / SCALE_X));
+        child.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
         notifyDataChanged();
@@ -182,9 +181,9 @@ public final class MapViewModel {
         NoteDisplayItem siblingItem = findItemById(siblingId);
         if (siblingItem != null) {
             double offsetY = siblingItem.getYpos() + siblingItem.getHeight() + 20;
-            sibling.setAttribute("$Xpos",
+            sibling.setAttribute(Attributes.XPOS,
                     new AttributeValue.NumberValue(siblingItem.getXpos() / SCALE_X));
-            sibling.setAttribute("$Ypos",
+            sibling.setAttribute(Attributes.YPOS,
                     new AttributeValue.NumberValue(offsetY / SCALE_Y));
         }
         NoteDisplayItem item = toDisplayItem(sibling);
@@ -282,8 +281,8 @@ public final class MapViewModel {
      */
     public void updateNotePosition(UUID noteId, double xpos, double ypos) {
         noteService.getNote(noteId).ifPresent(note -> {
-            note.setAttribute("$Xpos", new AttributeValue.NumberValue(xpos / SCALE_X));
-            note.setAttribute("$Ypos", new AttributeValue.NumberValue(ypos / SCALE_Y));
+            note.setAttribute(Attributes.XPOS, new AttributeValue.NumberValue(xpos / SCALE_X));
+            note.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         });
         // Update the display item in place
         for (int i = 0; i < noteItems.size(); i++) {
@@ -301,34 +300,20 @@ public final class MapViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        double xpos = note.getAttribute("$Xpos")
-                .map(v -> ((AttributeValue.NumberValue) v).value() * SCALE_X)
-                .orElse(0.0);
-        double ypos = note.getAttribute("$Ypos")
-                .map(v -> ((AttributeValue.NumberValue) v).value() * SCALE_Y)
-                .orElse(0.0);
-        double width = note.getAttribute("$Width")
-                .map(v -> ((AttributeValue.NumberValue) v).value() * SCALE_X)
-                .orElse(DEFAULT_WIDTH * SCALE_X);
-        double height = note.getAttribute("$Height")
-                .map(v -> ((AttributeValue.NumberValue) v).value() * SCALE_Y)
-                .orElse(DEFAULT_HEIGHT * SCALE_Y);
-        String colorHex = note.getAttribute("$Color")
-                .map(v -> ((AttributeValue.ColorValue) v).value())
-                .map(TbxColor::toHex)
-                .orElse(DEFAULT_COLOR_HEX);
-        String badge = resolveBadge(note);
+        double xpos = NoteDisplayHelper.resolveNumber(
+                note, Attributes.XPOS, 0.0) * SCALE_X;
+        double ypos = NoteDisplayHelper.resolveNumber(
+                note, Attributes.YPOS, 0.0) * SCALE_Y;
+        double width = NoteDisplayHelper.resolveNumber(
+                note, Attributes.WIDTH, DEFAULT_WIDTH) * SCALE_X;
+        double height = NoteDisplayHelper.resolveNumber(
+                note, Attributes.HEIGHT, DEFAULT_HEIGHT) * SCALE_Y;
 
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
-                xpos, ypos, width, height, colorHex,
-                noteService.hasChildren(note.getId()), badge);
-    }
-
-    private static String resolveBadge(Note note) {
-        return note.getAttribute("$Badge")
-                .map(v -> ((AttributeValue.StringValue) v).value())
-                .flatMap(BadgeRegistry::getBadgeSymbol)
-                .orElse("");
+                xpos, ypos, width, height,
+                NoteDisplayHelper.resolveColorHex(note),
+                noteService.hasChildren(note.getId()),
+                NoteDisplayHelper.resolveBadge(note));
     }
 }
