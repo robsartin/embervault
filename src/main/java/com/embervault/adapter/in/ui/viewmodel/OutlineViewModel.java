@@ -33,7 +33,7 @@ public final class OutlineViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private Runnable onDataChanged;
+    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from the given note title property.
@@ -61,13 +61,7 @@ public final class OutlineViewModel {
      * @param callback the callback to invoke, or null to clear
      */
     public void setOnDataChanged(Runnable callback) {
-        this.onDataChanged = callback;
-    }
-
-    private void notifyDataChanged() {
-        if (onDataChanged != null) {
-            onDataChanged.run();
-        }
+        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */
@@ -135,7 +129,7 @@ public final class OutlineViewModel {
         if (parentId.equals(navigationStack.getCurrentId())) {
             rootItems.add(item);
         }
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
         return item;
     }
 
@@ -150,7 +144,7 @@ public final class OutlineViewModel {
         Note sibling = noteService.createSiblingNote(siblingId, title);
         NoteDisplayItem item = toDisplayItem(sibling);
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
         return item;
     }
 
@@ -162,7 +156,7 @@ public final class OutlineViewModel {
     public void indentNote(UUID noteId) {
         noteService.indentNote(noteId);
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
@@ -173,7 +167,7 @@ public final class OutlineViewModel {
     public void outdentNote(UUID noteId) {
         noteService.outdentNote(noteId);
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
@@ -200,7 +194,7 @@ public final class OutlineViewModel {
                 break;
             }
         }
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
         return true;
     }
 
@@ -219,7 +213,7 @@ public final class OutlineViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
@@ -237,7 +231,7 @@ public final class OutlineViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
@@ -272,7 +266,7 @@ public final class OutlineViewModel {
         boolean deleted = noteService.deleteNoteIfLeaf(noteId);
         if (deleted) {
             loadNotes();
-            notifyDataChanged();
+            dataChangeSupport.notifyDataChanged();
         }
         return deleted;
     }

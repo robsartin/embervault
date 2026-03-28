@@ -26,7 +26,7 @@ public final class SelectedNoteViewModel {
     private final StringProperty title = new SimpleStringProperty("");
     private final StringProperty text = new SimpleStringProperty("");
     private final NoteService noteService;
-    private Runnable onDataChanged;
+    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
 
     /**
      * Constructs a SelectedNoteViewModel.
@@ -44,13 +44,7 @@ public final class SelectedNoteViewModel {
      * @param callback the callback to invoke, or null to clear
      */
     public void setOnDataChanged(Runnable callback) {
-        this.onDataChanged = callback;
-    }
-
-    private void notifyDataChanged() {
-        if (onDataChanged != null) {
-            onDataChanged.run();
-        }
+        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the selected note id property. */
@@ -101,7 +95,7 @@ public final class SelectedNoteViewModel {
         }
         noteService.renameNote(noteId, newTitle);
         title.set(newTitle);
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
@@ -119,6 +113,6 @@ public final class SelectedNoteViewModel {
                     new AttributeValue.StringValue(newText));
         });
         text.set(newText);
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 }

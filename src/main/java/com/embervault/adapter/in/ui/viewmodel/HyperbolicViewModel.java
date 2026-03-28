@@ -52,7 +52,7 @@ public final class HyperbolicViewModel {
             new SimpleObjectProperty<>();
     private final NavigationStack navigationStack = new NavigationStack();
     private double viewportRadius = DEFAULT_VIEWPORT_RADIUS;
-    private Runnable onDataChanged;
+    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
 
     /**
      * Constructs a HyperbolicViewModel with the given services.
@@ -74,13 +74,7 @@ public final class HyperbolicViewModel {
      * @param callback the callback to invoke, or null to clear
      */
     public void setOnDataChanged(Runnable callback) {
-        this.onDataChanged = callback;
-    }
-
-    private void notifyDataChanged() {
-        if (onDataChanged != null) {
-            onDataChanged.run();
-        }
+        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /**
@@ -151,7 +145,7 @@ public final class HyperbolicViewModel {
     public void createLink(UUID source, UUID dest) {
         linkService.createLink(source, dest);
         computeLayout();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /** Returns the focus note id property. */
