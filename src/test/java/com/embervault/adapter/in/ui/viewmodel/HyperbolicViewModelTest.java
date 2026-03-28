@@ -15,6 +15,7 @@ import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -290,5 +291,55 @@ class HyperbolicViewModelTest {
         assertNotNull(viewModel.getNodes());
         assertFalse(viewModel.getNodes().isEmpty());
         assertEquals(n1.getId(), viewModel.getNodes().get(0).noteId());
+    }
+
+    @Test
+    @DisplayName("getNoteBadge() returns badge symbol when $Badge is set")
+    void getNoteBadge_shouldReturnSymbolWhenSet() {
+        Note note = noteService.createNote("N1", "");
+        note.setAttribute("$Badge", new AttributeValue.StringValue("star"));
+
+        String badge = viewModel.getNoteBadge(note.getId());
+
+        assertEquals("\u2B50", badge);
+    }
+
+    @Test
+    @DisplayName("getNoteBadge() returns empty when $Badge not set")
+    void getNoteBadge_shouldReturnEmptyWhenNotSet() {
+        Note note = noteService.createNote("N1", "");
+
+        String badge = viewModel.getNoteBadge(note.getId());
+
+        assertEquals("", badge);
+    }
+
+    @Test
+    @DisplayName("getNoteBadge() returns empty for unknown badge name")
+    void getNoteBadge_shouldReturnEmptyForUnknownName() {
+        Note note = noteService.createNote("N1", "");
+        note.setAttribute("$Badge", new AttributeValue.StringValue("nonexistent"));
+
+        String badge = viewModel.getNoteBadge(note.getId());
+
+        assertEquals("", badge);
+    }
+
+    @Test
+    @DisplayName("getNoteTitle() returns note title")
+    void getNoteTitle_shouldReturnTitle() {
+        Note note = noteService.createNote("My Title", "");
+
+        String title = viewModel.getNoteTitle(note.getId());
+
+        assertEquals("My Title", title);
+    }
+
+    @Test
+    @DisplayName("getNoteTitle() returns empty for nonexistent note")
+    void getNoteTitle_shouldReturnEmptyForNonexistent() {
+        String title = viewModel.getNoteTitle(UUID.randomUUID());
+
+        assertEquals("", title);
     }
 }

@@ -110,4 +110,41 @@ class NoteDisplayItemTest {
 
         assertEquals(a.hashCode(), b.hashCode());
     }
+
+    @Test
+    @DisplayName("simple constructor defaults badge to empty string")
+    void simpleConstructor_shouldDefaultBadgeToEmpty() {
+        NoteDisplayItem item = new NoteDisplayItem(
+                UUID.randomUUID(), "Title", "Content");
+
+        assertEquals("", item.getBadge());
+    }
+
+    @Test
+    @DisplayName("nine-arg constructor defaults badge to empty string")
+    void nineArgConstructor_shouldDefaultBadgeToEmpty() {
+        NoteDisplayItem item = new NoteDisplayItem(
+                UUID.randomUUID(), "Title", "Content",
+                0, 0, 6, 4, "#808080", false);
+
+        assertEquals("", item.getBadge());
+    }
+
+    @Test
+    @DisplayName("full constructor stores badge symbol")
+    void fullConstructor_shouldStoreBadge() {
+        NoteDisplayItem item = new NoteDisplayItem(
+                UUID.randomUUID(), "Title", "Content",
+                0, 0, 6, 4, "#808080", false, "\u2B50");
+
+        assertEquals("\u2B50", item.getBadge());
+    }
+
+    @Test
+    @DisplayName("full constructor rejects null badge")
+    void fullConstructor_shouldRejectNullBadge() {
+        assertThrows(NullPointerException.class,
+                () -> new NoteDisplayItem(UUID.randomUUID(), "Title", "Content",
+                        0, 0, 6, 4, "#808080", false, null));
+    }
 }

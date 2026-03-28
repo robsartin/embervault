@@ -173,6 +173,18 @@ public class MapViewController {
         textBox.setClip(clip);
 
         StackPane notePane = new StackPane(rect, textBox);
+
+        // Badge label in top-right corner
+        String badge = item.getBadge();
+        if (badge != null && !badge.isEmpty()) {
+            Label badgeLabel = new Label(badge);
+            badgeLabel.setFont(Font.font("System", TITLE_FONT_SIZE));
+            badgeLabel.setMouseTransparent(true);
+            badgeLabel.setPadding(new Insets(2, 4, 0, 0));
+            StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
+            notePane.getChildren().add(badgeLabel);
+        }
+
         notePane.setUserData(item.getId());
         notePane.setAlignment(Pos.TOP_LEFT);
         notePane.setLayoutX(item.getXpos());

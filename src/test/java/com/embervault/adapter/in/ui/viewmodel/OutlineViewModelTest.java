@@ -12,6 +12,7 @@ import java.util.UUID;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -562,5 +563,32 @@ class OutlineViewModelTest {
         viewModel.deleteNote(child.getId());
 
         assertTrue(notified[0]);
+    }
+
+    @Test
+    @DisplayName("toDisplayItem() resolves badge from $Badge attribute")
+    void toDisplayItem_shouldResolveBadge() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+        child.setAttribute("$Badge", new AttributeValue.StringValue("flag"));
+        viewModel.setBaseNoteId(parent.getId());
+
+        viewModel.loadNotes();
+
+        NoteDisplayItem item = viewModel.getRootItems().get(0);
+        assertEquals("\uD83D\uDEA9", item.getBadge());
+    }
+
+    @Test
+    @DisplayName("toDisplayItem() returns empty badge when $Badge not set")
+    void toDisplayItem_shouldReturnEmptyBadgeWhenNotSet() {
+        Note parent = noteService.createNote("Parent", "");
+        noteService.createChildNote(parent.getId(), "Child");
+        viewModel.setBaseNoteId(parent.getId());
+
+        viewModel.loadNotes();
+
+        NoteDisplayItem item = viewModel.getRootItems().get(0);
+        assertEquals("", item.getBadge());
     }
 }

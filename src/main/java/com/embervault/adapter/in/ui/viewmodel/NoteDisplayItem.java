@@ -20,12 +20,13 @@ public final class NoteDisplayItem {
     private final double height;
     private final String colorHex;
     private final boolean hasChildren;
+    private final String badge;
 
     /**
      * Constructs a display item with the given id, title, and content.
      */
     public NoteDisplayItem(UUID id, String title, String content) {
-        this(id, title, content, 0, 0, 6, 4, "#808080", false);
+        this(id, title, content, 0, 0, 6, 4, "#808080", false, "");
     }
 
     /**
@@ -44,6 +45,27 @@ public final class NoteDisplayItem {
     public NoteDisplayItem(UUID id, String title, String content,
             double xpos, double ypos, double width, double height,
             String colorHex, boolean hasChildren) {
+        this(id, title, content, xpos, ypos, width, height, colorHex,
+                hasChildren, "");
+    }
+
+    /**
+     * Constructs a display item with full map, outline, and badge data.
+     *
+     * @param id          the note id
+     * @param title       the note title
+     * @param content     the note content
+     * @param xpos        the x position
+     * @param ypos        the y position
+     * @param width       the width
+     * @param height      the height
+     * @param colorHex    the fill color as hex string
+     * @param hasChildren whether this note has children
+     * @param badge       the badge Unicode symbol, or empty string if none
+     */
+    public NoteDisplayItem(UUID id, String title, String content,
+            double xpos, double ypos, double width, double height,
+            String colorHex, boolean hasChildren, String badge) {
         this.id = Objects.requireNonNull(id, "id must not be null");
         this.title = Objects.requireNonNull(title, "title must not be null");
         this.content = Objects.requireNonNull(content, "content must not be null");
@@ -53,6 +75,7 @@ public final class NoteDisplayItem {
         this.height = height;
         this.colorHex = Objects.requireNonNull(colorHex, "colorHex must not be null");
         this.hasChildren = hasChildren;
+        this.badge = Objects.requireNonNull(badge, "badge must not be null");
     }
 
     /** Returns the note id. */
@@ -98,6 +121,11 @@ public final class NoteDisplayItem {
     /** Returns whether this note has children. */
     public boolean isHasChildren() {
         return hasChildren;
+    }
+
+    /** Returns the badge Unicode symbol, or empty string if no badge. */
+    public String getBadge() {
+        return badge;
     }
 
     @Override

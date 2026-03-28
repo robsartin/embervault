@@ -13,6 +13,7 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.AttributeType;
 import com.embervault.domain.AttributeValue;
+import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Note;
 import com.embervault.domain.TbxColor;
 import javafx.beans.property.ObjectProperty;
@@ -216,10 +217,14 @@ public final class AttributeBrowserViewModel {
                 .map(v -> ((AttributeValue.ColorValue) v).value())
                 .map(TbxColor::toHex)
                 .orElse(DEFAULT_COLOR_HEX);
+        String badge = note.getAttribute("$Badge")
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .flatMap(BadgeRegistry::getBadgeSymbol)
+                .orElse("");
 
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
                 0, 0, 0, 0, colorHex,
-                noteService.hasChildren(note.getId()));
+                noteService.hasChildren(note.getId()), badge);
     }
 }

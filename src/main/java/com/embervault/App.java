@@ -459,6 +459,18 @@ public class App extends Application {
         stampService.createStamp("Color:blue", "$Color=blue");
         stampService.createStamp("Mark Done", "$Checked=true");
         stampService.createStamp("Mark Undone", "$Checked=false");
+
+        // Badge stamps
+        stampService.createStamp("Badge:star", "$Badge=star");
+        stampService.createStamp("Badge:flag", "$Badge=flag");
+        stampService.createStamp("Badge:check", "$Badge=check");
+        stampService.createStamp("Badge:warning", "$Badge=warning");
+        stampService.createStamp("Badge:book", "$Badge=book");
+        stampService.createStamp("Badge:person", "$Badge=person");
+        stampService.createStamp("Badge:idea", "$Badge=idea");
+        stampService.createStamp("Badge:heart", "$Badge=heart");
+        stampService.createStamp("Badge:pin", "$Badge=pin");
+        stampService.createStamp("Badge:fire", "$Badge=fire");
     }
 
     public static void main(String[] args) {

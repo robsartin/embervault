@@ -215,7 +215,9 @@ public class HyperbolicViewController {
             // Label (only if node is large enough)
             if (node.displayRadius() >= SMALL_NODE_THRESHOLD) {
                 String title = noteTitle(node.noteId());
-                Label label = new Label(title);
+                String badge = noteBadge(node.noteId());
+                String labelText = badge.isEmpty() ? title : badge + " " + title;
+                Label label = new Label(labelText);
                 label.setFont(Font.font("System", FontWeight.BOLD, LABEL_FONT_SIZE));
                 label.setTextFill(Color.WHITE);
                 label.setMouseTransparent(true);
@@ -226,7 +228,9 @@ public class HyperbolicViewController {
             } else {
                 // Tooltip for small nodes
                 String title = noteTitle(node.noteId());
-                Tooltip.install(circle, new Tooltip(title));
+                String badge = noteBadge(node.noteId());
+                String tipText = badge.isEmpty() ? title : badge + " " + title;
+                Tooltip.install(circle, new Tooltip(tipText));
             }
         }
 
@@ -260,14 +264,11 @@ public class HyperbolicViewController {
     }
 
     private String noteTitle(UUID noteId) {
-        return viewModel.getNodes().stream()
-                .filter(n -> n.noteId().equals(noteId))
-                .findFirst()
-                .map(n -> {
-                    // Try to get the note title from NoteService via ViewModel
-                    // For now, use the noteId as a fallback
-                    return noteId.toString().substring(0, 8);
-                })
-                .orElse("");
+        String title = viewModel.getNoteTitle(noteId);
+        return title.isEmpty() ? noteId.toString().substring(0, 8) : title;
+    }
+
+    private String noteBadge(UUID noteId) {
+        return viewModel.getNoteBadge(noteId);
     }
 }
