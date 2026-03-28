@@ -170,11 +170,30 @@ public class App extends Application {
         wireSelection(outlineViewModel.selectedNoteIdProperty(), selectedNoteVm);
         wireSelection(treemapViewModel.selectedNoteIdProperty(), selectedNoteVm);
 
+        // Create ViewPaneContext instances for switchable panes.
+        // refreshAll is defined as a lambda that delegates to each
+        // pane context, so pane switches are automatically reflected.
+        ViewPaneContext mapPane = new ViewPaneContext(
+                ViewType.MAP,
+                mapViewModel.tabTitleProperty(), mapView,
+                project.getRootNote().getId(),
+                mapViewModel::loadNotes);
+        ViewPaneContext outlinePane = new ViewPaneContext(
+                ViewType.OUTLINE,
+                outlineViewModel.tabTitleProperty(), outlineView,
+                project.getRootNote().getId(),
+                outlineViewModel::loadNotes);
+        ViewPaneContext treemapPane = new ViewPaneContext(
+                ViewType.TREEMAP,
+                treemapViewModel.tabTitleProperty(), treemapView,
+                project.getRootNote().getId(),
+                treemapViewModel::loadNotes);
+
         // Synchronize: any mutation triggers all views to reload.
         Runnable refreshAll = () -> {
-            mapViewModel.loadNotes();
-            outlineViewModel.loadNotes();
-            treemapViewModel.loadNotes();
+            mapPane.refreshCurrentView();
+            outlinePane.refreshCurrentView();
+            treemapPane.refreshCurrentView();
             browserViewModel.groupNotes();
             if (hyperbolicViewModel.getFocusNoteId() != null) {
                 hyperbolicViewModel.setFocusNote(
@@ -192,13 +211,17 @@ public class App extends Application {
         hyperbolicViewModel.setOnDataChanged(refreshAll);
         selectedNoteVm.setOnDataChanged(refreshAll);
 
-        // Wrap each view with a title label
-        VBox mapContainer = wrapWithLabel(
-                mapViewModel.tabTitleProperty(), mapView);
-        VBox outlineContainer = wrapWithLabel(
-                outlineViewModel.tabTitleProperty(), outlineView);
-        VBox treemapContainer = wrapWithLabel(
-                treemapViewModel.tabTitleProperty(), treemapView);
+        // Wire shared deps into pane contexts for view switching
+        ViewPaneDeps paneDeps = new ViewPaneDeps(
+                noteService, linkService, schemaRegistry,
+                refreshAll, selectedNoteVm, rootNoteTitle);
+        mapPane.setDeps(paneDeps);
+        outlinePane.setDeps(paneDeps);
+        treemapPane.setDeps(paneDeps);
+
+        VBox mapContainer = mapPane.getContainer();
+        VBox outlineContainer = outlinePane.getContainer();
+        VBox treemapContainer = treemapPane.getContainer();
         VBox hyperbolicContainer = wrapWithLabel(
                 hyperbolicViewModel.tabTitleProperty(), hyperbolicView);
 
