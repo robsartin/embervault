@@ -225,13 +225,16 @@ public class App extends Application {
         mainSplitPane.getItems().addAll(viewsSplitPane, textPaneView);
         mainSplitPane.setDividerPositions(0.6);
 
-        // Menu bar
-        MenuBar menuBar = createMenuBar(
-                mapViewModel, outlineViewModel, mainSplitPane,
-                browserEditorPane, hyperbolicContainer,
-                hyperbolicViewModel, project, stampService,
+        // Build shared context for menu construction
+        AppContext ctx = new AppContext(
+                mapViewModel, hyperbolicViewModel, searchViewModel,
+                mainSplitPane, browserEditorPane, hyperbolicContainer,
+                project, stampService,
                 mapViewModel.selectedNoteIdProperty(),
-                refreshAll, stage, searchViewModel);
+                refreshAll, stage);
+
+        // Menu bar
+        MenuBar menuBar = createMenuBar(ctx);
 
         // Top area: menu bar + search bar
         VBox topArea = new VBox(menuBar, searchView);
@@ -247,19 +250,7 @@ public class App extends Application {
         stage.show();
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private MenuBar createMenuBar(MapViewModel mapViewModel,
-            OutlineViewModel outlineViewModel,
-            SplitPane mainSplitPane,
-            SplitPane browserEditorPane,
-            VBox hyperbolicContainer,
-            HyperbolicViewModel hyperbolicViewModel,
-            Project project,
-            StampService stampService,
-            ObjectProperty<UUID> selectedNoteId,
-            Runnable refreshAll,
-            Stage ownerStage,
-            SearchViewModel searchViewModel) {
+    private MenuBar createMenuBar(AppContext ctx) {
         // Note menu
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setAccelerator(
@@ -268,7 +259,7 @@ public class App extends Application {
         createNote.setOnAction(e -> {
             // Create a child under the selected note in the map,
             // or under root
-            mapViewModel.createChildNote("Untitled");
+            ctx.mapViewModel().createChildNote("Untitled");
         });
 
         Menu noteMenu = new Menu("Note");
@@ -276,8 +267,7 @@ public class App extends Application {
 
         // Stamps menu
         Menu stampsMenu = new Menu("Stamps");
-        buildStampsMenu(stampsMenu, stampService, selectedNoteId,
-                refreshAll, ownerStage);
+        buildStampsMenu(stampsMenu, ctx);
 
         // View menu
         MenuItem mapViewItem = new MenuItem("Map");
@@ -298,17 +288,18 @@ public class App extends Application {
                         KeyCombination.SHORTCUT_DOWN,
                         KeyCombination.SHIFT_DOWN));
         hyperbolicViewItem.setOnAction(e -> {
-            BorderPane root = (BorderPane) mainSplitPane
+            BorderPane root = (BorderPane) ctx.mainSplitPane()
                     .getScene().getRoot();
-            if (root.getCenter() == hyperbolicContainer) {
-                root.setCenter(mainSplitPane);
+            if (root.getCenter() == ctx.hyperbolicContainer()) {
+                root.setCenter(ctx.mainSplitPane());
             } else {
                 // Set focus to root note if no focus set yet
-                if (hyperbolicViewModel.getFocusNoteId() == null) {
-                    hyperbolicViewModel.setFocusNote(
-                            project.getRootNote().getId());
+                if (ctx.hyperbolicViewModel().getFocusNoteId()
+                        == null) {
+                    ctx.hyperbolicViewModel().setFocusNote(
+                            ctx.project().getRootNote().getId());
                 }
-                root.setCenter(hyperbolicContainer);
+                root.setCenter(ctx.hyperbolicContainer());
             }
         });
 
@@ -318,12 +309,12 @@ public class App extends Application {
                         KeyCombination.SHORTCUT_DOWN,
                         KeyCombination.SHIFT_DOWN));
         browserViewItem.setOnAction(e -> {
-            BorderPane root = (BorderPane) mainSplitPane
+            BorderPane root = (BorderPane) ctx.mainSplitPane()
                     .getScene().getRoot();
-            if (root.getCenter() == browserEditorPane) {
-                root.setCenter(mainSplitPane);
+            if (root.getCenter() == ctx.browserEditorPane()) {
+                root.setCenter(ctx.mainSplitPane());
             } else {
-                root.setCenter(browserEditorPane);
+                root.setCenter(ctx.browserEditorPane());
             }
         });
 
@@ -336,7 +327,8 @@ public class App extends Application {
         findItem.setAccelerator(
                 new KeyCodeCombination(KeyCode.F,
                         KeyCombination.SHORTCUT_DOWN));
-        findItem.setOnAction(e -> searchViewModel.toggleVisible());
+        findItem.setOnAction(e ->
+                ctx.searchViewModel().toggleVisible());
 
         Menu editMenu = new Menu("Edit");
         editMenu.getItems().add(findItem);
@@ -347,19 +339,14 @@ public class App extends Application {
         return menuBar;
     }
 
-    private void buildStampsMenu(Menu stampsMenu,
-            StampService stampService,
-            ObjectProperty<UUID> selectedNoteId,
-            Runnable refreshAll,
-            Stage ownerStage) {
+    private void buildStampsMenu(Menu stampsMenu, AppContext ctx) {
         stampsMenu.getItems().clear();
 
         // "Inspect Stamps..." item
         MenuItem inspectItem = new MenuItem("Inspect Stamps...");
         inspectItem.setOnAction(e -> {
             try {
-                openStampEditor(stampService, stampsMenu,
-                        selectedNoteId, refreshAll, ownerStage);
+                openStampEditor(stampsMenu, ctx);
             } catch (IOException ex) {
                 LOG.error("Failed to open stamp editor", ex);
             }
@@ -370,7 +357,7 @@ public class App extends Application {
         // Build dynamic stamp items
         Map<String, Menu> subMenus = new HashMap<>();
 
-        for (Stamp stamp : stampService.getAllStamps()) {
+        for (Stamp stamp : ctx.stampService().getAllStamps()) {
             String name = stamp.name();
             UUID stampId = stamp.id();
 
@@ -392,59 +379,51 @@ public class App extends Application {
 
                 MenuItem item = new MenuItem(itemName);
                 item.setOnAction(ev -> applyStampToSelected(
-                        stampService, stampId, selectedNoteId,
-                        refreshAll));
+                        ctx, stampId));
                 subMenu.getItems().add(item);
             } else {
                 MenuItem item = new MenuItem(name);
                 item.setOnAction(ev -> applyStampToSelected(
-                        stampService, stampId, selectedNoteId,
-                        refreshAll));
+                        ctx, stampId));
                 stampsMenu.getItems().add(item);
             }
         }
     }
 
-    private void applyStampToSelected(StampService stampService,
-            UUID stampId,
-            ObjectProperty<UUID> selectedNoteId,
-            Runnable refreshAll) {
-        UUID noteId = selectedNoteId.get();
+    private void applyStampToSelected(AppContext ctx,
+            UUID stampId) {
+        UUID noteId = ctx.selectedNoteId().get();
         if (noteId == null) {
             LOG.warn("No note selected to apply stamp to");
             return;
         }
         try {
-            stampService.applyStamp(stampId, noteId);
-            refreshAll.run();
+            ctx.stampService().applyStamp(stampId, noteId);
+            ctx.refreshAll().run();
         } catch (Exception ex) {
             LOG.error("Failed to apply stamp", ex);
         }
     }
 
-    private void openStampEditor(StampService stampService,
-            Menu stampsMenu,
-            ObjectProperty<UUID> selectedNoteId,
-            Runnable refreshAll,
-            Stage ownerStage) throws IOException {
+    private void openStampEditor(Menu stampsMenu,
+            AppContext ctx) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/"
                         + "StampEditorView.fxml"));
         Parent editorRoot = loader.load();
         StampEditorViewController controller = loader.getController();
         StampEditorViewModel editorVm =
-                new StampEditorViewModel(stampService);
+                new StampEditorViewModel(ctx.stampService());
         controller.initViewModel(editorVm);
 
         Stage editorStage = new Stage();
         editorStage.setTitle("Inspect Stamps");
         editorStage.setScene(new Scene(editorRoot));
-        editorStage.initOwner(ownerStage);
+        editorStage.initOwner(ctx.ownerStage());
         editorStage.showAndWait();
 
         // Rebuild stamps menu after editor closes
-        buildStampsMenu(stampsMenu, stampService, selectedNoteId,
-                refreshAll, ownerStage);
+        buildStampsMenu(stampsMenu, ctx);
     }
 
     private Parent loadView(String fxml,
