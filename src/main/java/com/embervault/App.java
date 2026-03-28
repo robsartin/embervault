@@ -19,6 +19,7 @@ import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
@@ -27,6 +28,8 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -99,8 +102,21 @@ public class App extends Application {
                     }
                 });
 
+        // Wrap each view with a title label
+        Label mapLabel = new Label();
+        mapLabel.textProperty().bind(mapViewModel.tabTitleProperty());
+        mapLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
+        VBox mapContainer = new VBox(mapLabel, mapView);
+        VBox.setVgrow(mapView, Priority.ALWAYS);
+
+        Label outlineLabel = new Label();
+        outlineLabel.textProperty().bind(outlineViewModel.tabTitleProperty());
+        outlineLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
+        VBox outlineContainer = new VBox(outlineLabel, outlineView);
+        VBox.setVgrow(outlineView, Priority.ALWAYS);
+
         // SplitPane with Map on left, Outline on right
-        SplitPane splitPane = new SplitPane(mapView, outlineView);
+        SplitPane splitPane = new SplitPane(mapContainer, outlineContainer);
         splitPane.setDividerPositions(0.5);
 
         // Menu bar
