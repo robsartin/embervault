@@ -1,5 +1,28 @@
 package com.embervault.domain;
 
+import static com.embervault.domain.Attributes.BADGE;
+import static com.embervault.domain.Attributes.BORDER_COLOR;
+import static com.embervault.domain.Attributes.CAPTION;
+import static com.embervault.domain.Attributes.CHECKED;
+import static com.embervault.domain.Attributes.COLOR;
+import static com.embervault.domain.Attributes.CONTAINER;
+import static com.embervault.domain.Attributes.CREATED;
+import static com.embervault.domain.Attributes.DISPLAYED_ATTRIBUTES;
+import static com.embervault.domain.Attributes.FLAGS;
+import static com.embervault.domain.Attributes.HEIGHT;
+import static com.embervault.domain.Attributes.IS_PROTOTYPE;
+import static com.embervault.domain.Attributes.MODIFIED;
+import static com.embervault.domain.Attributes.NAME;
+import static com.embervault.domain.Attributes.OUTLINE_ORDER;
+import static com.embervault.domain.Attributes.PROTOTYPE;
+import static com.embervault.domain.Attributes.SHAPE;
+import static com.embervault.domain.Attributes.SUBTITLE;
+import static com.embervault.domain.Attributes.TEXT;
+import static com.embervault.domain.Attributes.URL;
+import static com.embervault.domain.Attributes.WIDTH;
+import static com.embervault.domain.Attributes.XPOS;
+import static com.embervault.domain.Attributes.YPOS;
+
 import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,47 +107,47 @@ public final class AttributeSchemaRegistry {
 
     private void registerSystemAttributes() {
         // Identity & Structure
-        systemAttr("$Name", AttributeType.STRING, new AttributeValue.StringValue(""));
-        systemAttr("$IsPrototype", AttributeType.BOOLEAN, new AttributeValue.BooleanValue(false));
-        systemAttr("$Prototype", AttributeType.STRING, new AttributeValue.StringValue(""));
-        intrinsicAttr("$Container", AttributeType.STRING,
+        systemAttr(NAME, AttributeType.STRING, new AttributeValue.StringValue(""));
+        systemAttr(IS_PROTOTYPE, AttributeType.BOOLEAN, new AttributeValue.BooleanValue(false));
+        systemAttr(PROTOTYPE, AttributeType.STRING, new AttributeValue.StringValue(""));
+        intrinsicAttr(CONTAINER, AttributeType.STRING,
                 new AttributeValue.StringValue(""), false);
-        intrinsicAttr("$OutlineOrder", AttributeType.NUMBER,
+        intrinsicAttr(OUTLINE_ORDER, AttributeType.NUMBER,
                 new AttributeValue.NumberValue(0), false);
 
         // Content
-        systemAttr("$Text", AttributeType.STRING, new AttributeValue.StringValue(""));
-        systemAttr("$Subtitle", AttributeType.STRING, new AttributeValue.StringValue(""));
-        systemAttr("$Caption", AttributeType.STRING, new AttributeValue.StringValue(""));
+        systemAttr(TEXT, AttributeType.STRING, new AttributeValue.StringValue(""));
+        systemAttr(SUBTITLE, AttributeType.STRING, new AttributeValue.StringValue(""));
+        systemAttr(CAPTION, AttributeType.STRING, new AttributeValue.StringValue(""));
 
         // Appearance
-        systemAttr("$Color", AttributeType.COLOR,
+        systemAttr(COLOR, AttributeType.COLOR,
                 new AttributeValue.ColorValue(TbxColor.named("warm gray")));
-        systemAttr("$BorderColor", AttributeType.COLOR,
+        systemAttr(BORDER_COLOR, AttributeType.COLOR,
                 new AttributeValue.ColorValue(TbxColor.hex("#000000")));
-        systemAttr("$Shape", AttributeType.STRING, new AttributeValue.StringValue("normal"));
+        systemAttr(SHAPE, AttributeType.STRING, new AttributeValue.StringValue("normal"));
 
         // Position & Size (intrinsic)
-        intrinsicAttr("$Xpos", AttributeType.NUMBER, new AttributeValue.NumberValue(0), false);
-        intrinsicAttr("$Ypos", AttributeType.NUMBER, new AttributeValue.NumberValue(0), false);
-        intrinsicAttr("$Width", AttributeType.NUMBER, new AttributeValue.NumberValue(6), false);
-        intrinsicAttr("$Height", AttributeType.NUMBER, new AttributeValue.NumberValue(4), false);
+        intrinsicAttr(XPOS, AttributeType.NUMBER, new AttributeValue.NumberValue(0), false);
+        intrinsicAttr(YPOS, AttributeType.NUMBER, new AttributeValue.NumberValue(0), false);
+        intrinsicAttr(WIDTH, AttributeType.NUMBER, new AttributeValue.NumberValue(6), false);
+        intrinsicAttr(HEIGHT, AttributeType.NUMBER, new AttributeValue.NumberValue(4), false);
 
         // Dates (intrinsic, read-only)
-        intrinsicAttr("$Created", AttributeType.DATE,
+        intrinsicAttr(CREATED, AttributeType.DATE,
                 new AttributeValue.DateValue(Instant.EPOCH), true);
-        intrinsicAttr("$Modified", AttributeType.DATE,
+        intrinsicAttr(MODIFIED, AttributeType.DATE,
                 new AttributeValue.DateValue(Instant.EPOCH), true);
 
         // Flags & State
-        systemAttr("$Checked", AttributeType.BOOLEAN, new AttributeValue.BooleanValue(false));
-        systemAttr("$URL", AttributeType.URL, new AttributeValue.UrlValue(""));
+        systemAttr(CHECKED, AttributeType.BOOLEAN, new AttributeValue.BooleanValue(false));
+        systemAttr(URL, AttributeType.URL, new AttributeValue.UrlValue(""));
 
         // Display
-        systemAttr("$DisplayedAttributes", AttributeType.SET,
+        systemAttr(DISPLAYED_ATTRIBUTES, AttributeType.SET,
                 new AttributeValue.SetValue(Set.of()));
-        systemAttr("$Flags", AttributeType.SET, new AttributeValue.SetValue(Set.of()));
-        systemAttr("$Badge", AttributeType.STRING, new AttributeValue.StringValue(""));
+        systemAttr(FLAGS, AttributeType.SET, new AttributeValue.SetValue(Set.of()));
+        systemAttr(BADGE, AttributeType.STRING, new AttributeValue.StringValue(""));
     }
 
     private void systemAttr(String name, AttributeType type, AttributeValue defaultValue) {

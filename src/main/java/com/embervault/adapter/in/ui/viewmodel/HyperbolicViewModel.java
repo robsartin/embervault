@@ -1,5 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import static com.embervault.domain.Attributes.BADGE;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -213,7 +215,7 @@ public final class HyperbolicViewModel {
      */
     public String getNoteBadge(UUID noteId) {
         return noteService.getNote(noteId)
-                .flatMap(note -> note.getAttribute("$Badge"))
+                .flatMap(note -> note.getAttribute(BADGE))
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .flatMap(BadgeRegistry::getBadgeSymbol)
                 .orElse("");

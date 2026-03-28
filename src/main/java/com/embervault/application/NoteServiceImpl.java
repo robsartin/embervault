@@ -1,5 +1,14 @@
 package com.embervault.application;
 
+import static com.embervault.domain.Attributes.CONTAINER;
+import static com.embervault.domain.Attributes.CREATED;
+import static com.embervault.domain.Attributes.MODIFIED;
+import static com.embervault.domain.Attributes.NAME;
+import static com.embervault.domain.Attributes.OUTLINE_ORDER;
+import static com.embervault.domain.Attributes.TEXT;
+import static com.embervault.domain.Attributes.XPOS;
+import static com.embervault.domain.Attributes.YPOS;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,13 +91,13 @@ public final class NoteServiceImpl implements NoteService {
         int nextOrder = repository.findChildren(parentId).size();
 
         Note child = Note.create(title, "");
-        child.setAttribute("$Container",
+        child.setAttribute(CONTAINER,
                 new AttributeValue.StringValue(parentId.toString()));
-        child.setAttribute("$OutlineOrder",
+        child.setAttribute(OUTLINE_ORDER,
                 new AttributeValue.NumberValue(nextOrder));
-        child.setAttribute("$Xpos",
+        child.setAttribute(XPOS,
                 new AttributeValue.NumberValue(random.nextDouble() * MAX_XPOS));
-        child.setAttribute("$Ypos",
+        child.setAttribute(YPOS,
                 new AttributeValue.NumberValue(random.nextDouble() * MAX_YPOS));
 
         return repository.save(child);
@@ -103,7 +112,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(noteId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
-        note.setAttribute("$Name", new AttributeValue.StringValue(newTitle));
+        note.setAttribute(NAME, new AttributeValue.StringValue(newTitle));
         return repository.save(note);
     }
 
@@ -127,9 +136,9 @@ public final class NoteServiceImpl implements NoteService {
                         "Parent note not found: " + newParentId));
 
         int nextOrder = repository.findChildren(newParentId).size();
-        note.setAttribute("$Container",
+        note.setAttribute(CONTAINER,
                 new AttributeValue.StringValue(newParentId.toString()));
-        note.setAttribute("$OutlineOrder",
+        note.setAttribute(OUTLINE_ORDER,
                 new AttributeValue.NumberValue(nextOrder));
 
         return repository.save(note);
@@ -141,13 +150,13 @@ public final class NoteServiceImpl implements NoteService {
                 .orElseThrow(() -> new NoSuchElementException(
                         "Sibling note not found: " + siblingId));
 
-        String containerId = sibling.getAttribute("$Container")
+        String containerId = sibling.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElseThrow(() -> new NoSuchElementException(
                         "Sibling has no $Container: " + siblingId));
 
-        double siblingOrder = sibling.getAttribute("$OutlineOrder")
+        double siblingOrder = sibling.getAttribute(OUTLINE_ORDER)
                 .filter(v -> v instanceof AttributeValue.NumberValue)
                 .map(v -> ((AttributeValue.NumberValue) v).value())
                 .orElse(0.0);
@@ -157,12 +166,12 @@ public final class NoteServiceImpl implements NoteService {
         // Bump order of all siblings after this one
         List<Note> siblings = repository.findChildren(parentId);
         for (Note s : siblings) {
-            double order = s.getAttribute("$OutlineOrder")
+            double order = s.getAttribute(OUTLINE_ORDER)
                     .filter(v -> v instanceof AttributeValue.NumberValue)
                     .map(v -> ((AttributeValue.NumberValue) v).value())
                     .orElse(0.0);
             if (order > siblingOrder) {
-                s.setAttribute("$OutlineOrder",
+                s.setAttribute(OUTLINE_ORDER,
                         new AttributeValue.NumberValue(order + 1));
                 repository.save(s);
             }
@@ -170,13 +179,13 @@ public final class NoteServiceImpl implements NoteService {
 
         // Create the new note (use AttributeMap constructor to allow empty titles)
         Note newNote = createNoteWithTitle(title);
-        newNote.setAttribute("$Container",
+        newNote.setAttribute(CONTAINER,
                 new AttributeValue.StringValue(containerId));
-        newNote.setAttribute("$OutlineOrder",
+        newNote.setAttribute(OUTLINE_ORDER,
                 new AttributeValue.NumberValue(siblingOrder + 1));
-        newNote.setAttribute("$Xpos",
+        newNote.setAttribute(XPOS,
                 new AttributeValue.NumberValue(random.nextDouble() * MAX_XPOS));
-        newNote.setAttribute("$Ypos",
+        newNote.setAttribute(YPOS,
                 new AttributeValue.NumberValue(random.nextDouble() * MAX_YPOS));
 
         return repository.save(newNote);
@@ -188,7 +197,7 @@ public final class NoteServiceImpl implements NoteService {
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
 
-        String containerId = note.getAttribute("$Container")
+        String containerId = note.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElse(null);
@@ -198,7 +207,7 @@ public final class NoteServiceImpl implements NoteService {
         }
 
         UUID parentId = UUID.fromString(containerId);
-        double noteOrder = note.getAttribute("$OutlineOrder")
+        double noteOrder = note.getAttribute(OUTLINE_ORDER)
                 .filter(v -> v instanceof AttributeValue.NumberValue)
                 .map(v -> ((AttributeValue.NumberValue) v).value())
                 .orElse(0.0);
@@ -211,7 +220,7 @@ public final class NoteServiceImpl implements NoteService {
             if (s.getId().equals(noteId)) {
                 continue;
             }
-            double order = s.getAttribute("$OutlineOrder")
+            double order = s.getAttribute(OUTLINE_ORDER)
                     .filter(v -> v instanceof AttributeValue.NumberValue)
                     .map(v -> ((AttributeValue.NumberValue) v).value())
                     .orElse(0.0);
@@ -227,9 +236,9 @@ public final class NoteServiceImpl implements NoteService {
 
         // Move note to be a child of noteAbove
         int newOrder = repository.findChildren(noteAbove.getId()).size();
-        note.setAttribute("$Container",
+        note.setAttribute(CONTAINER,
                 new AttributeValue.StringValue(noteAbove.getId().toString()));
-        note.setAttribute("$OutlineOrder",
+        note.setAttribute(OUTLINE_ORDER,
                 new AttributeValue.NumberValue(newOrder));
 
         return repository.save(note);
@@ -241,7 +250,7 @@ public final class NoteServiceImpl implements NoteService {
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
 
-        String containerId = note.getAttribute("$Container")
+        String containerId = note.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElse(null);
@@ -256,7 +265,7 @@ public final class NoteServiceImpl implements NoteService {
             return note;
         }
 
-        String grandparentContainerId = parent.getAttribute("$Container")
+        String grandparentContainerId = parent.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElse(null);
@@ -268,7 +277,7 @@ public final class NoteServiceImpl implements NoteService {
         UUID grandparentId = UUID.fromString(grandparentContainerId);
 
         // Find parent's order in grandparent's children
-        double parentOrder = parent.getAttribute("$OutlineOrder")
+        double parentOrder = parent.getAttribute(OUTLINE_ORDER)
                 .filter(v -> v instanceof AttributeValue.NumberValue)
                 .map(v -> ((AttributeValue.NumberValue) v).value())
                 .orElse(0.0);
@@ -276,21 +285,21 @@ public final class NoteServiceImpl implements NoteService {
         // Bump order of grandparent's children that come after parent
         List<Note> grandparentChildren = repository.findChildren(grandparentId);
         for (Note gc : grandparentChildren) {
-            double order = gc.getAttribute("$OutlineOrder")
+            double order = gc.getAttribute(OUTLINE_ORDER)
                     .filter(v -> v instanceof AttributeValue.NumberValue)
                     .map(v -> ((AttributeValue.NumberValue) v).value())
                     .orElse(0.0);
             if (order > parentOrder) {
-                gc.setAttribute("$OutlineOrder",
+                gc.setAttribute(OUTLINE_ORDER,
                         new AttributeValue.NumberValue(order + 1));
                 repository.save(gc);
             }
         }
 
         // Move note to grandparent, positioned just after parent
-        note.setAttribute("$Container",
+        note.setAttribute(CONTAINER,
                 new AttributeValue.StringValue(grandparentContainerId));
-        note.setAttribute("$OutlineOrder",
+        note.setAttribute(OUTLINE_ORDER,
                 new AttributeValue.NumberValue(parentOrder + 1));
 
         return repository.save(note);
@@ -307,7 +316,7 @@ public final class NoteServiceImpl implements NoteService {
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
 
-        String containerId = note.getAttribute("$Container")
+        String containerId = note.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElse(null);
@@ -317,7 +326,7 @@ public final class NoteServiceImpl implements NoteService {
         }
 
         UUID parentId = UUID.fromString(containerId);
-        double noteOrder = note.getAttribute("$OutlineOrder")
+        double noteOrder = note.getAttribute(OUTLINE_ORDER)
                 .filter(v -> v instanceof AttributeValue.NumberValue)
                 .map(v -> ((AttributeValue.NumberValue) v).value())
                 .orElse(0.0);
@@ -330,7 +339,7 @@ public final class NoteServiceImpl implements NoteService {
             if (s.getId().equals(noteId)) {
                 continue;
             }
-            double order = s.getAttribute("$OutlineOrder")
+            double order = s.getAttribute(OUTLINE_ORDER)
                     .filter(v -> v instanceof AttributeValue.NumberValue)
                     .map(v -> ((AttributeValue.NumberValue) v).value())
                     .orElse(0.0);
@@ -403,11 +412,11 @@ public final class NoteServiceImpl implements NoteService {
         }
         Instant now = Instant.now();
         AttributeMap attrs = new AttributeMap();
-        attrs.set("$Name", new AttributeValue.StringValue(
+        attrs.set(NAME, new AttributeValue.StringValue(
                 title == null ? "" : title));
-        attrs.set("$Text", new AttributeValue.StringValue(""));
-        attrs.set("$Created", new AttributeValue.DateValue(now));
-        attrs.set("$Modified", new AttributeValue.DateValue(now));
+        attrs.set(TEXT, new AttributeValue.StringValue(""));
+        attrs.set(CREATED, new AttributeValue.DateValue(now));
+        attrs.set(MODIFIED, new AttributeValue.DateValue(now));
         return new Note(UUID.randomUUID(), attrs);
     }
 }
