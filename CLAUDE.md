@@ -38,6 +38,50 @@ Hexagonal architecture (ports & adapters) with MVVM for the UI layer.
 
 Dependency flow is strictly inward: adapters -> ports -> domain.
 
+### View types
+
+- **Map** — spatial canvas where notes are positioned by `$Xpos`/`$Ypos`
+- **Outline** — hierarchical list ordered by `$OutlineOrder`
+- **Treemap** — area-proportional rectangles (uses `TreemapLayout`)
+- **Hyperbolic** — graph of note-to-note `Link` connections (uses `HyperbolicLayout`)
+- **Attribute Browser** — groups notes by attribute values into categories
+- Views are switched via right-click context menu (tab switching)
+
+### Note model
+
+- Notes use a **type-safe attribute map** — not fixed fields (see ADR-0018)
+- Use `Attributes` constants (e.g., `Attributes.NAME`, `Attributes.COLOR`) — never raw `"$Name"` strings
+- Attribute values are typed via `AttributeValue` sealed hierarchy (`StringValue`, `ColorValue`, `NumberValue`, etc.)
+
+### Stamps
+
+- `Stamp` record: reusable named actions applied to notes (e.g., `"$Color=red"`, `"$Checked=true"`)
+- Created via `Stamp.create(name, action)` with auto-generated UUID
+- Managed through `StampEditorViewController` / `StampEditorViewModel`
+
+### Links
+
+- `Link` record: directed connection between two notes (source -> destination)
+- Types: `"untitled"` (default), `"web"`, `"prototype"`, etc.
+- Primary navigation primitive for the Hyperbolic view
+
+### Text pane
+
+- `TextPaneViewController` — editor below the view area for the selected note's `$Text`
+- Bound to the currently selected note via `SelectedNoteViewModel`
+
+### Search
+
+- `Cmd+F` opens search; uses debounce for incremental filtering
+- `SearchViewController` / `SearchViewModel`
+
+### Shared ViewModel utilities
+
+- `NoteDisplayHelper` — extracts color hex, badge symbol, and numeric attributes from notes
+- `DataChangeSupport` — composable callback holder (`setOnDataChanged` / `notifyDataChanged`)
+- `NavigationStack` — drill-down history with observable `canNavigateBack` property
+- `TextUtils` — text truncation with ellipsis
+
 ## Key Design Decisions
 
 - Notes use a type-safe attribute map (not fixed fields) — see ADR-0018
@@ -53,6 +97,12 @@ All enforced by `mvn verify`:
 - Checkstyle (Google-based) must pass
 - JaCoCo coverage thresholds must be met
 - ArchUnit architecture rules must pass
+
+## Test Conventions
+
+- `@Tag("ui")` on all TestFX UI tests
+- CI runs UI tests under `xvfb` (X virtual framebuffer)
+- `skip-ui-tests` Maven profile to exclude `@Tag("ui")` tests locally: `./mvnw verify -Pskip-ui-tests`
 
 ## PR Workflow
 
