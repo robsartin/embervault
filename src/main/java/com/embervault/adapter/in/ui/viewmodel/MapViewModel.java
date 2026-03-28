@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
+import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Note;
 import com.embervault.domain.TbxColor;
 import javafx.beans.property.BooleanProperty;
@@ -225,7 +226,8 @@ public final class MapViewModel {
                         item.getId(), newTitle, item.getContent(),
                         item.getXpos(), item.getYpos(),
                         item.getWidth(), item.getHeight(),
-                        item.getColorHex(), item.isHasChildren()));
+                        item.getColorHex(), item.isHasChildren(),
+                        item.getBadge()));
                 break;
             }
         }
@@ -291,7 +293,8 @@ public final class MapViewModel {
                         item.getId(), item.getTitle(), item.getContent(),
                         xpos, ypos,
                         item.getWidth(), item.getHeight(),
-                        item.getColorHex(), item.isHasChildren()));
+                        item.getColorHex(), item.isHasChildren(),
+                        item.getBadge()));
                 break;
             }
         }
@@ -314,10 +317,18 @@ public final class MapViewModel {
                 .map(v -> ((AttributeValue.ColorValue) v).value())
                 .map(TbxColor::toHex)
                 .orElse(DEFAULT_COLOR_HEX);
+        String badge = resolveBadge(note);
 
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
                 xpos, ypos, width, height, colorHex,
-                noteService.hasChildren(note.getId()));
+                noteService.hasChildren(note.getId()), badge);
+    }
+
+    private static String resolveBadge(Note note) {
+        return note.getAttribute("$Badge")
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .flatMap(BadgeRegistry::getBadgeSymbol)
+                .orElse("");
     }
 }

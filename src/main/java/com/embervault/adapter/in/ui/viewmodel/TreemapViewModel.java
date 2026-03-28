@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
+import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Note;
 import com.embervault.domain.TbxColor;
 import javafx.beans.property.BooleanProperty;
@@ -210,10 +211,18 @@ public final class TreemapViewModel {
                 .map(v -> ((AttributeValue.ColorValue) v).value())
                 .map(TbxColor::toHex)
                 .orElse(DEFAULT_COLOR_HEX);
+        String badge = resolveBadge(note);
 
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
                 0, 0, 0, 0, colorHex,
-                noteService.hasChildren(note.getId()));
+                noteService.hasChildren(note.getId()), badge);
+    }
+
+    private static String resolveBadge(Note note) {
+        return note.getAttribute("$Badge")
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .flatMap(BadgeRegistry::getBadgeSymbol)
+                .orElse("");
     }
 }

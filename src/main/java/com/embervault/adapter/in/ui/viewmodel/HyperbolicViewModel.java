@@ -13,6 +13,8 @@ import java.util.UUID;
 
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.AttributeValue;
+import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Link;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -188,6 +190,33 @@ public final class HyperbolicViewModel {
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
         return canNavigateBack;
+    }
+
+    /**
+     * Returns the title of the note with the given id, or an empty string.
+     *
+     * @param noteId the note id
+     * @return the note title, or empty string if not found
+     */
+    public String getNoteTitle(UUID noteId) {
+        return noteService.getNote(noteId)
+                .map(note -> note.getTitle())
+                .orElse("");
+    }
+
+    /**
+     * Returns the badge Unicode symbol for the note with the given id,
+     * or an empty string if no badge is set.
+     *
+     * @param noteId the note id
+     * @return the badge symbol, or empty string
+     */
+    public String getNoteBadge(UUID noteId) {
+        return noteService.getNote(noteId)
+                .flatMap(note -> note.getAttribute("$Badge"))
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .flatMap(BadgeRegistry::getBadgeSymbol)
+                .orElse("");
     }
 
     private void computeLayout() {

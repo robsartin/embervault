@@ -336,7 +336,7 @@ public class OutlineViewController {
                 }
             }
             if (item != null) {
-                setText(item.getTitle());
+                setText(badgedTitle(item));
             }
             setGraphic(null);
             textField = null;
@@ -348,10 +348,18 @@ public class OutlineViewController {
             }
             editing = false;
             if (getItem() != null) {
-                setText(getItem().getTitle());
+                setText(badgedTitle(getItem()));
             }
             setGraphic(null);
             textField = null;
+        }
+
+        private String badgedTitle(NoteDisplayItem item) {
+            String badge = item.getBadge();
+            if (badge != null && !badge.isEmpty()) {
+                return badge + " " + item.getTitle();
+            }
+            return item.getTitle();
         }
 
         @Override
@@ -370,7 +378,7 @@ public class OutlineViewController {
                 setText(null);
                 setGraphic(textField);
             } else {
-                setText(item.getTitle());
+                setText(badgedTitle(item));
                 setGraphic(null);
             }
         }

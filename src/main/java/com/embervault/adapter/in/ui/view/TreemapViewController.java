@@ -167,6 +167,18 @@ public class TreemapViewController {
 
         Rectangle clip = new Rectangle(rectWidth, rectHeight);
         StackPane notePane = new StackPane(rect, titleLabel);
+
+        // Badge in top-right corner if space permits
+        String badge = item.getBadge();
+        if (badge != null && !badge.isEmpty() && rectWidth > 30 && rectHeight > 20) {
+            Label badgeLabel = new Label(badge);
+            badgeLabel.setFont(Font.font("System", TITLE_FONT_SIZE));
+            badgeLabel.setMouseTransparent(true);
+            badgeLabel.setPadding(new Insets(2, 4, 0, 0));
+            StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
+            notePane.getChildren().add(badgeLabel);
+        }
+
         notePane.setClip(clip);
         notePane.setUserData(item.getId());
         notePane.setAlignment(Pos.CENTER);

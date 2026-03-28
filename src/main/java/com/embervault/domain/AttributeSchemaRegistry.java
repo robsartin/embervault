@@ -124,6 +124,7 @@ public final class AttributeSchemaRegistry {
         systemAttr("$DisplayedAttributes", AttributeType.SET,
                 new AttributeValue.SetValue(Set.of()));
         systemAttr("$Flags", AttributeType.SET, new AttributeValue.SetValue(Set.of()));
+        systemAttr("$Badge", AttributeType.STRING, new AttributeValue.StringValue(""));
     }
 
     private void systemAttr(String name, AttributeType type, AttributeValue defaultValue) {
