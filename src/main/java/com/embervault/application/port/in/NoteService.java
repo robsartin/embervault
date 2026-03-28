@@ -75,6 +75,40 @@ public interface NoteService {
     Note renameNote(UUID noteId, String newTitle);
 
     /**
+     * Creates a new sibling note directly after the given sibling in outline order.
+     *
+     * <p>The new note will have the same {@code $Container} as the sibling.
+     * Subsequent siblings have their {@code $OutlineOrder} incremented to make room.</p>
+     *
+     * @param siblingId the id of the note to create a sibling after
+     * @param title     the title for the new note (may be empty for rapid entry)
+     * @return the newly created sibling note
+     */
+    Note createSiblingNote(UUID siblingId, String title);
+
+    /**
+     * Indents a note by making it a child of the note directly above it in outline order.
+     *
+     * <p>If the note is the first child (no note above), it is returned unchanged.</p>
+     *
+     * @param noteId the id of the note to indent
+     * @return the updated note
+     */
+    Note indentNote(UUID noteId);
+
+    /**
+     * Outdents a note by moving it to be a sibling of its current parent.
+     *
+     * <p>The note is placed just after its old parent in the grandparent's children.
+     * If the note has no parent or the parent has no grandparent, the note is returned
+     * unchanged.</p>
+     *
+     * @param noteId the id of the note to outdent
+     * @return the updated note
+     */
+    Note outdentNote(UUID noteId);
+
+    /**
      * Deletes the note with the given id.
      */
     void deleteNote(UUID id);

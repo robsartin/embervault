@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -15,6 +16,7 @@ import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
@@ -23,8 +25,9 @@ import org.slf4j.LoggerFactory;
 /**
  * FXML controller for the Outline view.
  *
- * <p>Renders notes as a hierarchical tree. Single-clicking an already-selected
- * note starts inline editing. Double-clicking drills down into a note.
+ * <p>Renders notes as a hierarchical tree. Single-clicking any note
+ * immediately starts inline editing. Double-clicking drills down into a note.
+ * Enter creates a new sibling, Tab indents, Shift+Tab outdents.
  * Focus lost on the edit field commits the change; Escape cancels.</p>
  */
 public class OutlineViewController {
@@ -55,7 +58,7 @@ public class OutlineViewController {
         outlineTreeView.setEditable(false);
 
         // Set up cell factory with custom click handling
-        outlineTreeView.setCellFactory(tv -> new ClickToEditNoteTreeCell());
+        outlineTreeView.setCellFactory(tv -> new OutlineNoteTreeCell());
 
         // Load initial data
         viewModel.loadNotes();
@@ -75,12 +78,12 @@ public class OutlineViewController {
                     }
                 });
 
-        // Key handling: Enter creates child, Escape navigates back
+        // Event filter to intercept Tab/Shift+Tab before TreeView handles them
+        outlineTreeView.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTreeKeyFilter);
+
+        // Key handling: Escape navigates back
         outlineTreeView.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                createChildUnderSelected();
-                event.consume();
-            } else if (event.getCode() == KeyCode.ESCAPE
+            if (event.getCode() == KeyCode.ESCAPE
                     && viewModel.canNavigateBackProperty().get()) {
                 viewModel.navigateBack();
                 event.consume();
@@ -94,6 +97,23 @@ public class OutlineViewController {
     /** Returns the associated ViewModel. */
     public OutlineViewModel getViewModel() {
         return viewModel;
+    }
+
+    private void handleTreeKeyFilter(KeyEvent event) {
+        if (event.getCode() == KeyCode.TAB) {
+            TreeItem<NoteDisplayItem> selected = outlineTreeView.getSelectionModel()
+                    .getSelectedItem();
+            if (selected != null && selected.getValue() != null) {
+                UUID noteId = selected.getValue().getId();
+                if (event.isShiftDown()) {
+                    viewModel.outdentNote(noteId);
+                } else {
+                    viewModel.indentNote(noteId);
+                }
+                refreshAndEdit(noteId);
+                event.consume();
+            }
+        }
     }
 
     private ContextMenu createContextMenu() {
@@ -148,17 +168,73 @@ public class OutlineViewController {
     }
 
     /**
-     * Custom TreeCell that uses single-click on a selected item to edit,
-     * and double-click to drill down. Focus lost on the edit field commits changes.
+     * Rebuilds the tree, selects the given note, and starts editing it.
      */
-    private final class ClickToEditNoteTreeCell extends TreeCell<NoteDisplayItem> {
+    private void refreshAndEdit(UUID noteIdToSelect) {
+        TreeItem<NoteDisplayItem> target = findTreeItem(
+                outlineTreeView.getRoot(), noteIdToSelect);
+        if (target != null) {
+            outlineTreeView.getSelectionModel().select(target);
+            // Use Platform.runLater so the tree has settled before we trigger edit
+            Platform.runLater(() -> {
+                int row = outlineTreeView.getRow(target);
+                if (row >= 0) {
+                    OutlineNoteTreeCell cell = findCellForItem(target);
+                    if (cell != null) {
+                        cell.startInlineEdit();
+                    }
+                }
+            });
+        }
+    }
+
+    private TreeItem<NoteDisplayItem> findTreeItem(TreeItem<NoteDisplayItem> root,
+            UUID noteId) {
+        if (root == null || noteId == null) {
+            return null;
+        }
+        if (root.getValue() != null && noteId.equals(root.getValue().getId())) {
+            return root;
+        }
+        for (TreeItem<NoteDisplayItem> child : root.getChildren()) {
+            TreeItem<NoteDisplayItem> found = findTreeItem(child, noteId);
+            if (found != null) {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    private OutlineNoteTreeCell findCellForItem(TreeItem<NoteDisplayItem> target) {
+        int row = outlineTreeView.getRow(target);
+        if (row < 0) {
+            return null;
+        }
+        // Look up the cell via the TreeView's lookup mechanism
+        for (var node : outlineTreeView.lookupAll(".tree-cell")) {
+            if (node instanceof OutlineNoteTreeCell cell
+                    && cell.getTreeItem() == target) {
+                return cell;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Custom TreeCell that starts editing on single click.
+     * Enter creates a sibling, Tab/Shift+Tab indent/outdent,
+     * Escape cancels, focus lost commits.
+     */
+    private final class OutlineNoteTreeCell extends TreeCell<NoteDisplayItem> {
 
         private TextField textField;
         private boolean editing;
 
-        ClickToEditNoteTreeCell() {
+        OutlineNoteTreeCell() {
             setOnMouseClicked(event -> {
-                if (event.getButton() != MouseButton.PRIMARY || isEmpty() || getItem() == null) {
+                if (event.getButton() != MouseButton.PRIMARY
+                        || isEmpty() || getItem() == null) {
                     return;
                 }
 
@@ -166,15 +242,15 @@ public class OutlineViewController {
                     // Double-click -> drill down
                     viewModel.drillDown(getItem().getId());
                     event.consume();
-                } else if (event.getClickCount() == 1 && isSelected() && !editing) {
-                    // Single click on already-selected item -> start editing
+                } else if (event.getClickCount() == 1 && !editing) {
+                    // Single click -> immediate edit
                     startInlineEdit();
                     event.consume();
                 }
             });
         }
 
-        private void startInlineEdit() {
+        void startInlineEdit() {
             if (getItem() == null) {
                 return;
             }
@@ -182,16 +258,8 @@ public class OutlineViewController {
             textField = new TextField(getItem().getTitle());
             textField.selectAll();
 
-            // Commit on Enter
-            textField.setOnAction(e -> commitInlineEdit());
-
-            // Cancel on Escape
-            textField.setOnKeyPressed(e -> {
-                if (e.getCode() == KeyCode.ESCAPE) {
-                    cancelInlineEdit();
-                    e.consume();
-                }
-            });
+            // Key handling on the text field
+            textField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEditKeyPress);
 
             // Commit on focus lost
             textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
@@ -203,6 +271,34 @@ public class OutlineViewController {
             setText(null);
             setGraphic(textField);
             textField.requestFocus();
+        }
+
+        private void handleEditKeyPress(KeyEvent event) {
+            if (event.getCode() == KeyCode.ENTER) {
+                NoteDisplayItem currentItem = getItem();
+                commitInlineEdit();
+                if (currentItem != null) {
+                    NoteDisplayItem newItem = viewModel.createSiblingNote(
+                            currentItem.getId(), "");
+                    refreshAndEdit(newItem.getId());
+                }
+                event.consume();
+            } else if (event.getCode() == KeyCode.TAB) {
+                NoteDisplayItem currentItem = getItem();
+                commitInlineEdit();
+                if (currentItem != null) {
+                    if (event.isShiftDown()) {
+                        viewModel.outdentNote(currentItem.getId());
+                    } else {
+                        viewModel.indentNote(currentItem.getId());
+                    }
+                    refreshAndEdit(currentItem.getId());
+                }
+                event.consume();
+            } else if (event.getCode() == KeyCode.ESCAPE) {
+                cancelInlineEdit();
+                event.consume();
+            }
         }
 
         private void commitInlineEdit() {
