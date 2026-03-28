@@ -2,9 +2,13 @@ package com.embervault;
 
 import java.io.IOException;
 
+import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
 import com.embervault.adapter.in.ui.view.MapViewController;
+import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
+import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
+import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
@@ -12,6 +16,7 @@ import com.embervault.application.ProjectServiceImpl;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.ProjectService;
 import com.embervault.application.port.out.NoteRepository;
+import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Project;
 import javafx.application.Application;
 import javafx.beans.property.SimpleStringProperty;
@@ -68,6 +73,17 @@ public class App extends Application {
         OutlineViewModel outlineViewModel = new OutlineViewModel(rootNoteTitle, noteService);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
 
+        // Create shared AttributeSchemaRegistry
+        AttributeSchemaRegistry schemaRegistry = new AttributeSchemaRegistry();
+
+        // Create Attribute Browser ViewModel
+        AttributeBrowserViewModel browserViewModel =
+                new AttributeBrowserViewModel(noteService, schemaRegistry);
+
+        // Create Note Editor ViewModel
+        NoteEditorViewModel editorViewModel =
+                new NoteEditorViewModel(noteService, schemaRegistry);
+
         // Load MapView
         FXMLLoader mapLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/MapView.fxml"));
@@ -82,14 +98,36 @@ public class App extends Application {
         OutlineViewController outlineController = outlineLoader.getController();
         outlineController.initViewModel(outlineViewModel);
 
-        // Synchronize: any mutation in either view triggers both to reload
+        // Load AttributeBrowserView
+        FXMLLoader browserLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/AttributeBrowserView.fxml"));
+        Parent browserView = browserLoader.load();
+        AttributeBrowserViewController browserController =
+                browserLoader.getController();
+        browserController.initViewModel(browserViewModel);
+
+        // Load NoteEditorView
+        FXMLLoader editorLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/NoteEditorView.fxml"));
+        Parent editorView = editorLoader.load();
+        NoteEditorViewController editorController =
+                editorLoader.getController();
+        editorController.initViewModel(editorViewModel);
+
+        // Wire browser note selection to editor
+        browserViewModel.selectedNoteIdProperty().addListener(
+                (obs, oldVal, newVal) -> editorViewModel.setNote(newVal));
+
+        // Synchronize: any mutation in any view triggers all to reload
         // from the shared NoteService/Repository.
         Runnable refreshAll = () -> {
             mapViewModel.loadNotes();
             outlineViewModel.loadNotes();
+            browserViewModel.groupNotes();
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
+        editorViewModel.setOnDataChanged(refreshAll);
 
         // Wrap each view with a title label
         Label mapLabel = new Label();
@@ -104,12 +142,27 @@ public class App extends Application {
         VBox outlineContainer = new VBox(outlineLabel, outlineView);
         VBox.setVgrow(outlineView, Priority.ALWAYS);
 
+        // Browser + Editor combined pane
+        Label browserLabel = new Label();
+        browserLabel.textProperty().bind(browserViewModel.tabTitleProperty());
+        browserLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
+        VBox browserContainer = new VBox(browserLabel, browserView);
+        VBox.setVgrow(browserView, Priority.ALWAYS);
+
+        VBox editorContainer = new VBox(editorView);
+        VBox.setVgrow(editorView, Priority.ALWAYS);
+
+        SplitPane browserEditorPane = new SplitPane(
+                browserContainer, editorContainer);
+        browserEditorPane.setDividerPositions(0.4);
+
         // SplitPane with Map on left, Outline on right
         SplitPane splitPane = new SplitPane(mapContainer, outlineContainer);
         splitPane.setDividerPositions(0.5);
 
         // Menu bar
-        MenuBar menuBar = createMenuBar(mapViewModel, outlineViewModel);
+        MenuBar menuBar = createMenuBar(
+                mapViewModel, outlineViewModel, splitPane, browserEditorPane);
 
         // BorderPane: menu bar on top, split pane in center
         BorderPane root = new BorderPane();
@@ -123,7 +176,9 @@ public class App extends Application {
     }
 
     private MenuBar createMenuBar(MapViewModel mapViewModel,
-                                   OutlineViewModel outlineViewModel) {
+            OutlineViewModel outlineViewModel,
+            SplitPane mainSplitPane,
+            SplitPane browserEditorPane) {
         // Note menu
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setAccelerator(
@@ -145,8 +200,23 @@ public class App extends Application {
         outlineViewItem.setOnAction(e ->
                 LOG.debug("Outline view placeholder selected"));
 
+        MenuItem browserViewItem = new MenuItem("Browser");
+        browserViewItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.B,
+                        KeyCombination.SHORTCUT_DOWN,
+                        KeyCombination.SHIFT_DOWN));
+        browserViewItem.setOnAction(e -> {
+            BorderPane root = (BorderPane) mainSplitPane.getScene().getRoot();
+            if (root.getCenter() == browserEditorPane) {
+                root.setCenter(mainSplitPane);
+            } else {
+                root.setCenter(browserEditorPane);
+            }
+        });
+
         Menu viewMenu = new Menu("View");
-        viewMenu.getItems().addAll(mapViewItem, outlineViewItem);
+        viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
+                browserViewItem);
 
         MenuBar menuBar = new MenuBar(noteMenu, viewMenu);
         menuBar.setUseSystemMenuBar(true);
