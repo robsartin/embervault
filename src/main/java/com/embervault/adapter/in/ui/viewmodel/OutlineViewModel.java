@@ -42,6 +42,7 @@ public final class OutlineViewModel {
     private final StringProperty rootNoteTitle;
     private final Deque<UUID> navigationHistory = new ArrayDeque<>();
     private UUID baseNoteId;
+    private Runnable onDataChanged;
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from the given note title property.
@@ -61,6 +62,21 @@ public final class OutlineViewModel {
                 updateTabTitle(newVal);
             }
         });
+    }
+
+    /**
+     * Sets a callback to be invoked after any mutation operation.
+     *
+     * @param callback the callback to invoke, or null to clear
+     */
+    public void setOnDataChanged(Runnable callback) {
+        this.onDataChanged = callback;
+    }
+
+    private void notifyDataChanged() {
+        if (onDataChanged != null) {
+            onDataChanged.run();
+        }
     }
 
     /** Returns the tab title property. */
@@ -127,6 +143,7 @@ public final class OutlineViewModel {
         if (parentId.equals(baseNoteId)) {
             rootItems.add(item);
         }
+        notifyDataChanged();
         return item;
     }
 
@@ -141,6 +158,7 @@ public final class OutlineViewModel {
         Note sibling = noteService.createSiblingNote(siblingId, title);
         NoteDisplayItem item = toDisplayItem(sibling);
         loadNotes();
+        notifyDataChanged();
         return item;
     }
 
@@ -152,6 +170,7 @@ public final class OutlineViewModel {
     public void indentNote(UUID noteId) {
         noteService.indentNote(noteId);
         loadNotes();
+        notifyDataChanged();
     }
 
     /**
@@ -162,6 +181,7 @@ public final class OutlineViewModel {
     public void outdentNote(UUID noteId) {
         noteService.outdentNote(noteId);
         loadNotes();
+        notifyDataChanged();
     }
 
     /**
@@ -187,6 +207,7 @@ public final class OutlineViewModel {
                 break;
             }
         }
+        notifyDataChanged();
         return true;
     }
 
@@ -207,6 +228,7 @@ public final class OutlineViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
+        notifyDataChanged();
     }
 
     /**
@@ -225,6 +247,7 @@ public final class OutlineViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
+        notifyDataChanged();
     }
 
     /**

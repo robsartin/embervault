@@ -47,6 +47,7 @@ public final class MapViewModel {
     private final StringProperty rootNoteTitle;
     private final Deque<UUID> navigationHistory = new ArrayDeque<>();
     private UUID baseNoteId;
+    private Runnable onDataChanged;
 
     /**
      * Constructs a MapViewModel that derives its tab title from the given note title property.
@@ -66,6 +67,21 @@ public final class MapViewModel {
                 updateTabTitle(newVal);
             }
         });
+    }
+
+    /**
+     * Sets a callback to be invoked after any mutation operation.
+     *
+     * @param callback the callback to invoke, or null to clear
+     */
+    public void setOnDataChanged(Runnable callback) {
+        this.onDataChanged = callback;
+    }
+
+    private void notifyDataChanged() {
+        if (onDataChanged != null) {
+            onDataChanged.run();
+        }
     }
 
     /** Returns the tab title property. */
@@ -129,6 +145,7 @@ public final class MapViewModel {
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
+        notifyDataChanged();
         return item;
     }
 
@@ -147,6 +164,7 @@ public final class MapViewModel {
         child.setAttribute("$Ypos", new AttributeValue.NumberValue(ypos / SCALE_Y));
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
+        notifyDataChanged();
         return item;
     }
 
@@ -178,6 +196,7 @@ public final class MapViewModel {
                 break;
             }
         }
+        notifyDataChanged();
         return true;
     }
 
@@ -193,6 +212,7 @@ public final class MapViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
+        notifyDataChanged();
     }
 
     /**
@@ -211,6 +231,7 @@ public final class MapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
+        notifyDataChanged();
     }
 
     private void updateTabTitle(String title) {
@@ -241,6 +262,7 @@ public final class MapViewModel {
                 break;
             }
         }
+        notifyDataChanged();
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {

@@ -82,25 +82,14 @@ public class App extends Application {
         OutlineViewController outlineController = outlineLoader.getController();
         outlineController.initViewModel(outlineViewModel);
 
-        // Synchronize: when map creates a note, refresh outline and vice versa.
-        // Use a flag to prevent infinite listener loops.
-        final boolean[] syncing = {false};
-        mapViewModel.getNoteItems().addListener(
-                (javafx.collections.ListChangeListener<Object>) change -> {
-                    if (!syncing[0]) {
-                        syncing[0] = true;
-                        outlineViewModel.loadNotes();
-                        syncing[0] = false;
-                    }
-                });
-        outlineViewModel.getRootItems().addListener(
-                (javafx.collections.ListChangeListener<Object>) change -> {
-                    if (!syncing[0]) {
-                        syncing[0] = true;
-                        mapViewModel.loadNotes();
-                        syncing[0] = false;
-                    }
-                });
+        // Synchronize: any mutation in either view triggers both to reload
+        // from the shared NoteService/Repository.
+        Runnable refreshAll = () -> {
+            mapViewModel.loadNotes();
+            outlineViewModel.loadNotes();
+        };
+        mapViewModel.setOnDataChanged(refreshAll);
+        outlineViewModel.setOnDataChanged(refreshAll);
 
         // Wrap each view with a title label
         Label mapLabel = new Label();
