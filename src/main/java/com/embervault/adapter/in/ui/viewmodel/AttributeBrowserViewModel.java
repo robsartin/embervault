@@ -57,7 +57,7 @@ public final class AttributeBrowserViewModel {
     private final NoteService noteService;
     private final AttributeSchemaRegistry schemaRegistry;
     private String selectedAttribute;
-    private Runnable onDataChanged;
+    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
 
     /**
      * Constructs an AttributeBrowserViewModel.
@@ -81,13 +81,7 @@ public final class AttributeBrowserViewModel {
      * @param callback the callback to invoke, or null to clear
      */
     public void setOnDataChanged(Runnable callback) {
-        this.onDataChanged = callback;
-    }
-
-    private void notifyDataChanged() {
-        if (onDataChanged != null) {
-            onDataChanged.run();
-        }
+        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */

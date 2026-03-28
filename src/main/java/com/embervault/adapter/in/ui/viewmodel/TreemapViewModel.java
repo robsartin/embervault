@@ -36,7 +36,7 @@ public final class TreemapViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private Runnable onDataChanged;
+    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
 
     /**
      * Constructs a TreemapViewModel that derives its tab title from the given note title property.
@@ -63,13 +63,7 @@ public final class TreemapViewModel {
      * @param callback the callback to invoke, or null to clear
      */
     public void setOnDataChanged(Runnable callback) {
-        this.onDataChanged = callback;
-    }
-
-    private void notifyDataChanged() {
-        if (onDataChanged != null) {
-            onDataChanged.run();
-        }
+        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */
@@ -140,7 +134,7 @@ public final class TreemapViewModel {
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
         return item;
     }
 
@@ -159,7 +153,7 @@ public final class TreemapViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
@@ -177,7 +171,7 @@ public final class TreemapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        notifyDataChanged();
+        dataChangeSupport.notifyDataChanged();
     }
 
     /**
