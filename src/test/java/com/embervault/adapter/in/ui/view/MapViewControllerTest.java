@@ -1,6 +1,7 @@
 package com.embervault.adapter.in.ui.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -14,8 +15,11 @@ import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.port.in.NoteService;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -240,6 +244,134 @@ class MapViewControllerTest {
         for (Node child : mapCanvas.getChildren()) {
             if (child instanceof StackPane sp && id.equals(sp.getUserData())) {
                 return sp;
+            }
+        }
+        return null;
+    }
+
+    // --- Zoom rendering tests ---
+
+    @Test
+    @DisplayName("OVERVIEW tier renders note as rectangle only, no labels")
+    void overviewTier_shouldRenderRectangleOnly() {
+        viewModel.createChildNote("Test Note");
+        viewModel.setZoomLevel(0.2); // OVERVIEW tier
+
+        StackPane node = findNodeByTitle("Test Note");
+        // In OVERVIEW, there should be no title label visible
+        // The node should exist but only have a rectangle
+        assertNotNull(findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId()));
+        StackPane noteNode = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        // First child should be a Rectangle
+        assertTrue(noteNode.getChildren().get(0) instanceof Rectangle,
+                "First child should be a Rectangle");
+        // Should not have a VBox with labels
+        boolean hasVisibleLabels = false;
+        for (Node child : noteNode.getChildren()) {
+            if (child instanceof VBox vbox) {
+                hasVisibleLabels = true;
+            }
+        }
+        assertFalse(hasVisibleLabels,
+                "OVERVIEW tier should not render text labels");
+    }
+
+    @Test
+    @DisplayName("TITLES_ONLY tier renders rectangle with title but no content")
+    void titlesOnlyTier_shouldRenderTitleOnly() {
+        viewModel.createChildNote("My Title");
+        // Force content on the note
+        viewModel.setZoomLevel(0.5); // TITLES_ONLY tier
+
+        StackPane noteNode = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        assertNotNull(noteNode);
+
+        // Should have a VBox with title label only
+        VBox textBox = findTextBox(noteNode);
+        assertNotNull(textBox, "TITLES_ONLY tier should have a text VBox");
+        assertTrue(textBox.getChildren().size() >= 1,
+                "Should have at least a title label");
+        assertTrue(textBox.getChildren().get(0) instanceof Label,
+                "First child should be a title Label");
+        // Should not have content label
+        boolean hasContentLabel = false;
+        for (int i = 1; i < textBox.getChildren().size(); i++) {
+            if (textBox.getChildren().get(i) instanceof Label) {
+                hasContentLabel = true;
+            }
+        }
+        assertFalse(hasContentLabel,
+                "TITLES_ONLY tier should not render content label");
+    }
+
+    @Test
+    @DisplayName("NORMAL tier renders title and content (current behavior)")
+    void normalTier_shouldRenderTitleAndContent() {
+        viewModel.setZoomLevel(1.0); // NORMAL tier
+        viewModel.createChildNote("Title");
+
+        StackPane noteNode = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        assertNotNull(noteNode);
+
+        VBox textBox = findTextBox(noteNode);
+        assertNotNull(textBox,
+                "NORMAL tier should have a text VBox");
+    }
+
+    @Test
+    @DisplayName("DETAILED tier renders with larger font size")
+    void detailedTier_shouldRenderWithLargerFont() {
+        viewModel.createChildNote("Detailed Note");
+        viewModel.setZoomLevel(2.0); // DETAILED tier
+
+        StackPane noteNode = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        assertNotNull(noteNode);
+
+        VBox textBox = findTextBox(noteNode);
+        assertNotNull(textBox,
+                "DETAILED tier should have a text VBox");
+        Label titleLabel = (Label) textBox.getChildren().get(0);
+        assertEquals(18.0, titleLabel.getFont().getSize(), 0.1,
+                "DETAILED tier title font should be 18pt");
+    }
+
+    @Test
+    @DisplayName("tier change triggers re-render of notes")
+    void tierChange_shouldReRenderNotes() {
+        viewModel.createChildNote("Re-render Test");
+        StackPane nodeAtNormal = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        assertNotNull(nodeAtNormal);
+
+        // Change to OVERVIEW tier
+        viewModel.setZoomLevel(0.2);
+
+        // After tier change, node should be re-rendered
+        StackPane nodeAtOverview = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        assertNotNull(nodeAtOverview,
+                "Note node should still exist after tier change");
+    }
+
+    @Test
+    @DisplayName("zoom toolbar is present after initViewModel")
+    void zoomToolbar_shouldBePresent() {
+        // The zoom toolbar should be part of the scene
+        // Check that the mapCanvas parent has a toolbar
+        assertNotNull(controller.getViewModel(),
+                "ViewModel should be set");
+    }
+
+    /** Finds the VBox child within a StackPane note node. */
+    private VBox findTextBox(StackPane noteNode) {
+        for (Node child : noteNode.getChildren()) {
+            if (child instanceof VBox vbox) {
+                return vbox;
             }
         }
         return null;

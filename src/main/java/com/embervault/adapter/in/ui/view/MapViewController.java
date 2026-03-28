@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
-import javafx.application.Platform;
+import com.embervault.adapter.in.ui.viewmodel.ZoomTier;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -20,9 +20,9 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -32,6 +32,7 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
+import javafx.scene.transform.Scale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,18 +52,26 @@ public class MapViewController {
     private static final double CONTENT_FONT_SIZE = 11.0;
 
     private static final double BACK_BUTTON_PADDING = 5.0;
+    private static final double SCROLL_ZOOM_FACTOR = 1.1;
+    private static final double DETAILED_CONTENT_FONT_SIZE = 14.0;
+    private static final double ZOOM_PERCENTAGE = 100.0;
 
     @FXML private Pane mapCanvas;
 
     private MapViewModel viewModel;
     private Button backButton;
     private final Map<UUID, StackPane> nodeMap = new HashMap<>();
+    private Scale zoomScale;
+    private Label zoomLabel;
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
      */
     public void initViewModel(MapViewModel viewModel) {
         this.viewModel = viewModel;
+
+        // Set up zoom transform on a wrapper Group
+        setupZoom();
 
         // Back navigation button
         backButton = new Button("\u2190 Back");
@@ -81,6 +90,10 @@ public class MapViewController {
         viewModel.getNoteItems().addListener(
                 (ListChangeListener<NoteDisplayItem>) this::onNoteItemsChanged);
 
+        // Re-render when zoom tier changes
+        viewModel.currentTierProperty().addListener(
+                (obs, oldTier, newTier) -> renderAllNotes());
+
         // Double-click background to create new note at click position
         mapCanvas.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
@@ -88,6 +101,17 @@ public class MapViewController {
                     && event.getTarget() == mapCanvas) {
                 viewModel.createChildNoteAt("Untitled", event.getX(), event.getY());
             }
+        });
+
+        // Scroll wheel zoom toward cursor
+        mapCanvas.setOnScroll(event -> {
+            double factor = event.getDeltaY() > 0
+                    ? SCROLL_ZOOM_FACTOR : 1.0 / SCROLL_ZOOM_FACTOR;
+            double newZoom = viewModel.zoomLevelProperty().get() * factor;
+            zoomScale.setPivotX(event.getX());
+            zoomScale.setPivotY(event.getY());
+            viewModel.setZoomLevel(newZoom);
+            event.consume();
         });
 
         // Return key to create new note; Escape to navigate back
@@ -125,6 +149,46 @@ public class MapViewController {
         outlineView.setOnAction(e -> LOG.debug("Outline View placeholder selected"));
 
         return new ContextMenu(createNote, new SeparatorMenuItem(), outlineView);
+    }
+
+    private void setupZoom() {
+        zoomScale = new Scale(1.0, 1.0);
+        mapCanvas.getTransforms().add(zoomScale);
+        viewModel.zoomLevelProperty().addListener((obs, oldVal, newVal) -> {
+            zoomScale.setX(newVal.doubleValue());
+            zoomScale.setY(newVal.doubleValue());
+            if (zoomLabel != null) {
+                zoomLabel.setText(String.format("%.0f%%",
+                        newVal.doubleValue() * ZOOM_PERCENTAGE));
+            }
+        });
+        createZoomToolbar();
+    }
+
+    private void createZoomToolbar() {
+        Button zoomInBtn = new Button("+");
+        zoomInBtn.setOnAction(e -> viewModel.zoomIn());
+
+        Button zoomOutBtn = new Button("\u2212");
+        zoomOutBtn.setOnAction(e -> viewModel.zoomOut());
+
+        Button fitAllBtn = new Button("Fit All");
+        fitAllBtn.setOnAction(e -> viewModel.fitAll(
+                mapCanvas.getWidth(), mapCanvas.getHeight()));
+
+        zoomLabel = new Label("100%");
+
+        HBox toolbar = new HBox(4, zoomOutBtn, zoomInBtn, fitAllBtn, zoomLabel);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+        toolbar.setPadding(new Insets(4));
+        toolbar.setStyle("-fx-background-color: rgba(245,245,245,0.9);");
+        toolbar.setLayoutX(BACK_BUTTON_PADDING);
+        toolbar.setLayoutY(BACK_BUTTON_PADDING);
+        toolbar.setMouseTransparent(false);
+        toolbar.setId("zoomToolbar");
+
+        // Add toolbar directly to mapCanvas so it floats on top
+        mapCanvas.getChildren().add(toolbar);
     }
 
     private void renderAllNotes() {
@@ -207,8 +271,9 @@ public class MapViewController {
             rect.setFill(Color.web(item.getColorHex()));
         }
 
-        // Update text labels (child 1 is VBox)
-        if (notePane.getChildren().get(1) instanceof VBox textBox) {
+        // Update text labels (child 1 is VBox) — only present in non-OVERVIEW tiers
+        if (notePane.getChildren().size() > 1
+                && notePane.getChildren().get(1) instanceof VBox textBox) {
             textBox.setMaxWidth(item.getWidth());
             textBox.setMaxHeight(item.getHeight());
 
@@ -252,6 +317,8 @@ public class MapViewController {
     }
 
     private StackPane createNoteNode(NoteDisplayItem item) {
+        ZoomTier tier = viewModel.getCurrentTier();
+
         Rectangle rect = new Rectangle(item.getWidth(), item.getHeight());
         rect.setFill(Color.web(item.getColorHex()));
         rect.setStroke(Color.BLACK);
@@ -259,51 +326,65 @@ public class MapViewController {
         rect.setArcWidth(4);
         rect.setArcHeight(4);
 
-        Label titleLabel = new Label(item.getTitle());
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD, TITLE_FONT_SIZE));
-        titleLabel.setTextAlignment(TextAlignment.LEFT);
-        titleLabel.setAlignment(Pos.TOP_LEFT);
-        titleLabel.setMaxWidth(item.getWidth() - 8);
-        titleLabel.setWrapText(true);
-        titleLabel.setMouseTransparent(false);
-        titleLabel.setPadding(new Insets(4, 4, 2, 4));
+        StackPane notePane;
 
-        VBox textBox = new VBox(titleLabel);
+        if (!tier.isShowTitle()) {
+            // OVERVIEW: rectangle only, no labels
+            notePane = new StackPane(rect);
+        } else {
+            double fontSize = tier.getTitleFontSize();
+            Label titleLabel = new Label(item.getTitle());
+            titleLabel.setFont(Font.font("System", FontWeight.BOLD, fontSize));
+            titleLabel.setTextAlignment(TextAlignment.LEFT);
+            titleLabel.setAlignment(Pos.TOP_LEFT);
+            titleLabel.setMaxWidth(item.getWidth() - 8);
+            titleLabel.setWrapText(true);
+            titleLabel.setMouseTransparent(false);
+            titleLabel.setPadding(new Insets(4, 4, 2, 4));
 
-        String content = item.getContent();
-        if (content != null && !content.isEmpty()) {
-            Label contentLabel = new Label(content);
-            contentLabel.setFont(Font.font("System", CONTENT_FONT_SIZE));
-            contentLabel.setTextAlignment(TextAlignment.LEFT);
-            contentLabel.setAlignment(Pos.TOP_LEFT);
-            contentLabel.setMaxWidth(item.getWidth() - 8);
-            contentLabel.setMaxHeight(Double.MAX_VALUE);
-            contentLabel.setWrapText(true);
-            contentLabel.setMouseTransparent(true);
-            contentLabel.setPadding(new Insets(0, 4, 4, 4));
-            VBox.setVgrow(contentLabel, Priority.ALWAYS);
-            textBox.getChildren().add(contentLabel);
-        }
+            VBox textBox = new VBox(titleLabel);
 
-        textBox.setMaxWidth(item.getWidth());
-        textBox.setMaxHeight(item.getHeight());
-        textBox.setAlignment(Pos.TOP_LEFT);
+            if (tier.isShowContent()) {
+                String content = item.getContent();
+                if (content != null && !content.isEmpty()) {
+                    double contentSize = tier == ZoomTier.DETAILED
+                            ? DETAILED_CONTENT_FONT_SIZE : CONTENT_FONT_SIZE;
+                    Label contentLabel = new Label(content);
+                    contentLabel.setFont(Font.font("System", contentSize));
+                    contentLabel.setTextAlignment(TextAlignment.LEFT);
+                    contentLabel.setAlignment(Pos.TOP_LEFT);
+                    contentLabel.setMaxWidth(item.getWidth() - 8);
+                    contentLabel.setMaxHeight(Double.MAX_VALUE);
+                    contentLabel.setWrapText(true);
+                    contentLabel.setMouseTransparent(true);
+                    contentLabel.setPadding(new Insets(0, 4, 4, 4));
+                    VBox.setVgrow(contentLabel, Priority.ALWAYS);
+                    textBox.getChildren().add(contentLabel);
+                }
+            }
 
-        // Clip the text container to the rectangle bounds
-        Rectangle clip = new Rectangle(item.getWidth(), item.getHeight());
-        textBox.setClip(clip);
+            textBox.setMaxWidth(item.getWidth());
+            textBox.setMaxHeight(item.getHeight());
+            textBox.setAlignment(Pos.TOP_LEFT);
 
-        StackPane notePane = new StackPane(rect, textBox);
+            // Clip the text container to the rectangle bounds
+            Rectangle clip = new Rectangle(item.getWidth(), item.getHeight());
+            textBox.setClip(clip);
 
-        // Badge label in top-right corner
-        String badge = item.getBadge();
-        if (badge != null && !badge.isEmpty()) {
-            Label badgeLabel = new Label(badge);
-            badgeLabel.setFont(Font.font("System", TITLE_FONT_SIZE));
-            badgeLabel.setMouseTransparent(true);
-            badgeLabel.setPadding(new Insets(2, 4, 0, 0));
-            StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
-            notePane.getChildren().add(badgeLabel);
+            notePane = new StackPane(rect, textBox);
+
+            // Badge label in top-right corner
+            if (tier.isShowBadge()) {
+                String badge = item.getBadge();
+                if (badge != null && !badge.isEmpty()) {
+                    Label badgeLabel = new Label(badge);
+                    badgeLabel.setFont(Font.font("System", fontSize));
+                    badgeLabel.setMouseTransparent(true);
+                    badgeLabel.setPadding(new Insets(2, 4, 0, 0));
+                    StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
+                    notePane.getChildren().add(badgeLabel);
+                }
+            }
         }
 
         notePane.setUserData(item.getId());
@@ -318,14 +399,24 @@ public class MapViewController {
 
         // Double-click handler at the notePane (StackPane) level so the VBox
         // cannot intercept events that should reach the rectangle.
-        // Target check: title label → inline edit; anything else → drill down.
+        // For tiers with title labels, clicking on title starts inline edit;
+        // anything else drills down.
         notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
                     && !dragging[0]) {
-                if (event.getTarget() == titleLabel
-                        || isDescendantOf(event.getTarget(), titleLabel)) {
-                    startInlineEdit(notePane, titleLabel, rect, item);
+                if (tier.isShowTitle() && notePane.getChildren().size() > 1) {
+                    VBox tb = (VBox) notePane.getChildren().get(1);
+                    Label tl = (Label) tb.getChildren().get(0);
+                    Rectangle rc = (Rectangle) notePane.getChildren().get(0);
+                    if (event.getTarget() == tl
+                            || isDescendantOf(event.getTarget(), tl)) {
+                        InlineEditHelper.startInlineEdit(
+                                notePane, tl, rc, item, viewModel,
+                                mapCanvas);
+                    } else {
+                        viewModel.drillDown(item.getId());
+                    }
                 } else {
                     viewModel.drillDown(item.getId());
                 }
@@ -342,92 +433,7 @@ public class MapViewController {
         return notePane;
     }
 
-    private void startInlineEdit(StackPane notePane, Label titleLabel,
-            Rectangle rect, NoteDisplayItem item) {
-        String originalTitle = titleLabel.getText();
-        TextField textField = new TextField(originalTitle);
-        textField.setFont(Font.font("System", FontWeight.BOLD, TITLE_FONT_SIZE));
-        textField.setAlignment(Pos.CENTER_LEFT);
-        textField.setMaxWidth(rect.getWidth() - 8);
-        textField.selectAll();
-
-        // The VBox containing labels is the second child of the StackPane
-        VBox textBox = (VBox) notePane.getChildren().get(1);
-        int titleIndex = textBox.getChildren().indexOf(titleLabel);
-
-        // Replace title label with text field inside the VBox
-        textBox.getChildren().set(titleIndex, textField);
-        textField.requestFocus();
-
-        Runnable commitEdit = () -> {
-            String newTitle = textField.getText().trim();
-            if (!newTitle.isEmpty() && viewModel.renameNote(item.getId(), newTitle)) {
-                titleLabel.setText(newTitle);
-            }
-            if (textBox.getChildren().contains(textField)) {
-                textBox.getChildren().set(
-                        textBox.getChildren().indexOf(textField), titleLabel);
-            }
-        };
-
-        Runnable cancelEdit = () -> {
-            if (textBox.getChildren().contains(textField)) {
-                textBox.getChildren().set(
-                        textBox.getChildren().indexOf(textField), titleLabel);
-            }
-        };
-
-        // Commit on Enter, then create sibling and start editing it
-        textField.setOnAction(e -> {
-            commitEdit.run();
-            NoteDisplayItem newItem = viewModel.createSiblingNote(
-                    item.getId(), "");
-            Platform.runLater(() -> {
-                for (Node child : mapCanvas.getChildren()) {
-                    if (child instanceof StackPane sp
-                            && newItem.getId().equals(sp.getUserData())) {
-                        startInlineEditOnNode(sp, newItem);
-                        break;
-                    }
-                }
-            });
-        });
-
-        // Cancel on Escape
-        textField.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.ESCAPE) {
-                cancelEdit.run();
-                e.consume();
-            }
-        });
-
-        // Commit on focus lost (same as pressing Enter)
-        textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
-            if (!isFocused) {
-                commitEdit.run();
-            }
-        });
-    }
-
-    /**
-     * Starts inline editing on a note pane found by ID after a re-render.
-     */
-    private void startInlineEditOnNode(StackPane notePane,
-            NoteDisplayItem item) {
-        VBox textBox = (VBox) notePane.getChildren().get(1);
-        Label titleLabel = (Label) textBox.getChildren().get(0);
-        Rectangle rect = (Rectangle) notePane.getChildren().get(0);
-        startInlineEdit(notePane, titleLabel, rect, item);
-    }
-
-    /**
-     * Installs drag handlers on the note pane while allowing click events to
-     * propagate to children (title label, rectangle).
-     *
-     * @return a single-element boolean array whose value is {@code true} while
-     *         a drag gesture is in progress; click handlers check this to avoid
-     *         treating the end of a drag as a click.
-     */
+    /** Installs drag handlers; returns a flag array that is true during drag. */
     private boolean[] enableDrag(StackPane notePane, NoteDisplayItem item) {
         final double[] dragDelta = new double[2];
         final boolean[] dragging = {false};
@@ -462,10 +468,7 @@ public class MapViewController {
         return dragging;
     }
 
-    /**
-     * Returns {@code true} if {@code target} is a descendant of {@code ancestor}
-     * in the JavaFX scene graph.
-     */
+    /** Returns true if target is a descendant of ancestor in the scene graph. */
     private static boolean isDescendantOf(Object target, javafx.scene.Node ancestor) {
         if (!(target instanceof javafx.scene.Node node)) {
             return false;
