@@ -299,6 +299,66 @@ public final class NoteServiceImpl implements NoteService {
         repository.delete(id);
     }
 
+    @Override
+    public Optional<Note> getPreviousInOutline(UUID noteId) {
+        Note note = repository.findById(noteId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Note not found: " + noteId));
+
+        String containerId = note.getAttribute("$Container")
+                .filter(v -> v instanceof AttributeValue.StringValue)
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .orElse(null);
+
+        if (containerId == null) {
+            return Optional.empty();
+        }
+
+        UUID parentId = UUID.fromString(containerId);
+        double noteOrder = note.getAttribute("$OutlineOrder")
+                .filter(v -> v instanceof AttributeValue.NumberValue)
+                .map(v -> ((AttributeValue.NumberValue) v).value())
+                .orElse(0.0);
+
+        // Find the sibling with the next-lower outline order
+        List<Note> siblings = repository.findChildren(parentId);
+        Note previousSibling = null;
+        double bestOrder = Double.NEGATIVE_INFINITY;
+        for (Note s : siblings) {
+            if (s.getId().equals(noteId)) {
+                continue;
+            }
+            double order = s.getAttribute("$OutlineOrder")
+                    .filter(v -> v instanceof AttributeValue.NumberValue)
+                    .map(v -> ((AttributeValue.NumberValue) v).value())
+                    .orElse(0.0);
+            if (order < noteOrder && order > bestOrder) {
+                bestOrder = order;
+                previousSibling = s;
+            }
+        }
+
+        if (previousSibling != null) {
+            return Optional.of(previousSibling);
+        }
+
+        // No previous sibling — return the parent note
+        return repository.findById(parentId);
+    }
+
+    @Override
+    public boolean deleteNoteIfLeaf(UUID noteId) {
+        Optional<Note> noteOpt = repository.findById(noteId);
+        if (noteOpt.isEmpty()) {
+            return false;
+        }
+        if (hasChildren(noteId)) {
+            return false;
+        }
+        repository.delete(noteId);
+        return true;
+    }
+
     /**
      * Creates a note allowing an empty title by using the AttributeMap constructor.
      */

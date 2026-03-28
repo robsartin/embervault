@@ -251,6 +251,43 @@ public final class OutlineViewModel {
     }
 
     /**
+     * Returns whether the note with the given id has any children.
+     *
+     * @param noteId the note id
+     * @return true if the note has children
+     */
+    public boolean hasChildren(UUID noteId) {
+        return noteService.hasChildren(noteId);
+    }
+
+    /**
+     * Returns the id of the previous note in outline order, or null if none.
+     *
+     * @param noteId the note id
+     * @return the previous note id, or null
+     */
+    public UUID getPreviousNoteId(UUID noteId) {
+        return noteService.getPreviousInOutline(noteId)
+                .map(Note::getId)
+                .orElse(null);
+    }
+
+    /**
+     * Deletes a leaf note and reloads the tree.
+     *
+     * @param noteId the note id to delete
+     * @return true if the note was deleted, false if it has children or does not exist
+     */
+    public boolean deleteNote(UUID noteId) {
+        boolean deleted = noteService.deleteNoteIfLeaf(noteId);
+        if (deleted) {
+            loadNotes();
+            notifyDataChanged();
+        }
+        return deleted;
+    }
+
+    /**
      * Returns the children of the given note as display items.
      *
      * @param parentId the parent note id

@@ -301,6 +301,21 @@ public class OutlineViewController {
                     refreshAndEdit(currentItem.getId());
                 }
                 event.consume();
+            } else if (event.getCode() == KeyCode.BACK_SPACE
+                    && textField.getText().isEmpty()) {
+                UUID noteId = getItem().getId();
+                if (!viewModel.hasChildren(noteId)) {
+                    UUID previousId = viewModel.getPreviousNoteId(noteId);
+                    editing = false;
+                    setText(null);
+                    setGraphic(null);
+                    textField = null;
+                    viewModel.deleteNote(noteId);
+                    if (previousId != null) {
+                        refreshAndEdit(previousId);
+                    }
+                }
+                event.consume();
             } else if (event.getCode() == KeyCode.ESCAPE) {
                 escapeCancelled = true;
                 cancelInlineEdit();
