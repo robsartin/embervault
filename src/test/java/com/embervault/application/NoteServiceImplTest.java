@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Random;
@@ -594,5 +595,43 @@ class NoteServiceImplTest {
         boolean result = service.deleteNoteIfLeaf(UUID.randomUUID());
 
         assertFalse(result);
+    }
+
+    // --- hasChildrenBatch tests ---
+
+    @Test
+    @DisplayName("hasChildrenBatch() returns map with correct boolean values")
+    void hasChildrenBatch_shouldReturnCorrectMap() {
+        Note parent = service.createNote("Parent", "");
+        Note childless = service.createNote("Childless", "");
+        service.createChildNote(parent.getId(), "Child");
+
+        Map<UUID, Boolean> result = service.hasChildrenBatch(
+                List.of(parent.getId(), childless.getId()));
+
+        assertTrue(result.get(parent.getId()));
+        assertFalse(result.get(childless.getId()));
+    }
+
+    @Test
+    @DisplayName("hasChildrenBatch() returns empty map for empty input")
+    void hasChildrenBatch_shouldReturnEmptyMapForEmptyInput() {
+        Map<UUID, Boolean> result = service.hasChildrenBatch(List.of());
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("hasChildrenBatch() includes all requested ids in result")
+    void hasChildrenBatch_shouldIncludeAllRequestedIds() {
+        Note noteA = service.createNote("A", "");
+        Note noteB = service.createNote("B", "");
+
+        Map<UUID, Boolean> result = service.hasChildrenBatch(
+                List.of(noteA.getId(), noteB.getId()));
+
+        assertEquals(2, result.size());
+        assertTrue(result.containsKey(noteA.getId()));
+        assertTrue(result.containsKey(noteB.getId()));
     }
 }

@@ -4,11 +4,14 @@ import static com.embervault.domain.Attributes.CONTAINER;
 import static com.embervault.domain.Attributes.OUTLINE_ORDER;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.embervault.application.port.out.NoteRepository;
@@ -52,6 +55,31 @@ public final class InMemoryNoteRepository implements NoteRepository {
                                 .map(v -> ((AttributeValue.NumberValue) v).value())
                                 .orElse(0.0)))
                 .toList();
+    }
+
+    @Override
+    public Set<UUID> findNoteIdsWithChildren(Collection<UUID> noteIds) {
+        if (noteIds.isEmpty()) {
+            return Set.of();
+        }
+        Set<UUID> candidates = new HashSet<>(noteIds);
+        Set<UUID> result = new HashSet<>();
+        for (Note note : store.values()) {
+            note.getAttribute("$Container")
+                    .filter(v -> v instanceof AttributeValue.StringValue)
+                    .map(v -> ((AttributeValue.StringValue) v).value())
+                    .ifPresent(containerIdStr -> {
+                        try {
+                            UUID containerId = UUID.fromString(containerIdStr);
+                            if (candidates.contains(containerId)) {
+                                result.add(containerId);
+                            }
+                        } catch (IllegalArgumentException ignored) {
+                            // skip malformed UUIDs
+                        }
+                    });
+        }
+        return result;
     }
 
     @Override
