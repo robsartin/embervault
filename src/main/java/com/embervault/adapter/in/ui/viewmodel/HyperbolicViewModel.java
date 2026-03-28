@@ -18,12 +18,10 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Link;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -52,9 +50,7 @@ public final class HyperbolicViewModel {
             new SimpleObjectProperty<>();
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
-    private final BooleanProperty canNavigateBack =
-            new SimpleBooleanProperty(false);
-    private final Deque<UUID> navigationHistory = new ArrayDeque<>();
+    private final NavigationStack navigationStack = new NavigationStack();
     private double viewportRadius = DEFAULT_VIEWPORT_RADIUS;
     private Runnable onDataChanged;
 
@@ -120,8 +116,8 @@ public final class HyperbolicViewModel {
     public void drillDown(UUID noteId) {
         UUID current = focusNoteId.get();
         if (current != null) {
-            navigationHistory.push(current);
-            canNavigateBack.set(true);
+            navigationStack.setCurrentId(current);
+            navigationStack.push(noteId);
         }
         setFocusNote(noteId);
     }
@@ -130,11 +126,10 @@ public final class HyperbolicViewModel {
      * Navigates back to the previous focus note.
      */
     public void navigateBack() {
-        if (navigationHistory.isEmpty()) {
+        UUID previous = navigationStack.pop();
+        if (previous == null) {
             return;
         }
-        UUID previous = navigationHistory.pop();
-        canNavigateBack.set(!navigationHistory.isEmpty());
         setFocusNote(previous);
     }
 
@@ -191,7 +186,7 @@ public final class HyperbolicViewModel {
 
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
-        return canNavigateBack;
+        return navigationStack.canNavigateBackProperty();
     }
 
     /**

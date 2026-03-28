@@ -1,7 +1,5 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -9,12 +7,10 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Note;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -41,12 +37,9 @@ public final class MapViewModel {
             FXCollections.observableArrayList();
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
-    private final BooleanProperty canNavigateBack =
-            new SimpleBooleanProperty(false);
+    private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private final Deque<UUID> navigationHistory = new ArrayDeque<>();
-    private UUID baseNoteId;
     private Runnable onDataChanged;
 
     /**
@@ -63,7 +56,7 @@ public final class MapViewModel {
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
         noteTitle.addListener((obs, oldVal, newVal) -> {
-            if (navigationHistory.isEmpty()) {
+            if (navigationStack.isAtRoot()) {
                 updateTabTitle(newVal);
             }
         });
@@ -105,12 +98,12 @@ public final class MapViewModel {
      * @param noteId the base note id
      */
     public void setBaseNoteId(UUID noteId) {
-        this.baseNoteId = noteId;
+        navigationStack.setCurrentId(noteId);
     }
 
     /** Returns the base note id. */
     public UUID getBaseNoteId() {
-        return baseNoteId;
+        return navigationStack.getCurrentId();
     }
 
     /**
@@ -124,6 +117,7 @@ public final class MapViewModel {
 
     /** Loads the children of the base note into the observable list. */
     public void loadNotes() {
+        UUID baseNoteId = navigationStack.getCurrentId();
         if (baseNoteId == null) {
             noteItems.clear();
             return;
@@ -141,6 +135,7 @@ public final class MapViewModel {
      * @return the display item for the created note
      */
     public NoteDisplayItem createChildNote(String title) {
+        UUID baseNoteId = navigationStack.getCurrentId();
         Objects.requireNonNull(baseNoteId, "baseNoteId must be set before creating children");
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
@@ -158,6 +153,7 @@ public final class MapViewModel {
      * @return the display item for the created note
      */
     public NoteDisplayItem createChildNoteAt(String title, double xpos, double ypos) {
+        UUID baseNoteId = navigationStack.getCurrentId();
         Objects.requireNonNull(baseNoteId, "baseNoteId must be set before creating children");
         Note child = noteService.createChildNote(baseNoteId, title);
         child.setAttribute(Attributes.XPOS, new AttributeValue.NumberValue(xpos / SCALE_X));
@@ -203,7 +199,7 @@ public final class MapViewModel {
 
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
-        return canNavigateBack;
+        return navigationStack.canNavigateBackProperty();
     }
 
     /**
@@ -240,9 +236,7 @@ public final class MapViewModel {
      * @param noteId the note id to drill into
      */
     public void drillDown(UUID noteId) {
-        navigationHistory.push(baseNoteId);
-        canNavigateBack.set(true);
-        baseNoteId = noteId;
+        navigationStack.push(noteId);
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
@@ -253,15 +247,14 @@ public final class MapViewModel {
      * Navigates back to the previous base note.
      */
     public void navigateBack() {
-        if (navigationHistory.isEmpty()) {
+        UUID previous = navigationStack.pop();
+        if (previous == null) {
             return;
         }
-        baseNoteId = navigationHistory.pop();
-        canNavigateBack.set(!navigationHistory.isEmpty());
-        if (navigationHistory.isEmpty()) {
+        if (navigationStack.isAtRoot()) {
             updateTabTitle(rootNoteTitle.get());
         } else {
-            noteService.getNote(baseNoteId).ifPresent(note ->
+            noteService.getNote(previous).ifPresent(note ->
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
