@@ -1,5 +1,9 @@
 package com.embervault.adapter.in.ui.view;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import javafx.application.Platform;
@@ -50,6 +54,7 @@ public class MapViewController {
 
     private MapViewModel viewModel;
     private Button backButton;
+    private final Map<UUID, StackPane> nodeMap = new HashMap<>();
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -70,9 +75,9 @@ public class MapViewController {
         viewModel.loadNotes();
         renderAllNotes();
 
-        // Re-render when note list changes
+        // Incrementally update when note list changes
         viewModel.getNoteItems().addListener(
-                (ListChangeListener<NoteDisplayItem>) change -> renderAllNotes());
+                (ListChangeListener<NoteDisplayItem>) this::onNoteItemsChanged);
 
         // Double-click background to create new note
         mapCanvas.setOnMouseClicked(event -> {
@@ -122,12 +127,114 @@ public class MapViewController {
 
     private void renderAllNotes() {
         mapCanvas.getChildren().clear();
+        nodeMap.clear();
         for (NoteDisplayItem item : viewModel.getNoteItems()) {
             StackPane noteNode = createNoteNode(item);
+            nodeMap.put(item.getId(), noteNode);
             mapCanvas.getChildren().add(noteNode);
         }
         // Keep back button on top
         mapCanvas.getChildren().add(backButton);
+    }
+
+    /** Processes incremental changes from the observable note items list. */
+    private void onNoteItemsChanged(
+            ListChangeListener.Change<? extends NoteDisplayItem> change) {
+        while (change.next()) {
+            if (change.wasPermutated()) {
+                renderAllNotes();
+                return;
+            }
+            if (change.wasReplaced()) {
+                for (NoteDisplayItem item : change.getAddedSubList()) {
+                    StackPane existing = nodeMap.get(item.getId());
+                    if (existing != null) {
+                        updateNoteNode(existing, item);
+                    } else {
+                        renderAllNotes();
+                        return;
+                    }
+                }
+            } else {
+                if (change.wasRemoved()) {
+                    for (NoteDisplayItem removed : change.getRemoved()) {
+                        StackPane node = nodeMap.remove(removed.getId());
+                        if (node != null) {
+                            mapCanvas.getChildren().remove(node);
+                        }
+                    }
+                }
+                if (change.wasAdded()) {
+                    int backIdx = mapCanvas.getChildren().indexOf(backButton);
+                    if (backIdx < 0) {
+                        backIdx = mapCanvas.getChildren().size();
+                    }
+                    for (NoteDisplayItem item : change.getAddedSubList()) {
+                        StackPane noteNode = createNoteNode(item);
+                        nodeMap.put(item.getId(), noteNode);
+                        mapCanvas.getChildren().add(backIdx, noteNode);
+                        backIdx++;
+                    }
+                }
+            }
+        }
+    }
+
+    /** Updates an existing node in-place for changed display properties. */
+    private void updateNoteNode(StackPane notePane, NoteDisplayItem item) {
+        // Update position
+        notePane.setLayoutX(item.getXpos());
+        notePane.setLayoutY(item.getYpos());
+
+        // Update rectangle (child 0)
+        if (notePane.getChildren().get(0) instanceof Rectangle rect) {
+            rect.setWidth(item.getWidth());
+            rect.setHeight(item.getHeight());
+            rect.setFill(Color.web(item.getColorHex()));
+        }
+
+        // Update text labels (child 1 is VBox)
+        if (notePane.getChildren().get(1) instanceof VBox textBox) {
+            textBox.setMaxWidth(item.getWidth());
+            textBox.setMaxHeight(item.getHeight());
+
+            // Update clip
+            if (textBox.getClip() instanceof Rectangle clip) {
+                clip.setWidth(item.getWidth());
+                clip.setHeight(item.getHeight());
+            }
+
+            // Update title label (first child of VBox)
+            if (!textBox.getChildren().isEmpty()
+                    && textBox.getChildren().get(0) instanceof Label titleLabel) {
+                titleLabel.setText(item.getTitle());
+                titleLabel.setMaxWidth(item.getWidth() - 8);
+            }
+
+            // Update content label if present (second child of VBox)
+            if (textBox.getChildren().size() > 1
+                    && textBox.getChildren().get(1)
+                            instanceof Label contentLabel) {
+                contentLabel.setText(
+                        item.getContent() != null ? item.getContent() : "");
+                contentLabel.setMaxWidth(item.getWidth() - 8);
+            }
+        }
+
+        // Update badge label if present (child 2)
+        if (notePane.getChildren().size() > 2
+                && notePane.getChildren().get(2) instanceof Label badgeLabel) {
+            String badge = item.getBadge();
+            badgeLabel.setText(badge != null ? badge : "");
+        }
+
+        // Update selection highlight
+        if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
+            if (notePane.getChildren().get(0) instanceof Rectangle rect) {
+                rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
+                rect.setStroke(Color.DODGERBLUE);
+            }
+        }
     }
 
     private StackPane createNoteNode(NoteDisplayItem item) {
