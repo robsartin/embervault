@@ -146,32 +146,29 @@ public class MapViewController {
         notePane.setLayoutY(item.getYpos());
         notePane.setCursor(Cursor.HAND);
 
+        // Drag support – returns a flag array so click handlers can check
+        // whether the gesture was a drag rather than a click.
+        final boolean[] dragging = enableDrag(notePane, item);
+
         // Double-click on title label -> inline edit
         titleLabel.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && event.getButton() == MouseButton.PRIMARY) {
+            if (event.getClickCount() == 2
+                    && event.getButton() == MouseButton.PRIMARY
+                    && !dragging[0]) {
                 startInlineEdit(notePane, titleLabel, rect, item);
-                event.consume();
-            } else {
-                viewModel.selectNote(item.getId());
-                highlightSelected(notePane);
                 event.consume();
             }
         });
 
         // Double-click on rectangle body (not title) -> drill down
         rect.setOnMouseClicked(event -> {
-            if (event.getClickCount() == 2 && event.getButton() == MouseButton.PRIMARY) {
+            if (event.getClickCount() == 2
+                    && event.getButton() == MouseButton.PRIMARY
+                    && !dragging[0]) {
                 viewModel.drillDown(item.getId());
-                event.consume();
-            } else {
-                viewModel.selectNote(item.getId());
-                highlightSelected(notePane);
                 event.consume();
             }
         });
-
-        // Drag support
-        enableDrag(notePane, item);
 
         // Highlight if currently selected
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
@@ -230,18 +227,29 @@ public class MapViewController {
         });
     }
 
-    private void enableDrag(StackPane notePane, NoteDisplayItem item) {
+    /**
+     * Installs drag handlers on the note pane while allowing click events to
+     * propagate to children (title label, rectangle).
+     *
+     * @return a single-element boolean array whose value is {@code true} while
+     *         a drag gesture is in progress; click handlers check this to avoid
+     *         treating the end of a drag as a click.
+     */
+    private boolean[] enableDrag(StackPane notePane, NoteDisplayItem item) {
         final double[] dragDelta = new double[2];
+        final boolean[] dragging = {false};
 
         notePane.setOnMousePressed(event -> {
             dragDelta[0] = notePane.getLayoutX() - event.getSceneX();
             dragDelta[1] = notePane.getLayoutY() - event.getSceneY();
+            dragging[0] = false;
             viewModel.selectNote(item.getId());
             highlightSelected(notePane);
-            event.consume();
+            // Do NOT consume – let the event reach child click handlers
         });
 
         notePane.setOnMouseDragged(event -> {
+            dragging[0] = true;
             double newX = Math.max(0, event.getSceneX() + dragDelta[0]);
             double newY = Math.max(0, event.getSceneY() + dragDelta[1]);
             notePane.setLayoutX(newX);
@@ -250,10 +258,14 @@ public class MapViewController {
         });
 
         notePane.setOnMouseReleased(event -> {
-            viewModel.updateNotePosition(
-                    item.getId(), notePane.getLayoutX(), notePane.getLayoutY());
-            event.consume();
+            if (dragging[0]) {
+                viewModel.updateNotePosition(
+                        item.getId(), notePane.getLayoutX(), notePane.getLayoutY());
+                event.consume();
+            }
         });
+
+        return dragging;
     }
 
     private void highlightSelected(StackPane selected) {
