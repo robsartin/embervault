@@ -2,6 +2,7 @@ package com.embervault.adapter.in.ui.view;
 
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
+import javafx.animation.PauseTransition;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -10,20 +11,23 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * FXML controller for the search bar.
  *
- * <p>Binds to a {@link SearchViewModel} and triggers search on each keystroke.
- * Escape closes the bar, Enter selects the first result, and clicking a result
- * selects it in the active view.</p>
+ * <p>Binds to a {@link SearchViewModel} and debounces search-as-you-type
+ * using a 200ms {@link PauseTransition}. Each keystroke restarts the timer;
+ * Enter bypasses the debounce and searches immediately.
+ * Escape closes the bar and clicking a result selects it.</p>
  */
 public class SearchViewController {
 
     private static final Logger LOG =
             LoggerFactory.getLogger(SearchViewController.class);
+    private static final double DEBOUNCE_MILLIS = 200;
 
     @FXML private VBox searchRoot;
     @FXML private TextField searchField;
@@ -31,6 +35,8 @@ public class SearchViewController {
     @FXML private ListView<NoteDisplayItem> resultsList;
 
     private SearchViewModel viewModel;
+    private final PauseTransition debounce =
+            new PauseTransition(Duration.millis(DEBOUNCE_MILLIS));
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -48,19 +54,27 @@ public class SearchViewController {
         searchField.textProperty().bindBidirectional(
                 viewModel.queryProperty());
 
-        // Search on each keystroke
+        // Debounce search: restart timer on each keystroke
         searchField.textProperty().addListener(
                 (obs, oldVal, newVal) -> {
                     LOG.debug("Search query changed: {}", newVal);
-                    viewModel.search(newVal);
+                    debounce.stop();
+                    debounce.setOnFinished(
+                            e -> viewModel.search(newVal));
+                    debounce.playFromStart();
                 });
 
-        // Enter selects first result
+        // Enter bypasses debounce and searches immediately;
+        // Escape hides the search bar
         searchField.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER
-                    && !viewModel.getResults().isEmpty()) {
-                NoteDisplayItem first = viewModel.getResults().get(0);
-                viewModel.selectResult(first.getId());
+            if (event.getCode() == KeyCode.ENTER) {
+                debounce.stop();
+                viewModel.search(searchField.getText());
+                if (!viewModel.getResults().isEmpty()) {
+                    NoteDisplayItem first =
+                            viewModel.getResults().get(0);
+                    viewModel.selectResult(first.getId());
+                }
             } else if (event.getCode() == KeyCode.ESCAPE) {
                 viewModel.hide();
             }
