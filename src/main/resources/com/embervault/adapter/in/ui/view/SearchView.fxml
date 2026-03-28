@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="searchRoot" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.embervault.adapter.in.ui.view.SearchViewController"
+      spacing="2">
+
+    <HBox spacing="4" alignment="CENTER_LEFT" style="-fx-padding: 4 8;">
+        <TextField fx:id="searchField" promptText="Search notes..."
+                   HBox.hgrow="ALWAYS"/>
+        <Button fx:id="closeButton" text="X" onAction="#handleClose"/>
+    </HBox>
+
+    <ListView fx:id="resultsList" maxHeight="200"/>
+</VBox>

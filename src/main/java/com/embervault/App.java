@@ -10,6 +10,7 @@ import com.embervault.adapter.in.ui.view.HyperbolicViewController;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
+import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.StampEditorViewController;
 import com.embervault.adapter.in.ui.view.TreemapViewController;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
@@ -17,6 +18,7 @@ import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
@@ -38,6 +40,7 @@ import com.embervault.domain.Project;
 import com.embervault.domain.Stamp;
 import javafx.application.Application;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
@@ -178,6 +181,21 @@ public class App extends Application {
         browserViewModel.selectedNoteIdProperty().addListener(
                 (obs, oldVal, newVal) -> editorViewModel.setNote(newVal));
 
+        SearchViewModel searchViewModel = new SearchViewModel(noteService);
+        FXMLLoader searchLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/SearchView.fxml"));
+        Parent searchView = searchLoader.load();
+        SearchViewController searchController =
+                searchLoader.getController();
+        searchController.initViewModel(searchViewModel);
+        searchViewModel.selectedNoteIdProperty().addListener(
+                (obs, oldVal, newVal) -> {
+                    if (newVal != null) {
+                        mapViewModel.selectNote(newVal);
+                        outlineViewModel.selectNote(newVal);
+                    }
+                });
+
         // Synchronize: any mutation in any view triggers all to reload
         // from the shared NoteService/Repository.
         Runnable refreshAll = () -> {
@@ -197,41 +215,18 @@ public class App extends Application {
         hyperbolicViewModel.setOnDataChanged(refreshAll);
 
         // Wrap each view with a title label
-        Label mapLabel = new Label();
-        mapLabel.textProperty().bind(mapViewModel.tabTitleProperty());
-        mapLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox mapContainer = new VBox(mapLabel, mapView);
-        VBox.setVgrow(mapView, Priority.ALWAYS);
-
-        Label outlineLabel = new Label();
-        outlineLabel.textProperty().bind(
-                outlineViewModel.tabTitleProperty());
-        outlineLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox outlineContainer = new VBox(outlineLabel, outlineView);
-        VBox.setVgrow(outlineView, Priority.ALWAYS);
-
-        Label treemapLabel = new Label();
-        treemapLabel.textProperty().bind(
-                treemapViewModel.tabTitleProperty());
-        treemapLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox treemapContainer = new VBox(treemapLabel, treemapView);
-        VBox.setVgrow(treemapView, Priority.ALWAYS);
-
-        Label hyperbolicLabel = new Label();
-        hyperbolicLabel.textProperty().bind(
-                hyperbolicViewModel.tabTitleProperty());
-        hyperbolicLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox hyperbolicContainer = new VBox(
-                hyperbolicLabel, hyperbolicView);
-        VBox.setVgrow(hyperbolicView, Priority.ALWAYS);
+        VBox mapContainer = wrapWithLabel(
+                mapViewModel.tabTitleProperty(), mapView);
+        VBox outlineContainer = wrapWithLabel(
+                outlineViewModel.tabTitleProperty(), outlineView);
+        VBox treemapContainer = wrapWithLabel(
+                treemapViewModel.tabTitleProperty(), treemapView);
+        VBox hyperbolicContainer = wrapWithLabel(
+                hyperbolicViewModel.tabTitleProperty(), hyperbolicView);
 
         // Browser + Editor combined pane
-        Label browserLabel = new Label();
-        browserLabel.textProperty().bind(
-                browserViewModel.tabTitleProperty());
-        browserLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox browserContainer = new VBox(browserLabel, browserView);
-        VBox.setVgrow(browserView, Priority.ALWAYS);
+        VBox browserContainer = wrapWithLabel(
+                browserViewModel.tabTitleProperty(), browserView);
 
         VBox editorContainer = new VBox(editorView);
         VBox.setVgrow(editorView, Priority.ALWAYS);
@@ -251,11 +246,14 @@ public class App extends Application {
                 browserEditorPane, hyperbolicContainer,
                 hyperbolicViewModel, project, stampService,
                 mapViewModel.selectedNoteIdProperty(),
-                refreshAll, stage);
+                refreshAll, stage, searchViewModel);
 
-        // BorderPane: menu bar on top, split pane in center
+        // Top area: menu bar + search bar
+        VBox topArea = new VBox(menuBar, searchView);
+
+        // BorderPane: top area on top, split pane in center
         BorderPane root = new BorderPane();
-        root.setTop(menuBar);
+        root.setTop(topArea);
         root.setCenter(splitPane);
 
         Scene scene = new Scene(root, 1024, 768);
@@ -275,7 +273,8 @@ public class App extends Application {
             StampService stampService,
             ObjectProperty<UUID> selectedNoteId,
             Runnable refreshAll,
-            Stage ownerStage) {
+            Stage ownerStage,
+            SearchViewModel searchViewModel) {
         // Note menu
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setAccelerator(
@@ -347,8 +346,18 @@ public class App extends Application {
         viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
                 treemapViewItem, hyperbolicViewItem, browserViewItem);
 
+        // Edit menu
+        MenuItem findItem = new MenuItem("Find");
+        findItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.F,
+                        KeyCombination.SHORTCUT_DOWN));
+        findItem.setOnAction(e -> searchViewModel.toggleVisible());
+
+        Menu editMenu = new Menu("Edit");
+        editMenu.getItems().add(findItem);
+
         MenuBar menuBar = new MenuBar(
-                noteMenu, stampsMenu, viewMenu);
+                noteMenu, editMenu, stampsMenu, viewMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
     }
@@ -451,6 +460,17 @@ public class App extends Application {
         // Rebuild stamps menu after editor closes
         buildStampsMenu(stampsMenu, stampService, selectedNoteId,
                 refreshAll, ownerStage);
+    }
+
+    private static VBox wrapWithLabel(
+            ReadOnlyStringProperty titleProp,
+            Parent view) {
+        Label label = new Label();
+        label.textProperty().bind(titleProp);
+        label.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
+        VBox container = new VBox(label, view);
+        VBox.setVgrow(view, Priority.ALWAYS);
+        return container;
     }
 
     private void populateBuiltInStamps(StampService stampService) {
