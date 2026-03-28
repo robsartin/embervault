@@ -16,10 +16,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.TextAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +39,8 @@ public class MapViewController {
     private static final Logger LOG = LoggerFactory.getLogger(MapViewController.class);
     private static final double SELECTED_BORDER_WIDTH = 3.0;
     private static final double NORMAL_BORDER_WIDTH = 1.0;
-    private static final double FONT_SIZE = 12.0;
+    private static final double TITLE_FONT_SIZE = 14.0;
+    private static final double CONTENT_FONT_SIZE = 11.0;
 
     private static final double BACK_BUTTON_PADDING = 5.0;
 
@@ -133,15 +137,41 @@ public class MapViewController {
         rect.setArcHeight(4);
 
         Label titleLabel = new Label(item.getTitle());
-        titleLabel.setFont(Font.font(FONT_SIZE));
-        titleLabel.setTextAlignment(TextAlignment.CENTER);
-        titleLabel.setAlignment(Pos.CENTER);
+        titleLabel.setFont(Font.font("System", FontWeight.BOLD, TITLE_FONT_SIZE));
+        titleLabel.setTextAlignment(TextAlignment.LEFT);
+        titleLabel.setAlignment(Pos.TOP_LEFT);
         titleLabel.setMaxWidth(item.getWidth() - 8);
         titleLabel.setWrapText(true);
         titleLabel.setMouseTransparent(false);
-        titleLabel.setPadding(new Insets(2, 4, 2, 4));
+        titleLabel.setPadding(new Insets(4, 4, 2, 4));
 
-        StackPane notePane = new StackPane(rect, titleLabel);
+        VBox textBox = new VBox(titleLabel);
+
+        String content = item.getContent();
+        if (content != null && !content.isEmpty()) {
+            Label contentLabel = new Label(content);
+            contentLabel.setFont(Font.font("System", CONTENT_FONT_SIZE));
+            contentLabel.setTextAlignment(TextAlignment.LEFT);
+            contentLabel.setAlignment(Pos.TOP_LEFT);
+            contentLabel.setMaxWidth(item.getWidth() - 8);
+            contentLabel.setMaxHeight(Double.MAX_VALUE);
+            contentLabel.setWrapText(true);
+            contentLabel.setMouseTransparent(true);
+            contentLabel.setPadding(new Insets(0, 4, 4, 4));
+            VBox.setVgrow(contentLabel, Priority.ALWAYS);
+            textBox.getChildren().add(contentLabel);
+        }
+
+        textBox.setMaxWidth(item.getWidth());
+        textBox.setMaxHeight(item.getHeight());
+        textBox.setAlignment(Pos.TOP_LEFT);
+
+        // Clip the text container to the rectangle bounds
+        Rectangle clip = new Rectangle(item.getWidth(), item.getHeight());
+        textBox.setClip(clip);
+
+        StackPane notePane = new StackPane(rect, textBox);
+        notePane.setAlignment(Pos.TOP_LEFT);
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
         notePane.setCursor(Cursor.HAND);
@@ -183,46 +213,52 @@ public class MapViewController {
             Rectangle rect, NoteDisplayItem item) {
         String originalTitle = titleLabel.getText();
         TextField textField = new TextField(originalTitle);
-        textField.setFont(Font.font(FONT_SIZE));
-        textField.setAlignment(Pos.CENTER);
+        textField.setFont(Font.font("System", FontWeight.BOLD, TITLE_FONT_SIZE));
+        textField.setAlignment(Pos.CENTER_LEFT);
         textField.setMaxWidth(rect.getWidth() - 8);
         textField.selectAll();
 
-        // Replace label with text field
-        notePane.getChildren().remove(titleLabel);
-        notePane.getChildren().add(textField);
+        // The VBox containing labels is the second child of the StackPane
+        VBox textBox = (VBox) notePane.getChildren().get(1);
+        int titleIndex = textBox.getChildren().indexOf(titleLabel);
+
+        // Replace title label with text field inside the VBox
+        textBox.getChildren().set(titleIndex, textField);
         textField.requestFocus();
 
-        // Commit on Enter
-        textField.setOnAction(e -> {
+        Runnable commitEdit = () -> {
             String newTitle = textField.getText().trim();
             if (!newTitle.isEmpty() && viewModel.renameNote(item.getId(), newTitle)) {
                 titleLabel.setText(newTitle);
             }
-            notePane.getChildren().remove(textField);
-            notePane.getChildren().add(titleLabel);
-        });
+            if (textBox.getChildren().contains(textField)) {
+                textBox.getChildren().set(
+                        textBox.getChildren().indexOf(textField), titleLabel);
+            }
+        };
+
+        Runnable cancelEdit = () -> {
+            if (textBox.getChildren().contains(textField)) {
+                textBox.getChildren().set(
+                        textBox.getChildren().indexOf(textField), titleLabel);
+            }
+        };
+
+        // Commit on Enter
+        textField.setOnAction(e -> commitEdit.run());
 
         // Cancel on Escape
         textField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.ESCAPE) {
-                notePane.getChildren().remove(textField);
-                notePane.getChildren().add(titleLabel);
+                cancelEdit.run();
                 e.consume();
             }
         });
 
         // Commit on focus lost (same as pressing Enter)
         textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
-            if (!isFocused && notePane.getChildren().contains(textField)) {
-                String newTitle = textField.getText().trim();
-                if (!newTitle.isEmpty() && viewModel.renameNote(item.getId(), newTitle)) {
-                    titleLabel.setText(newTitle);
-                }
-                notePane.getChildren().remove(textField);
-                if (!notePane.getChildren().contains(titleLabel)) {
-                    notePane.getChildren().add(titleLabel);
-                }
+            if (!isFocused) {
+                commitEdit.run();
             }
         });
     }
