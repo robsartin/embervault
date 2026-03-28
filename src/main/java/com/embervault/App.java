@@ -6,10 +6,12 @@ import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
+import com.embervault.adapter.in.ui.view.TreemapViewController;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
@@ -73,6 +75,9 @@ public class App extends Application {
         OutlineViewModel outlineViewModel = new OutlineViewModel(rootNoteTitle, noteService);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
 
+        TreemapViewModel treemapViewModel = new TreemapViewModel(rootNoteTitle, noteService);
+        treemapViewModel.setBaseNoteId(project.getRootNote().getId());
+
         // Create shared AttributeSchemaRegistry
         AttributeSchemaRegistry schemaRegistry = new AttributeSchemaRegistry();
 
@@ -97,6 +102,13 @@ public class App extends Application {
         Parent outlineView = outlineLoader.load();
         OutlineViewController outlineController = outlineLoader.getController();
         outlineController.initViewModel(outlineViewModel);
+
+        // Load TreemapView
+        FXMLLoader treemapLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/TreemapView.fxml"));
+        Parent treemapView = treemapLoader.load();
+        TreemapViewController treemapController = treemapLoader.getController();
+        treemapController.initViewModel(treemapViewModel);
 
         // Load AttributeBrowserView
         FXMLLoader browserLoader = new FXMLLoader(getClass().getResource(
@@ -123,10 +135,12 @@ public class App extends Application {
         Runnable refreshAll = () -> {
             mapViewModel.loadNotes();
             outlineViewModel.loadNotes();
+            treemapViewModel.loadNotes();
             browserViewModel.groupNotes();
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
+        treemapViewModel.setOnDataChanged(refreshAll);
         editorViewModel.setOnDataChanged(refreshAll);
 
         // Wrap each view with a title label
@@ -142,6 +156,12 @@ public class App extends Application {
         VBox outlineContainer = new VBox(outlineLabel, outlineView);
         VBox.setVgrow(outlineView, Priority.ALWAYS);
 
+        Label treemapLabel = new Label();
+        treemapLabel.textProperty().bind(treemapViewModel.tabTitleProperty());
+        treemapLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
+        VBox treemapContainer = new VBox(treemapLabel, treemapView);
+        VBox.setVgrow(treemapView, Priority.ALWAYS);
+
         // Browser + Editor combined pane
         Label browserLabel = new Label();
         browserLabel.textProperty().bind(browserViewModel.tabTitleProperty());
@@ -156,9 +176,10 @@ public class App extends Application {
                 browserContainer, editorContainer);
         browserEditorPane.setDividerPositions(0.4);
 
-        // SplitPane with Map on left, Outline on right
-        SplitPane splitPane = new SplitPane(mapContainer, outlineContainer);
-        splitPane.setDividerPositions(0.5);
+        // SplitPane with Map, Outline, and Treemap
+        SplitPane splitPane = new SplitPane(
+                mapContainer, outlineContainer, treemapContainer);
+        splitPane.setDividerPositions(0.33, 0.66);
 
         // Menu bar
         MenuBar menuBar = createMenuBar(
@@ -200,6 +221,10 @@ public class App extends Application {
         outlineViewItem.setOnAction(e ->
                 LOG.debug("Outline view placeholder selected"));
 
+        MenuItem treemapViewItem = new MenuItem("Treemap");
+        treemapViewItem.setOnAction(e ->
+                LOG.debug("Treemap view placeholder selected"));
+
         MenuItem browserViewItem = new MenuItem("Browser");
         browserViewItem.setAccelerator(
                 new KeyCodeCombination(KeyCode.B,
@@ -216,7 +241,7 @@ public class App extends Application {
 
         Menu viewMenu = new Menu("View");
         viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
-                browserViewItem);
+                treemapViewItem, browserViewItem);
 
         MenuBar menuBar = new MenuBar(noteMenu, viewMenu);
         menuBar.setUseSystemMenuBar(true);
