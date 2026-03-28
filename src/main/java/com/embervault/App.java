@@ -1,32 +1,43 @@
 package com.embervault;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
 import com.embervault.adapter.in.ui.view.HyperbolicViewController;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
+import com.embervault.adapter.in.ui.view.StampEditorViewController;
 import com.embervault.adapter.in.ui.view.TreemapViewController;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
+import com.embervault.adapter.out.persistence.InMemoryStampRepository;
 import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
+import com.embervault.application.StampServiceImpl;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.ProjectService;
+import com.embervault.application.port.in.StampService;
 import com.embervault.application.port.out.LinkRepository;
 import com.embervault.application.port.out.NoteRepository;
+import com.embervault.application.port.out.StampRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Project;
+import com.embervault.domain.Stamp;
 import javafx.application.Application;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
@@ -36,6 +47,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
@@ -68,24 +80,36 @@ public class App extends Application {
         LinkRepository linkRepository = new InMemoryLinkRepository();
         LinkService linkService = new LinkServiceImpl(linkRepository);
 
+        // Create StampRepository and StampService
+        StampRepository stampRepository = new InMemoryStampRepository();
+        StampService stampService = new StampServiceImpl(
+                stampRepository, noteRepository);
+
+        // Pre-populate built-in stamps
+        populateBuiltInStamps(stampService);
+
         // Save root note to repository so children can reference it
         noteRepository.save(project.getRootNote());
 
         // Create a welcome note so the views have something to display
-        noteService.createChildNote(project.getRootNote().getId(), "Welcome to EmberVault");
+        noteService.createChildNote(project.getRootNote().getId(),
+                "Welcome to EmberVault");
 
         // Observable note title for binding to ViewModels
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
 
         // Create ViewModels with shared NoteService
-        MapViewModel mapViewModel = new MapViewModel(rootNoteTitle, noteService);
+        MapViewModel mapViewModel = new MapViewModel(
+                rootNoteTitle, noteService);
         mapViewModel.setBaseNoteId(project.getRootNote().getId());
 
-        OutlineViewModel outlineViewModel = new OutlineViewModel(rootNoteTitle, noteService);
+        OutlineViewModel outlineViewModel = new OutlineViewModel(
+                rootNoteTitle, noteService);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
 
-        TreemapViewModel treemapViewModel = new TreemapViewModel(rootNoteTitle, noteService);
+        TreemapViewModel treemapViewModel = new TreemapViewModel(
+                rootNoteTitle, noteService);
         treemapViewModel.setBaseNoteId(project.getRootNote().getId());
 
         // Create shared AttributeSchemaRegistry
@@ -110,14 +134,16 @@ public class App extends Application {
         FXMLLoader outlineLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/OutlineView.fxml"));
         Parent outlineView = outlineLoader.load();
-        OutlineViewController outlineController = outlineLoader.getController();
+        OutlineViewController outlineController =
+                outlineLoader.getController();
         outlineController.initViewModel(outlineViewModel);
 
         // Load TreemapView
         FXMLLoader treemapLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/TreemapView.fxml"));
         Parent treemapView = treemapLoader.load();
-        TreemapViewController treemapController = treemapLoader.getController();
+        TreemapViewController treemapController =
+                treemapLoader.getController();
         treemapController.initViewModel(treemapViewModel);
 
         // Create HyperbolicViewModel with shared services
@@ -178,13 +204,15 @@ public class App extends Application {
         VBox.setVgrow(mapView, Priority.ALWAYS);
 
         Label outlineLabel = new Label();
-        outlineLabel.textProperty().bind(outlineViewModel.tabTitleProperty());
+        outlineLabel.textProperty().bind(
+                outlineViewModel.tabTitleProperty());
         outlineLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
         VBox outlineContainer = new VBox(outlineLabel, outlineView);
         VBox.setVgrow(outlineView, Priority.ALWAYS);
 
         Label treemapLabel = new Label();
-        treemapLabel.textProperty().bind(treemapViewModel.tabTitleProperty());
+        treemapLabel.textProperty().bind(
+                treemapViewModel.tabTitleProperty());
         treemapLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
         VBox treemapContainer = new VBox(treemapLabel, treemapView);
         VBox.setVgrow(treemapView, Priority.ALWAYS);
@@ -193,12 +221,14 @@ public class App extends Application {
         hyperbolicLabel.textProperty().bind(
                 hyperbolicViewModel.tabTitleProperty());
         hyperbolicLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox hyperbolicContainer = new VBox(hyperbolicLabel, hyperbolicView);
+        VBox hyperbolicContainer = new VBox(
+                hyperbolicLabel, hyperbolicView);
         VBox.setVgrow(hyperbolicView, Priority.ALWAYS);
 
         // Browser + Editor combined pane
         Label browserLabel = new Label();
-        browserLabel.textProperty().bind(browserViewModel.tabTitleProperty());
+        browserLabel.textProperty().bind(
+                browserViewModel.tabTitleProperty());
         browserLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
         VBox browserContainer = new VBox(browserLabel, browserView);
         VBox.setVgrow(browserView, Priority.ALWAYS);
@@ -219,7 +249,9 @@ public class App extends Application {
         MenuBar menuBar = createMenuBar(
                 mapViewModel, outlineViewModel, splitPane,
                 browserEditorPane, hyperbolicContainer,
-                hyperbolicViewModel, project);
+                hyperbolicViewModel, project, stampService,
+                mapViewModel.selectedNoteIdProperty(),
+                refreshAll, stage);
 
         // BorderPane: menu bar on top, split pane in center
         BorderPane root = new BorderPane();
@@ -232,24 +264,36 @@ public class App extends Application {
         stage.show();
     }
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     private MenuBar createMenuBar(MapViewModel mapViewModel,
             OutlineViewModel outlineViewModel,
             SplitPane mainSplitPane,
             SplitPane browserEditorPane,
             VBox hyperbolicContainer,
             HyperbolicViewModel hyperbolicViewModel,
-            Project project) {
+            Project project,
+            StampService stampService,
+            ObjectProperty<UUID> selectedNoteId,
+            Runnable refreshAll,
+            Stage ownerStage) {
         // Note menu
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setAccelerator(
-                new KeyCodeCombination(KeyCode.N, KeyCombination.SHORTCUT_DOWN));
+                new KeyCodeCombination(KeyCode.N,
+                        KeyCombination.SHORTCUT_DOWN));
         createNote.setOnAction(e -> {
-            // Create a child under the selected note in the map, or under root
+            // Create a child under the selected note in the map,
+            // or under root
             mapViewModel.createChildNote("Untitled");
         });
 
         Menu noteMenu = new Menu("Note");
         noteMenu.getItems().add(createNote);
+
+        // Stamps menu
+        Menu stampsMenu = new Menu("Stamps");
+        buildStampsMenu(stampsMenu, stampService, selectedNoteId,
+                refreshAll, ownerStage);
 
         // View menu
         MenuItem mapViewItem = new MenuItem("Map");
@@ -270,7 +314,8 @@ public class App extends Application {
                         KeyCombination.SHORTCUT_DOWN,
                         KeyCombination.SHIFT_DOWN));
         hyperbolicViewItem.setOnAction(e -> {
-            BorderPane root = (BorderPane) mainSplitPane.getScene().getRoot();
+            BorderPane root = (BorderPane) mainSplitPane
+                    .getScene().getRoot();
             if (root.getCenter() == hyperbolicContainer) {
                 root.setCenter(mainSplitPane);
             } else {
@@ -289,7 +334,8 @@ public class App extends Application {
                         KeyCombination.SHORTCUT_DOWN,
                         KeyCombination.SHIFT_DOWN));
         browserViewItem.setOnAction(e -> {
-            BorderPane root = (BorderPane) mainSplitPane.getScene().getRoot();
+            BorderPane root = (BorderPane) mainSplitPane
+                    .getScene().getRoot();
             if (root.getCenter() == browserEditorPane) {
                 root.setCenter(mainSplitPane);
             } else {
@@ -301,9 +347,118 @@ public class App extends Application {
         viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
                 treemapViewItem, hyperbolicViewItem, browserViewItem);
 
-        MenuBar menuBar = new MenuBar(noteMenu, viewMenu);
+        MenuBar menuBar = new MenuBar(
+                noteMenu, stampsMenu, viewMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
+    }
+
+    private void buildStampsMenu(Menu stampsMenu,
+            StampService stampService,
+            ObjectProperty<UUID> selectedNoteId,
+            Runnable refreshAll,
+            Stage ownerStage) {
+        stampsMenu.getItems().clear();
+
+        // "Inspect Stamps..." item
+        MenuItem inspectItem = new MenuItem("Inspect Stamps...");
+        inspectItem.setOnAction(e -> {
+            try {
+                openStampEditor(stampService, stampsMenu,
+                        selectedNoteId, refreshAll, ownerStage);
+            } catch (IOException ex) {
+                LOG.error("Failed to open stamp editor", ex);
+            }
+        });
+        stampsMenu.getItems().add(inspectItem);
+        stampsMenu.getItems().add(new SeparatorMenuItem());
+
+        // Build dynamic stamp items
+        Map<String, Menu> subMenus = new HashMap<>();
+
+        for (Stamp stamp : stampService.getAllStamps()) {
+            String name = stamp.name();
+            UUID stampId = stamp.id();
+
+            // Check for exactly one colon for submenu
+            int colonIndex = name.indexOf(':');
+            boolean hasSubmenu = colonIndex > 0
+                    && colonIndex == name.lastIndexOf(':');
+
+            if (hasSubmenu) {
+                String menuName = name.substring(0, colonIndex);
+                String itemName = name.substring(colonIndex + 1);
+
+                Menu subMenu = subMenus.computeIfAbsent(menuName,
+                        k -> {
+                            Menu m = new Menu(k);
+                            stampsMenu.getItems().add(m);
+                            return m;
+                        });
+
+                MenuItem item = new MenuItem(itemName);
+                item.setOnAction(ev -> applyStampToSelected(
+                        stampService, stampId, selectedNoteId,
+                        refreshAll));
+                subMenu.getItems().add(item);
+            } else {
+                MenuItem item = new MenuItem(name);
+                item.setOnAction(ev -> applyStampToSelected(
+                        stampService, stampId, selectedNoteId,
+                        refreshAll));
+                stampsMenu.getItems().add(item);
+            }
+        }
+    }
+
+    private void applyStampToSelected(StampService stampService,
+            UUID stampId,
+            ObjectProperty<UUID> selectedNoteId,
+            Runnable refreshAll) {
+        UUID noteId = selectedNoteId.get();
+        if (noteId == null) {
+            LOG.warn("No note selected to apply stamp to");
+            return;
+        }
+        try {
+            stampService.applyStamp(stampId, noteId);
+            refreshAll.run();
+        } catch (Exception ex) {
+            LOG.error("Failed to apply stamp", ex);
+        }
+    }
+
+    private void openStampEditor(StampService stampService,
+            Menu stampsMenu,
+            ObjectProperty<UUID> selectedNoteId,
+            Runnable refreshAll,
+            Stage ownerStage) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/"
+                        + "StampEditorView.fxml"));
+        Parent editorRoot = loader.load();
+        StampEditorViewController controller = loader.getController();
+        StampEditorViewModel editorVm =
+                new StampEditorViewModel(stampService);
+        controller.initViewModel(editorVm);
+
+        Stage editorStage = new Stage();
+        editorStage.setTitle("Inspect Stamps");
+        editorStage.setScene(new Scene(editorRoot));
+        editorStage.initOwner(ownerStage);
+        editorStage.showAndWait();
+
+        // Rebuild stamps menu after editor closes
+        buildStampsMenu(stampsMenu, stampService, selectedNoteId,
+                refreshAll, ownerStage);
+    }
+
+    private void populateBuiltInStamps(StampService stampService) {
+        stampService.createStamp("Color:red", "$Color=red");
+        stampService.createStamp("Color:green", "$Color=green");
+        stampService.createStamp("Color:blue", "$Color=blue");
+        stampService.createStamp("Mark Done", "$Checked=true");
+        stampService.createStamp("Mark Undone", "$Checked=false");
     }
 
     public static void main(String[] args) {
