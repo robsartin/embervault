@@ -9,10 +9,14 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Note;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyObjectProperty;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -33,6 +37,11 @@ public final class MapViewModel {
     private static final double DEFAULT_WIDTH = 6.0;
     private static final double DEFAULT_HEIGHT = 4.0;
     private static final String DEFAULT_COLOR_HEX = "#808080";
+    private static final double MIN_ZOOM = 0.1;
+    private static final double MAX_ZOOM = 5.0;
+    private static final double ZOOM_IN_FACTOR = 1.25;
+    private static final double ZOOM_OUT_FACTOR = 0.8;
+    private static final double FIT_ALL_PADDING = 40.0;
 
     private final ReadOnlyStringWrapper tabTitle = new ReadOnlyStringWrapper();
     private final ObservableList<NoteDisplayItem> noteItems =
@@ -43,6 +52,9 @@ public final class MapViewModel {
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
     private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final DoubleProperty zoomLevel = new SimpleDoubleProperty(1.0);
+    private final ReadOnlyObjectWrapper<ZoomTier> currentTier =
+            new ReadOnlyObjectWrapper<>(ZoomTier.NORMAL);
 
     /**
      * Constructs a MapViewModel that derives its tab title from the given note title property.
@@ -62,6 +74,10 @@ public final class MapViewModel {
                 updateTabTitle(newVal);
             }
         });
+
+        // Update current tier when zoom level changes
+        zoomLevel.addListener((obs, oldVal, newVal) ->
+                currentTier.set(ZoomTier.fromZoomLevel(newVal.doubleValue())));
     }
 
     /**
@@ -200,6 +216,70 @@ public final class MapViewModel {
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
         return navigationStack.canNavigateBackProperty();
+    }
+
+    /** Returns the zoom level property. */
+    public DoubleProperty zoomLevelProperty() {
+        return zoomLevel;
+    }
+
+    /** Returns the current zoom tier property. */
+    public ReadOnlyObjectProperty<ZoomTier> currentTierProperty() {
+        return currentTier.getReadOnlyProperty();
+    }
+
+    /** Returns the current zoom tier. */
+    public ZoomTier getCurrentTier() {
+        return currentTier.get();
+    }
+
+    /**
+     * Sets the zoom level, clamped between 0.1 and 5.0.
+     *
+     * @param level the desired zoom level
+     */
+    public void setZoomLevel(double level) {
+        zoomLevel.set(Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, level)));
+    }
+
+    /** Zooms in by multiplying the current zoom level by 1.25. */
+    public void zoomIn() {
+        setZoomLevel(zoomLevel.get() * ZOOM_IN_FACTOR);
+    }
+
+    /** Zooms out by multiplying the current zoom level by 0.8. */
+    public void zoomOut() {
+        setZoomLevel(zoomLevel.get() * ZOOM_OUT_FACTOR);
+    }
+
+    /**
+     * Calculates and sets the zoom level to fit all notes within the viewport.
+     *
+     * @param viewportWidth  the viewport width in pixels
+     * @param viewportHeight the viewport height in pixels
+     */
+    public void fitAll(double viewportWidth, double viewportHeight) {
+        if (noteItems.isEmpty()) {
+            return;
+        }
+        double minX = Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE;
+        double maxX = Double.MIN_VALUE;
+        double maxY = Double.MIN_VALUE;
+        for (NoteDisplayItem item : noteItems) {
+            minX = Math.min(minX, item.getXpos());
+            minY = Math.min(minY, item.getYpos());
+            maxX = Math.max(maxX, item.getXpos() + item.getWidth());
+            maxY = Math.max(maxY, item.getYpos() + item.getHeight());
+        }
+        double contentWidth = maxX - minX;
+        double contentHeight = maxY - minY;
+        if (contentWidth <= 0 || contentHeight <= 0) {
+            return;
+        }
+        double scaleX = viewportWidth / (contentWidth + FIT_ALL_PADDING);
+        double scaleY = viewportHeight / (contentHeight + FIT_ALL_PADDING);
+        setZoomLevel(Math.min(scaleX, scaleY));
     }
 
     /**

@@ -420,4 +420,143 @@ class MapViewModelTest {
         NoteDisplayItem item = viewModel.getNoteItems().get(0);
         assertEquals("", item.getBadge());
     }
+
+    // --- Zoom support tests ---
+
+    @Test
+    @DisplayName("zoomLevel defaults to 1.0")
+    void zoomLevel_shouldDefaultTo1() {
+        assertEquals(1.0, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("currentTier defaults to NORMAL at zoom 1.0")
+    void currentTier_shouldDefaultToNormal() {
+        assertEquals(ZoomTier.NORMAL, viewModel.currentTierProperty().get());
+    }
+
+    @Test
+    @DisplayName("setZoomLevel updates zoomLevel property")
+    void setZoomLevel_shouldUpdateProperty() {
+        viewModel.setZoomLevel(2.0);
+
+        assertEquals(2.0, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("setZoomLevel clamps to minimum 0.1")
+    void setZoomLevel_shouldClampToMinimum() {
+        viewModel.setZoomLevel(0.01);
+
+        assertEquals(0.1, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("setZoomLevel clamps to maximum 5.0")
+    void setZoomLevel_shouldClampToMaximum() {
+        viewModel.setZoomLevel(10.0);
+
+        assertEquals(5.0, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("setZoomLevel updates currentTier")
+    void setZoomLevel_shouldUpdateCurrentTier() {
+        viewModel.setZoomLevel(0.2);
+        assertEquals(ZoomTier.OVERVIEW, viewModel.currentTierProperty().get());
+
+        viewModel.setZoomLevel(0.5);
+        assertEquals(ZoomTier.TITLES_ONLY, viewModel.currentTierProperty().get());
+
+        viewModel.setZoomLevel(1.0);
+        assertEquals(ZoomTier.NORMAL, viewModel.currentTierProperty().get());
+
+        viewModel.setZoomLevel(2.0);
+        assertEquals(ZoomTier.DETAILED, viewModel.currentTierProperty().get());
+    }
+
+    @Test
+    @DisplayName("zoomIn multiplies zoom by 1.25")
+    void zoomIn_shouldMultiplyBy1Point25() {
+        viewModel.setZoomLevel(1.0);
+
+        viewModel.zoomIn();
+
+        assertEquals(1.25, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("zoomIn clamps at 5.0")
+    void zoomIn_shouldClampAtMaximum() {
+        viewModel.setZoomLevel(4.5);
+
+        viewModel.zoomIn();
+
+        assertEquals(5.0, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("zoomOut multiplies zoom by 0.8")
+    void zoomOut_shouldMultiplyByPoint8() {
+        viewModel.setZoomLevel(1.0);
+
+        viewModel.zoomOut();
+
+        assertEquals(0.8, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("zoomOut clamps at 0.1")
+    void zoomOut_shouldClampAtMinimum() {
+        viewModel.setZoomLevel(0.12);
+
+        viewModel.zoomOut();
+
+        assertEquals(0.1, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("fitAll calculates zoom to fit all notes in viewport")
+    void fitAll_shouldCalculateZoomToFitNotes() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+
+        // Create notes at known positions
+        NoteDisplayItem item1 = viewModel.createChildNote("A");
+        viewModel.updateNotePosition(item1.getId(), 0, 0);
+        NoteDisplayItem item2 = viewModel.createChildNote("B");
+        viewModel.updateNotePosition(item2.getId(), 400, 300);
+
+        // Viewport of 800x600 should fit content at roughly 1:1
+        viewModel.fitAll(800, 600);
+
+        double zoom = viewModel.zoomLevelProperty().get();
+        assertTrue(zoom > 0.1 && zoom <= 5.0,
+                "Zoom should be within valid range, was: " + zoom);
+    }
+
+    @Test
+    @DisplayName("fitAll with empty note list does not change zoom")
+    void fitAll_shouldNotChangeZoom_whenNoNotes() {
+        viewModel.setZoomLevel(1.5);
+
+        viewModel.fitAll(800, 600);
+
+        assertEquals(1.5, viewModel.zoomLevelProperty().get(), 0.001);
+    }
+
+    @Test
+    @DisplayName("fitAll clamps result within valid range")
+    void fitAll_shouldClampResult() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+
+        // Single note at origin - huge viewport would want very large zoom
+        viewModel.createChildNote("Solo");
+
+        viewModel.fitAll(10000, 10000);
+
+        assertTrue(viewModel.zoomLevelProperty().get() <= 5.0,
+                "fitAll should clamp zoom to maximum 5.0");
+    }
 }
