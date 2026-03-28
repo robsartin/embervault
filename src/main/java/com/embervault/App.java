@@ -3,20 +3,26 @@ package com.embervault;
 import java.io.IOException;
 
 import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
+import com.embervault.adapter.in.ui.view.HyperbolicViewController;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.TreemapViewController;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
+import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
+import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
+import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
+import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.ProjectService;
+import com.embervault.application.port.out.LinkRepository;
 import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Project;
@@ -57,6 +63,10 @@ public class App extends Application {
         // Create shared NoteRepository and NoteService
         NoteRepository noteRepository = new InMemoryNoteRepository();
         NoteService noteService = new NoteServiceImpl(noteRepository);
+
+        // Create shared LinkRepository and LinkService
+        LinkRepository linkRepository = new InMemoryLinkRepository();
+        LinkService linkService = new LinkServiceImpl(linkRepository);
 
         // Save root note to repository so children can reference it
         noteRepository.save(project.getRootNote());
@@ -110,6 +120,18 @@ public class App extends Application {
         TreemapViewController treemapController = treemapLoader.getController();
         treemapController.initViewModel(treemapViewModel);
 
+        // Create HyperbolicViewModel with shared services
+        HyperbolicViewModel hyperbolicViewModel =
+                new HyperbolicViewModel(noteService, linkService);
+
+        // Load HyperbolicView
+        FXMLLoader hyperbolicLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/HyperbolicView.fxml"));
+        Parent hyperbolicView = hyperbolicLoader.load();
+        HyperbolicViewController hyperbolicController =
+                hyperbolicLoader.getController();
+        hyperbolicController.initViewModel(hyperbolicViewModel);
+
         // Load AttributeBrowserView
         FXMLLoader browserLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/AttributeBrowserView.fxml"));
@@ -137,11 +159,16 @@ public class App extends Application {
             outlineViewModel.loadNotes();
             treemapViewModel.loadNotes();
             browserViewModel.groupNotes();
+            if (hyperbolicViewModel.getFocusNoteId() != null) {
+                hyperbolicViewModel.setFocusNote(
+                        hyperbolicViewModel.getFocusNoteId());
+            }
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
         treemapViewModel.setOnDataChanged(refreshAll);
         editorViewModel.setOnDataChanged(refreshAll);
+        hyperbolicViewModel.setOnDataChanged(refreshAll);
 
         // Wrap each view with a title label
         Label mapLabel = new Label();
@@ -161,6 +188,13 @@ public class App extends Application {
         treemapLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
         VBox treemapContainer = new VBox(treemapLabel, treemapView);
         VBox.setVgrow(treemapView, Priority.ALWAYS);
+
+        Label hyperbolicLabel = new Label();
+        hyperbolicLabel.textProperty().bind(
+                hyperbolicViewModel.tabTitleProperty());
+        hyperbolicLabel.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
+        VBox hyperbolicContainer = new VBox(hyperbolicLabel, hyperbolicView);
+        VBox.setVgrow(hyperbolicView, Priority.ALWAYS);
 
         // Browser + Editor combined pane
         Label browserLabel = new Label();
@@ -183,7 +217,9 @@ public class App extends Application {
 
         // Menu bar
         MenuBar menuBar = createMenuBar(
-                mapViewModel, outlineViewModel, splitPane, browserEditorPane);
+                mapViewModel, outlineViewModel, splitPane,
+                browserEditorPane, hyperbolicContainer,
+                hyperbolicViewModel, project);
 
         // BorderPane: menu bar on top, split pane in center
         BorderPane root = new BorderPane();
@@ -199,7 +235,10 @@ public class App extends Application {
     private MenuBar createMenuBar(MapViewModel mapViewModel,
             OutlineViewModel outlineViewModel,
             SplitPane mainSplitPane,
-            SplitPane browserEditorPane) {
+            SplitPane browserEditorPane,
+            VBox hyperbolicContainer,
+            HyperbolicViewModel hyperbolicViewModel,
+            Project project) {
         // Note menu
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setAccelerator(
@@ -225,6 +264,25 @@ public class App extends Application {
         treemapViewItem.setOnAction(e ->
                 LOG.debug("Treemap view placeholder selected"));
 
+        MenuItem hyperbolicViewItem = new MenuItem("Hyperbolic");
+        hyperbolicViewItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.H,
+                        KeyCombination.SHORTCUT_DOWN,
+                        KeyCombination.SHIFT_DOWN));
+        hyperbolicViewItem.setOnAction(e -> {
+            BorderPane root = (BorderPane) mainSplitPane.getScene().getRoot();
+            if (root.getCenter() == hyperbolicContainer) {
+                root.setCenter(mainSplitPane);
+            } else {
+                // Set focus to root note if no focus set yet
+                if (hyperbolicViewModel.getFocusNoteId() == null) {
+                    hyperbolicViewModel.setFocusNote(
+                            project.getRootNote().getId());
+                }
+                root.setCenter(hyperbolicContainer);
+            }
+        });
+
         MenuItem browserViewItem = new MenuItem("Browser");
         browserViewItem.setAccelerator(
                 new KeyCodeCombination(KeyCode.B,
@@ -241,7 +299,7 @@ public class App extends Application {
 
         Menu viewMenu = new Menu("View");
         viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
-                treemapViewItem, browserViewItem);
+                treemapViewItem, hyperbolicViewItem, browserViewItem);
 
         MenuBar menuBar = new MenuBar(noteMenu, viewMenu);
         menuBar.setUseSystemMenuBar(true);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="com.embervault.adapter.in.ui.view.HyperbolicViewController">
+
+    <Pane fx:id="hyperbolicCanvas" style="-fx-background-color: #1A1A2E;"
+          minWidth="400" minHeight="300"/>
+</StackPane>

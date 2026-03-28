@@ -1,0 +1,236 @@
+package com.embervault.adapter.in.ui.viewmodel;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+
+import com.embervault.application.port.in.LinkService;
+import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.Link;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyBooleanProperty;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
+/**
+ * ViewModel for the Hyperbolic view tab.
+ *
+ * <p>Computes a hyperbolic layout of the link graph centered on a focus note.
+ * Provides observable properties for the view layer to bind to, including
+ * positioned nodes, edges, tab title, and navigation state.</p>
+ */
+public final class HyperbolicViewModel {
+
+    private static final int MAX_TITLE_LENGTH = 20;
+    private static final double DEFAULT_VIEWPORT_RADIUS = 300.0;
+    private static final Set<String> IGNORED_LINK_TYPES = Set.of("web", "prototype");
+
+    private final NoteService noteService;
+    private final LinkService linkService;
+    private final ReadOnlyStringWrapper tabTitle = new ReadOnlyStringWrapper();
+    private final ObservableList<HyperbolicNode> nodes =
+            FXCollections.observableArrayList();
+    private final ObservableList<HyperbolicEdge> edges =
+            FXCollections.observableArrayList();
+    private final ObjectProperty<UUID> focusNoteId =
+            new SimpleObjectProperty<>();
+    private final ObjectProperty<UUID> selectedNoteId =
+            new SimpleObjectProperty<>();
+    private final BooleanProperty canNavigateBack =
+            new SimpleBooleanProperty(false);
+    private final Deque<UUID> navigationHistory = new ArrayDeque<>();
+    private double viewportRadius = DEFAULT_VIEWPORT_RADIUS;
+    private Runnable onDataChanged;
+
+    /**
+     * Constructs a HyperbolicViewModel with the given services.
+     *
+     * @param noteService the note service for querying notes
+     * @param linkService the link service for querying links
+     */
+    public HyperbolicViewModel(NoteService noteService, LinkService linkService) {
+        this.noteService = Objects.requireNonNull(noteService,
+                "noteService must not be null");
+        this.linkService = Objects.requireNonNull(linkService,
+                "linkService must not be null");
+        tabTitle.set("Hyperbolic");
+    }
+
+    /**
+     * Sets a callback to be invoked after any mutation operation.
+     *
+     * @param callback the callback to invoke, or null to clear
+     */
+    public void setOnDataChanged(Runnable callback) {
+        this.onDataChanged = callback;
+    }
+
+    private void notifyDataChanged() {
+        if (onDataChanged != null) {
+            onDataChanged.run();
+        }
+    }
+
+    /**
+     * Sets the viewport radius for layout computation.
+     *
+     * @param radius the viewport radius in pixels
+     */
+    public void setViewportRadius(double radius) {
+        this.viewportRadius = radius;
+    }
+
+    /**
+     * Sets the focus note and computes the hyperbolic layout.
+     *
+     * @param noteId the note id to focus on
+     */
+    public void setFocusNote(UUID noteId) {
+        Objects.requireNonNull(noteId, "noteId must not be null");
+        focusNoteId.set(noteId);
+
+        noteService.getNote(noteId).ifPresent(note ->
+                tabTitle.set("Hyperbolic: "
+                        + TextUtils.truncate(note.getTitle(), MAX_TITLE_LENGTH)));
+
+        computeLayout();
+    }
+
+    /**
+     * Drills down to a new focus note, pushing the current focus onto the history stack.
+     *
+     * @param noteId the note id to drill into
+     */
+    public void drillDown(UUID noteId) {
+        UUID current = focusNoteId.get();
+        if (current != null) {
+            navigationHistory.push(current);
+            canNavigateBack.set(true);
+        }
+        setFocusNote(noteId);
+    }
+
+    /**
+     * Navigates back to the previous focus note.
+     */
+    public void navigateBack() {
+        if (navigationHistory.isEmpty()) {
+            return;
+        }
+        UUID previous = navigationHistory.pop();
+        canNavigateBack.set(!navigationHistory.isEmpty());
+        setFocusNote(previous);
+    }
+
+    /**
+     * Selects a note by id.
+     *
+     * @param noteId the note id to select, or null to clear
+     */
+    public void selectNote(UUID noteId) {
+        selectedNoteId.set(noteId);
+    }
+
+    /**
+     * Creates a link between two notes.
+     *
+     * @param source the source note id
+     * @param dest   the destination note id
+     */
+    public void createLink(UUID source, UUID dest) {
+        linkService.createLink(source, dest);
+        computeLayout();
+        notifyDataChanged();
+    }
+
+    /** Returns the focus note id property. */
+    public ObjectProperty<UUID> focusNoteIdProperty() {
+        return focusNoteId;
+    }
+
+    /** Returns the current focus note id. */
+    public UUID getFocusNoteId() {
+        return focusNoteId.get();
+    }
+
+    /** Returns the selected note id property. */
+    public ObjectProperty<UUID> selectedNoteIdProperty() {
+        return selectedNoteId;
+    }
+
+    /** Returns the tab title property. */
+    public ReadOnlyStringProperty tabTitleProperty() {
+        return tabTitle.getReadOnlyProperty();
+    }
+
+    /** Returns the observable list of positioned nodes. */
+    public ObservableList<HyperbolicNode> getNodes() {
+        return nodes;
+    }
+
+    /** Returns the observable list of edges. */
+    public ObservableList<HyperbolicEdge> getEdges() {
+        return edges;
+    }
+
+    /** Returns the canNavigateBack property. */
+    public ReadOnlyBooleanProperty canNavigateBackProperty() {
+        return canNavigateBack;
+    }
+
+    private void computeLayout() {
+        UUID focus = focusNoteId.get();
+        if (focus == null) {
+            nodes.clear();
+            edges.clear();
+            return;
+        }
+
+        // Build adjacency from links, ignoring web and prototype
+        Map<UUID, Set<UUID>> adjacency = new HashMap<>();
+        List<HyperbolicEdge> edgeList = new ArrayList<>();
+        Set<UUID> visited = new HashSet<>();
+        Deque<UUID> bfsQueue = new ArrayDeque<>();
+        bfsQueue.add(focus);
+        visited.add(focus);
+
+        while (!bfsQueue.isEmpty()) {
+            UUID current = bfsQueue.poll();
+            List<Link> links = linkService.getAllLinksFor(current);
+            for (Link link : links) {
+                if (IGNORED_LINK_TYPES.contains(link.type())) {
+                    continue;
+                }
+                UUID other = link.sourceId().equals(current)
+                        ? link.destinationId() : link.sourceId();
+                adjacency.computeIfAbsent(current, k -> new HashSet<>()).add(other);
+                adjacency.computeIfAbsent(other, k -> new HashSet<>()).add(current);
+
+                if (!visited.contains(other)) {
+                    visited.add(other);
+                    bfsQueue.add(other);
+                    edgeList.add(new HyperbolicEdge(
+                            link.sourceId(), link.destinationId()));
+                }
+            }
+        }
+
+        List<HyperbolicNode> layoutNodes = HyperbolicLayout.layout(
+                focus, adjacency, viewportRadius);
+
+        nodes.setAll(layoutNodes);
+        edges.setAll(edgeList);
+    }
+}
