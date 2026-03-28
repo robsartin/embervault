@@ -121,7 +121,7 @@ class MapViewControllerTest {
 
     @Test
     @DisplayName("z-order is preserved after adding a new note")
-    void addNote_shouldPreserveZOrder() {
+    void addNote_shouldPreserveZorder() {
         viewModel.createChildNote("A");
         viewModel.createChildNote("B");
 
