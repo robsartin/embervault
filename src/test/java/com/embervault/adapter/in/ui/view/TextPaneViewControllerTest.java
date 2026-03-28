@@ -170,10 +170,8 @@ class TextPaneViewControllerTest {
         robot.interact(() -> {
             titleField.requestFocus();
             titleField.setText("Enter Title");
+            titleField.fireEvent(new javafx.event.ActionEvent());
         });
-
-        robot.interact(() -> titleField.fireEvent(
-                new javafx.event.ActionEvent()));
 
         assertEquals("Enter Title", viewModel.titleProperty().get(),
                 "Title should be saved after Enter");
