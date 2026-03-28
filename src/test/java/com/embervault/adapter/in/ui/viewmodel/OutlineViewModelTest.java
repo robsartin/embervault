@@ -386,4 +386,77 @@ class OutlineViewModelTest {
 
         assertEquals("Outline: New Root Title", viewModel.tabTitleProperty().get());
     }
+
+    // --- createSiblingNote tests ---
+
+    @Test
+    @DisplayName("createSiblingNote() creates sibling and reloads tree")
+    void createSiblingNote_shouldCreateSiblingAndReload() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        Note child1 = noteService.createChildNote(parent.getId(), "Child1");
+        viewModel.loadNotes();
+
+        NoteDisplayItem item = viewModel.createSiblingNote(child1.getId(), "Sibling");
+
+        assertNotNull(item);
+        assertEquals("Sibling", item.getTitle());
+        // Root items should be reloaded
+        assertEquals(2, viewModel.getRootItems().size());
+        assertEquals("Child1", viewModel.getRootItems().get(0).getTitle());
+        assertEquals("Sibling", viewModel.getRootItems().get(1).getTitle());
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() with empty title creates note with empty title")
+    void createSiblingNote_emptyTitle_shouldWork() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        Note child1 = noteService.createChildNote(parent.getId(), "Child1");
+        viewModel.loadNotes();
+
+        NoteDisplayItem item = viewModel.createSiblingNote(child1.getId(), "");
+
+        assertNotNull(item);
+        assertEquals("", item.getTitle());
+    }
+
+    // --- indentNote tests ---
+
+    @Test
+    @DisplayName("indentNote() indents note and reloads tree")
+    void indentNote_shouldIndentAndReload() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        noteService.createChildNote(parent.getId(), "Child1");
+        Note child2 = noteService.createChildNote(parent.getId(), "Child2");
+        viewModel.loadNotes();
+
+        viewModel.indentNote(child2.getId());
+
+        // Only Child1 should remain at root level
+        assertEquals(1, viewModel.getRootItems().size());
+        assertEquals("Child1", viewModel.getRootItems().get(0).getTitle());
+        // Child1 should now have children
+        assertTrue(viewModel.getRootItems().get(0).isHasChildren());
+    }
+
+    // --- outdentNote tests ---
+
+    @Test
+    @DisplayName("outdentNote() outdents note and reloads tree")
+    void outdentNote_shouldOutdentAndReload() {
+        Note root = noteService.createNote("Root", "");
+        Note parent = noteService.createChildNote(root.getId(), "Parent");
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.outdentNote(child.getId());
+
+        // Root should now have Parent and Child
+        assertEquals(2, viewModel.getRootItems().size());
+        assertEquals("Parent", viewModel.getRootItems().get(0).getTitle());
+        assertEquals("Child", viewModel.getRootItems().get(1).getTitle());
+    }
 }

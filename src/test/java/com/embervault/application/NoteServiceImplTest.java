@@ -288,4 +288,218 @@ class NoteServiceImplTest {
         assertThrows(IllegalArgumentException.class,
                 () -> service.renameNote(note.getId(), "   "));
     }
+
+    // --- createSiblingNote tests ---
+
+    @Test
+    @DisplayName("createSiblingNote() creates a note with same parent as sibling")
+    void createSiblingNote_shouldCreateWithSameParent() {
+        Note parent = service.createNote("Parent", "");
+        Note sibling = service.createChildNote(parent.getId(), "Sibling");
+
+        Note newNote = service.createSiblingNote(sibling.getId(), "New");
+
+        assertNotNull(newNote);
+        assertEquals("New", newNote.getTitle());
+        String container = ((AttributeValue.StringValue)
+                newNote.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(parent.getId().toString(), container);
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() places new note after sibling in outline order")
+    void createSiblingNote_shouldPlaceAfterSibling() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        service.createChildNote(parent.getId(), "Child2");
+
+        Note newNote = service.createSiblingNote(child1.getId(), "Between");
+
+        double order = ((AttributeValue.NumberValue)
+                newNote.getAttribute("$OutlineOrder").orElseThrow()).value();
+        assertEquals(1.0, order);
+
+        // Child2's order should have been bumped to 2
+        List<Note> children = service.getChildren(parent.getId());
+        assertEquals(3, children.size());
+        assertEquals("Child1", children.get(0).getTitle());
+        assertEquals("Between", children.get(1).getTitle());
+        assertEquals("Child2", children.get(2).getTitle());
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() at end of list does not need to bump orders")
+    void createSiblingNote_atEnd_shouldAppend() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+
+        Note newNote = service.createSiblingNote(child2.getId(), "Last");
+
+        List<Note> children = service.getChildren(parent.getId());
+        assertEquals(3, children.size());
+        assertEquals("Child1", children.get(0).getTitle());
+        assertEquals("Child2", children.get(1).getTitle());
+        assertEquals("Last", children.get(2).getTitle());
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() with empty title creates note with empty title")
+    void createSiblingNote_emptyTitle_shouldCreateWithEmptyTitle() {
+        Note parent = service.createNote("Parent", "");
+        Note sibling = service.createChildNote(parent.getId(), "Sibling");
+
+        Note newNote = service.createSiblingNote(sibling.getId(), "");
+
+        assertEquals("", newNote.getTitle());
+    }
+
+    @Test
+    @DisplayName("createSiblingNote() throws when sibling does not exist")
+    void createSiblingNote_shouldThrowForMissingSibling() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.createSiblingNote(UUID.randomUUID(), "Title"));
+    }
+
+    // --- indentNote tests ---
+
+    @Test
+    @DisplayName("indentNote() moves note to be child of note above")
+    void indentNote_shouldMoveUnderNoteAbove() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+
+        Note indented = service.indentNote(child2.getId());
+
+        // child2 should now be a child of child1
+        String container = ((AttributeValue.StringValue)
+                indented.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(child1.getId().toString(), container);
+
+        // parent should only have child1 now
+        List<Note> parentChildren = service.getChildren(parent.getId());
+        assertEquals(1, parentChildren.size());
+        assertEquals("Child1", parentChildren.get(0).getTitle());
+
+        // child1 should have child2 as its child
+        List<Note> child1Children = service.getChildren(child1.getId());
+        assertEquals(1, child1Children.size());
+        assertEquals("Child2", child1Children.get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("indentNote() returns unchanged when note is first child (no note above)")
+    void indentNote_shouldReturnUnchangedWhenFirst() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+
+        Note result = service.indentNote(child1.getId());
+
+        // Should remain under parent
+        String container = ((AttributeValue.StringValue)
+                result.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(parent.getId().toString(), container);
+    }
+
+    @Test
+    @DisplayName("indentNote() appends to end of target's existing children")
+    void indentNote_shouldAppendToExistingChildren() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        service.createChildNote(child1.getId(), "ExistingGrandchild");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+
+        service.indentNote(child2.getId());
+
+        List<Note> child1Children = service.getChildren(child1.getId());
+        assertEquals(2, child1Children.size());
+        assertEquals("ExistingGrandchild", child1Children.get(0).getTitle());
+        assertEquals("Child2", child1Children.get(1).getTitle());
+    }
+
+    @Test
+    @DisplayName("indentNote() throws when note does not exist")
+    void indentNote_shouldThrowForMissingNote() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.indentNote(UUID.randomUUID()));
+    }
+
+    // --- outdentNote tests ---
+
+    @Test
+    @DisplayName("outdentNote() moves note to be sibling of parent")
+    void outdentNote_shouldMoveToGrandparent() {
+        Note root = service.createNote("Root", "");
+        Note parent = service.createChildNote(root.getId(), "Parent");
+        Note child = service.createChildNote(parent.getId(), "Child");
+
+        Note outdented = service.outdentNote(child.getId());
+
+        // child should now be under root
+        String container = ((AttributeValue.StringValue)
+                outdented.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(root.getId().toString(), container);
+
+        // parent should have no children
+        assertTrue(service.getChildren(parent.getId()).isEmpty());
+
+        // root should have parent and child
+        List<Note> rootChildren = service.getChildren(root.getId());
+        assertEquals(2, rootChildren.size());
+    }
+
+    @Test
+    @DisplayName("outdentNote() places note just after old parent in grandparent's children")
+    void outdentNote_shouldPlaceAfterOldParent() {
+        Note root = service.createNote("Root", "");
+        Note parent = service.createChildNote(root.getId(), "Parent");
+        service.createChildNote(root.getId(), "Uncle");
+        Note child = service.createChildNote(parent.getId(), "Child");
+
+        service.outdentNote(child.getId());
+
+        List<Note> rootChildren = service.getChildren(root.getId());
+        assertEquals(3, rootChildren.size());
+        assertEquals("Parent", rootChildren.get(0).getTitle());
+        assertEquals("Child", rootChildren.get(1).getTitle());
+        assertEquals("Uncle", rootChildren.get(2).getTitle());
+    }
+
+    @Test
+    @DisplayName("outdentNote() returns unchanged when note has no parent ($Container)")
+    void outdentNote_shouldReturnUnchangedWhenNoParent() {
+        Note root = service.createNote("Root", "");
+
+        Note result = service.outdentNote(root.getId());
+
+        assertEquals(root.getId(), result.getId());
+        // Should still have no $Container
+        assertTrue(result.getAttribute("$Container").isEmpty());
+    }
+
+    @Test
+    @DisplayName("outdentNote() returns unchanged when parent has no grandparent")
+    void outdentNote_shouldReturnUnchangedWhenParentIsTopLevel() {
+        Note topLevel = service.createNote("TopLevel", "");
+        Note child = service.createChildNote(topLevel.getId(), "Child");
+
+        // topLevel has no $Container, so child can't outdent further
+        // Actually, topLevel has no $Container, but child's parent is topLevel.
+        // The outdent should check if the parent (topLevel) has a $Container.
+        // Since topLevel doesn't, child is already at the shallowest indentable level.
+        Note result = service.outdentNote(child.getId());
+
+        // Should remain under topLevel
+        String container = ((AttributeValue.StringValue)
+                result.getAttribute("$Container").orElseThrow()).value();
+        assertEquals(topLevel.getId().toString(), container);
+    }
+
+    @Test
+    @DisplayName("outdentNote() throws when note does not exist")
+    void outdentNote_shouldThrowForMissingNote() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.outdentNote(UUID.randomUUID()));
+    }
 }

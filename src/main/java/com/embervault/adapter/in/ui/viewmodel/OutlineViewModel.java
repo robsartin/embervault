@@ -131,6 +131,40 @@ public final class OutlineViewModel {
     }
 
     /**
+     * Creates a new sibling note directly after the given sibling and reloads the tree.
+     *
+     * @param siblingId the sibling note id
+     * @param title     the title for the new note (may be empty)
+     * @return the display item for the created note
+     */
+    public NoteDisplayItem createSiblingNote(UUID siblingId, String title) {
+        Note sibling = noteService.createSiblingNote(siblingId, title);
+        NoteDisplayItem item = toDisplayItem(sibling);
+        loadNotes();
+        return item;
+    }
+
+    /**
+     * Indents a note (makes it a child of the note above) and reloads the tree.
+     *
+     * @param noteId the note id to indent
+     */
+    public void indentNote(UUID noteId) {
+        noteService.indentNote(noteId);
+        loadNotes();
+    }
+
+    /**
+     * Outdents a note (moves it up one level) and reloads the tree.
+     *
+     * @param noteId the note id to outdent
+     */
+    public void outdentNote(UUID noteId) {
+        noteService.outdentNote(noteId);
+        loadNotes();
+    }
+
+    /**
      * Renames a note, updating the display item in the root items list if present.
      *
      * @param noteId   the note id
