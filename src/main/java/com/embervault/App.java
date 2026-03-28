@@ -189,7 +189,10 @@ public class App extends Application {
                 project.getRootNote().getId(),
                 treemapViewModel::loadNotes);
 
-        // Synchronize: any mutation triggers all views to reload.
+        // SYNC CONTRACT — every mutation calls notifyDataChanged(), which
+        // invokes this refreshAll lambda to reload all views from the
+        // single authoritative NoteRepository. No view caches Note objects
+        // across refreshes. New views: add refresh here + wire below.
         Runnable refreshAll = () -> {
             mapPane.refreshCurrentView();
             outlinePane.refreshCurrentView();
@@ -203,6 +206,7 @@ public class App extends Application {
             if (selId != null) {
                 selectedNoteVm.setSelectedNoteId(selId);
             }
+            searchViewModel.refreshResults();
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
@@ -210,6 +214,7 @@ public class App extends Application {
         editorViewModel.setOnDataChanged(refreshAll);
         hyperbolicViewModel.setOnDataChanged(refreshAll);
         selectedNoteVm.setOnDataChanged(refreshAll);
+        searchViewModel.setOnDataChanged(refreshAll);
 
         // Wire shared deps into pane contexts for view switching
         ViewPaneDeps paneDeps = new ViewPaneDeps(

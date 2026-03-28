@@ -29,6 +29,7 @@ public final class SearchViewModel {
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
     private final NoteService noteService;
+    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
 
     /**
      * Constructs a SearchViewModel backed by the given NoteService.
@@ -38,6 +39,27 @@ public final class SearchViewModel {
     public SearchViewModel(NoteService noteService) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
+    }
+
+    /**
+     * Sets a callback to be invoked after any mutation operation.
+     *
+     * @param callback the callback to invoke, or null to clear
+     */
+    public void setOnDataChanged(Runnable callback) {
+        dataChangeSupport.setOnDataChanged(callback);
+    }
+
+    /**
+     * Re-runs the current search query so that results reflect the latest
+     * note state. Called by the global refreshAll cycle to keep search
+     * results in sync with other views.
+     */
+    public void refreshResults() {
+        String currentQuery = query.get();
+        if (visible.get() && currentQuery != null && !currentQuery.isBlank()) {
+            search(currentQuery);
+        }
     }
 
     /** Returns the query property bound to the search text field. */
