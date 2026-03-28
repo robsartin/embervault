@@ -1,18 +1,14 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Objects;
 import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.Note;
-import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
@@ -34,12 +30,9 @@ public final class OutlineViewModel {
             FXCollections.observableArrayList();
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
-    private final BooleanProperty canNavigateBack =
-            new SimpleBooleanProperty(false);
+    private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private final Deque<UUID> navigationHistory = new ArrayDeque<>();
-    private UUID baseNoteId;
     private Runnable onDataChanged;
 
     /**
@@ -56,7 +49,7 @@ public final class OutlineViewModel {
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
         noteTitle.addListener((obs, oldVal, newVal) -> {
-            if (navigationHistory.isEmpty()) {
+            if (navigationStack.isAtRoot()) {
                 updateTabTitle(newVal);
             }
         });
@@ -98,12 +91,12 @@ public final class OutlineViewModel {
      * @param noteId the base note id
      */
     public void setBaseNoteId(UUID noteId) {
-        this.baseNoteId = noteId;
+        navigationStack.setCurrentId(noteId);
     }
 
     /** Returns the base note id. */
     public UUID getBaseNoteId() {
-        return baseNoteId;
+        return navigationStack.getCurrentId();
     }
 
     /**
@@ -117,6 +110,7 @@ public final class OutlineViewModel {
 
     /** Loads the children of the base note into the observable list. */
     public void loadNotes() {
+        UUID baseNoteId = navigationStack.getCurrentId();
         if (baseNoteId == null) {
             rootItems.clear();
             return;
@@ -138,7 +132,7 @@ public final class OutlineViewModel {
         Note child = noteService.createChildNote(parentId, title);
         NoteDisplayItem item = toDisplayItem(child);
         // Add to root items if parent is the base note
-        if (parentId.equals(baseNoteId)) {
+        if (parentId.equals(navigationStack.getCurrentId())) {
             rootItems.add(item);
         }
         notifyDataChanged();
@@ -212,7 +206,7 @@ public final class OutlineViewModel {
 
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
-        return canNavigateBack;
+        return navigationStack.canNavigateBackProperty();
     }
 
     /**
@@ -221,9 +215,7 @@ public final class OutlineViewModel {
      * @param noteId the note id to drill into
      */
     public void drillDown(UUID noteId) {
-        navigationHistory.push(baseNoteId);
-        canNavigateBack.set(true);
-        baseNoteId = noteId;
+        navigationStack.push(noteId);
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
@@ -234,15 +226,14 @@ public final class OutlineViewModel {
      * Navigates back to the previous base note.
      */
     public void navigateBack() {
-        if (navigationHistory.isEmpty()) {
+        UUID previous = navigationStack.pop();
+        if (previous == null) {
             return;
         }
-        baseNoteId = navigationHistory.pop();
-        canNavigateBack.set(!navigationHistory.isEmpty());
-        if (navigationHistory.isEmpty()) {
+        if (navigationStack.isAtRoot()) {
             updateTabTitle(rootNoteTitle.get());
         } else {
-            noteService.getNote(baseNoteId).ifPresent(note ->
+            noteService.getNote(previous).ifPresent(note ->
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
