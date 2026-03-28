@@ -1,7 +1,9 @@
 package com.embervault.application;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -357,6 +359,39 @@ public final class NoteServiceImpl implements NoteService {
         }
         repository.delete(noteId);
         return true;
+    }
+
+    @Override
+    public List<Note> searchNotes(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        String lowerQuery = query.toLowerCase(Locale.ROOT);
+        List<Note> allNotes = repository.findAll();
+
+        List<Note> titleMatches = new ArrayList<>();
+        List<Note> textOnlyMatches = new ArrayList<>();
+
+        for (Note note : allNotes) {
+            boolean titleMatch = note.getTitle()
+                    .toLowerCase(Locale.ROOT)
+                    .contains(lowerQuery);
+            boolean textMatch = note.getContent()
+                    .toLowerCase(Locale.ROOT)
+                    .contains(lowerQuery);
+
+            if (titleMatch) {
+                titleMatches.add(note);
+            } else if (textMatch) {
+                textOnlyMatches.add(note);
+            }
+        }
+
+        List<Note> results = new ArrayList<>(
+                titleMatches.size() + textOnlyMatches.size());
+        results.addAll(titleMatches);
+        results.addAll(textOnlyMatches);
+        return results;
     }
 
     /**
