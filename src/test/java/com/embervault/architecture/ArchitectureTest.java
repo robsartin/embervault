@@ -180,4 +180,43 @@ class ArchitectureTest {
                 .allowEmptyShould(true)
                 .check(classes);
     }
+
+    @Test
+    @DisplayName("ADR-0010: Inbound port types must be interfaces")
+    void inboundPortTypesMustBeInterfaces() {
+        classes()
+                .that().resideInAPackage("com.embervault.application.port.in..")
+                .and().areTopLevelClasses()
+                .should().beInterfaces()
+                .because("ADR-0010 mandates that inbound ports (use case contracts) "
+                        + "are defined as interfaces")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0010: Outbound port types must be interfaces")
+    void outboundPortTypesMustBeInterfaces() {
+        classes()
+                .that().resideInAPackage("com.embervault.application.port.out..")
+                .and().areTopLevelClasses()
+                .should().beInterfaces()
+                .because("ADR-0010 mandates that outbound ports (repository contracts) "
+                        + "are defined as interfaces")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0009: Application ports must not depend on adapter packages")
+    void applicationPortsMustNotDependOnAdapters() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.application.port..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.embervault.adapter..")
+                .because("ADR-0009 mandates that ports define contracts independent "
+                        + "of adapter implementations (dependency flows inward only)")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
 }
