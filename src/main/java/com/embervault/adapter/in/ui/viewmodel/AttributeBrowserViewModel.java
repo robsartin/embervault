@@ -1,5 +1,8 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import static com.embervault.domain.Attributes.BADGE;
+import static com.embervault.domain.Attributes.COLOR;
+
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -213,11 +216,11 @@ public final class AttributeBrowserViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        String colorHex = note.getAttribute("$Color")
+        String colorHex = note.getAttribute(COLOR)
                 .map(v -> ((AttributeValue.ColorValue) v).value())
                 .map(TbxColor::toHex)
                 .orElse(DEFAULT_COLOR_HEX);
-        String badge = note.getAttribute("$Badge")
+        String badge = note.getAttribute(BADGE)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .flatMap(BadgeRegistry::getBadgeSymbol)
                 .orElse("");

@@ -1,5 +1,10 @@
 package com.embervault.domain;
 
+import static com.embervault.domain.Attributes.CREATED;
+import static com.embervault.domain.Attributes.MODIFIED;
+import static com.embervault.domain.Attributes.NAME;
+import static com.embervault.domain.Attributes.TEXT;
+
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
@@ -52,10 +57,10 @@ public final class Note {
 
         this.id = id;
         this.attributes = new AttributeMap();
-        this.attributes.set("$Name", new AttributeValue.StringValue(title));
-        this.attributes.set("$Text", new AttributeValue.StringValue(content));
-        this.attributes.set("$Created", new AttributeValue.DateValue(createdAt));
-        this.attributes.set("$Modified", new AttributeValue.DateValue(updatedAt));
+        this.attributes.set(NAME, new AttributeValue.StringValue(title));
+        this.attributes.set(TEXT, new AttributeValue.StringValue(content));
+        this.attributes.set(CREATED, new AttributeValue.DateValue(createdAt));
+        this.attributes.set(MODIFIED, new AttributeValue.DateValue(updatedAt));
     }
 
     /**
@@ -73,7 +78,7 @@ public final class Note {
 
     /** Returns the title ($Name attribute). */
     public String getTitle() {
-        return attributes.get("$Name")
+        return attributes.get(NAME)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElse("");
     }
@@ -85,7 +90,7 @@ public final class Note {
 
     /** Returns the content ($Text attribute). */
     public String getContent() {
-        return attributes.get("$Text")
+        return attributes.get(TEXT)
                 .map(v -> ((AttributeValue.StringValue) v).value())
                 .orElse("");
     }
@@ -97,14 +102,14 @@ public final class Note {
 
     /** Returns the creation timestamp ($Created attribute). */
     public Instant getCreatedAt() {
-        return attributes.get("$Created")
+        return attributes.get(CREATED)
                 .map(v -> ((AttributeValue.DateValue) v).value())
                 .orElse(Instant.EPOCH);
     }
 
     /** Returns the last-updated timestamp ($Modified attribute). */
     public Instant getUpdatedAt() {
-        return attributes.get("$Modified")
+        return attributes.get(MODIFIED)
                 .map(v -> ((AttributeValue.DateValue) v).value())
                 .orElse(Instant.EPOCH);
     }
@@ -168,9 +173,9 @@ public final class Note {
             throw new IllegalArgumentException("title must not be blank");
         }
 
-        this.attributes.set("$Name", new AttributeValue.StringValue(newTitle));
-        this.attributes.set("$Text", new AttributeValue.StringValue(newContent));
-        this.attributes.set("$Modified", new AttributeValue.DateValue(Instant.now()));
+        this.attributes.set(NAME, new AttributeValue.StringValue(newTitle));
+        this.attributes.set(TEXT, new AttributeValue.StringValue(newContent));
+        this.attributes.set(MODIFIED, new AttributeValue.DateValue(Instant.now()));
     }
 
     @Override

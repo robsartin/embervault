@@ -1,5 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import static com.embervault.domain.Attributes.TEXT;
+
 import java.util.Objects;
 import java.util.UUID;
 
@@ -113,7 +115,7 @@ public final class SelectedNoteViewModel {
             return;
         }
         noteService.getNote(noteId).ifPresent(note -> {
-            note.setAttribute("$Text",
+            note.setAttribute(TEXT,
                     new AttributeValue.StringValue(newText));
         });
         text.set(newText);

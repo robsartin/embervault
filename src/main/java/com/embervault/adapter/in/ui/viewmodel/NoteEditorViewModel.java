@@ -1,5 +1,8 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import static com.embervault.domain.Attributes.NAME;
+import static com.embervault.domain.Attributes.TEXT;
+
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
@@ -125,7 +128,7 @@ public final class NoteEditorViewModel {
             return;
         }
         noteService.getNote(currentNoteId).ifPresent(note -> {
-            note.setAttribute("$Text", new AttributeValue.StringValue(newText));
+            note.setAttribute(TEXT, new AttributeValue.StringValue(newText));
         });
         text.set(newText);
         notifyDataChanged();
@@ -156,7 +159,7 @@ public final class NoteEditorViewModel {
         for (Map.Entry<String, AttributeValue> entry : entries.entrySet()) {
             String attrName = entry.getKey();
             // Skip $Name and $Text since they have dedicated fields
-            if ("$Name".equals(attrName) || "$Text".equals(attrName)) {
+            if (NAME.equals(attrName) || TEXT.equals(attrName)) {
                 continue;
             }
             // Skip intrinsic/read-only attributes
