@@ -56,4 +56,4 @@ All enforced by `mvn verify`:
 
 ## PR Workflow
 
-Do not auto-merge PRs. Always leave PRs open for manual review and merge.
+All code changes are made on issue branches and submitted as PRs to main. Direct pushes to main are blocked. PRs require passing CI (tests, checkstyle, jacoco, archunit) and are merged manually -- no auto-merge. Branch naming: `issue-<number>/<short-description>` or `fix/<description>`. See [ADR-0019](doc/adr/0019-branch-and-pr-workflow.md) for details.
