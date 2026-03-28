@@ -459,4 +459,108 @@ class OutlineViewModelTest {
         assertEquals("Parent", viewModel.getRootItems().get(0).getTitle());
         assertEquals("Child", viewModel.getRootItems().get(1).getTitle());
     }
+
+    // --- hasChildren tests ---
+
+    @Test
+    @DisplayName("hasChildren() returns true when note has children")
+    void hasChildren_shouldReturnTrue() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+
+        assertTrue(viewModel.hasChildren(child.getId()));
+    }
+
+    @Test
+    @DisplayName("hasChildren() returns false when note has no children")
+    void hasChildren_shouldReturnFalse() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+
+        assertFalse(viewModel.hasChildren(child.getId()));
+    }
+
+    // --- getPreviousNoteId tests ---
+
+    @Test
+    @DisplayName("getPreviousNoteId() returns previous sibling id")
+    void getPreviousNoteId_shouldReturnPreviousSiblingId() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child1 = noteService.createChildNote(parent.getId(), "Child1");
+        Note child2 = noteService.createChildNote(parent.getId(), "Child2");
+
+        UUID previousId = viewModel.getPreviousNoteId(child2.getId());
+
+        assertEquals(child1.getId(), previousId);
+    }
+
+    @Test
+    @DisplayName("getPreviousNoteId() returns parent id when first child")
+    void getPreviousNoteId_shouldReturnParentIdWhenFirstChild() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+
+        UUID previousId = viewModel.getPreviousNoteId(child.getId());
+
+        assertEquals(parent.getId(), previousId);
+    }
+
+    @Test
+    @DisplayName("getPreviousNoteId() returns null when no previous")
+    void getPreviousNoteId_shouldReturnNullWhenNoPrevious() {
+        Note root = noteService.createNote("Root", "");
+
+        UUID previousId = viewModel.getPreviousNoteId(root.getId());
+
+        assertNull(previousId);
+    }
+
+    // --- deleteNote tests ---
+
+    @Test
+    @DisplayName("deleteNote() deletes leaf note and reloads tree")
+    void deleteNote_shouldDeleteLeafAndReload() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        noteService.createChildNote(parent.getId(), "Child1");
+        Note child2 = noteService.createChildNote(parent.getId(), "Child2");
+        viewModel.loadNotes();
+
+        boolean result = viewModel.deleteNote(child2.getId());
+
+        assertTrue(result);
+        assertEquals(1, viewModel.getRootItems().size());
+        assertEquals("Child1", viewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("deleteNote() does not delete note with children")
+    void deleteNote_shouldNotDeleteNoteWithChildren() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.loadNotes();
+
+        boolean result = viewModel.deleteNote(child.getId());
+
+        assertFalse(result);
+        assertEquals(1, viewModel.getRootItems().size());
+    }
+
+    @Test
+    @DisplayName("deleteNote() notifies data changed on success")
+    void deleteNote_shouldNotifyDataChanged() {
+        Note parent = noteService.createNote("Parent", "");
+        viewModel.setBaseNoteId(parent.getId());
+        Note child = noteService.createChildNote(parent.getId(), "Child");
+        viewModel.loadNotes();
+        boolean[] notified = {false};
+        viewModel.setOnDataChanged(() -> notified[0] = true);
+
+        viewModel.deleteNote(child.getId());
+
+        assertTrue(notified[0]);
+    }
 }

@@ -502,4 +502,97 @@ class NoteServiceImplTest {
         assertThrows(NoSuchElementException.class,
                 () -> service.outdentNote(UUID.randomUUID()));
     }
+
+    // --- getPreviousInOutline tests ---
+
+    @Test
+    @DisplayName("getPreviousInOutline() returns previous sibling")
+    void getPreviousInOutline_shouldReturnPreviousSibling() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+
+        Optional<Note> previous = service.getPreviousInOutline(child2.getId());
+
+        assertTrue(previous.isPresent());
+        assertEquals(child1.getId(), previous.get().getId());
+    }
+
+    @Test
+    @DisplayName("getPreviousInOutline() returns parent when note is first child")
+    void getPreviousInOutline_shouldReturnParentWhenFirstChild() {
+        Note parent = service.createNote("Parent", "");
+        Note child = service.createChildNote(parent.getId(), "Child");
+
+        Optional<Note> previous = service.getPreviousInOutline(child.getId());
+
+        assertTrue(previous.isPresent());
+        assertEquals(parent.getId(), previous.get().getId());
+    }
+
+    @Test
+    @DisplayName("getPreviousInOutline() returns empty when note has no container")
+    void getPreviousInOutline_shouldReturnEmptyWhenNoContainer() {
+        Note root = service.createNote("Root", "");
+
+        Optional<Note> previous = service.getPreviousInOutline(root.getId());
+
+        assertTrue(previous.isEmpty());
+    }
+
+    @Test
+    @DisplayName("getPreviousInOutline() returns correct sibling among many")
+    void getPreviousInOutline_shouldReturnCorrectSiblingAmongMany() {
+        Note parent = service.createNote("Parent", "");
+        Note child1 = service.createChildNote(parent.getId(), "Child1");
+        Note child2 = service.createChildNote(parent.getId(), "Child2");
+        Note child3 = service.createChildNote(parent.getId(), "Child3");
+
+        Optional<Note> previous = service.getPreviousInOutline(child3.getId());
+
+        assertTrue(previous.isPresent());
+        assertEquals(child2.getId(), previous.get().getId());
+    }
+
+    @Test
+    @DisplayName("getPreviousInOutline() throws when note does not exist")
+    void getPreviousInOutline_shouldThrowForMissingNote() {
+        assertThrows(NoSuchElementException.class,
+                () -> service.getPreviousInOutline(UUID.randomUUID()));
+    }
+
+    // --- deleteNoteIfLeaf tests ---
+
+    @Test
+    @DisplayName("deleteNoteIfLeaf() deletes leaf note and returns true")
+    void deleteNoteIfLeaf_shouldDeleteLeafNote() {
+        Note parent = service.createNote("Parent", "");
+        Note child = service.createChildNote(parent.getId(), "Child");
+
+        boolean result = service.deleteNoteIfLeaf(child.getId());
+
+        assertTrue(result);
+        assertTrue(service.getNote(child.getId()).isEmpty());
+    }
+
+    @Test
+    @DisplayName("deleteNoteIfLeaf() does not delete note with children and returns false")
+    void deleteNoteIfLeaf_shouldNotDeleteNoteWithChildren() {
+        Note parent = service.createNote("Parent", "");
+        Note child = service.createChildNote(parent.getId(), "Child");
+        service.createChildNote(child.getId(), "Grandchild");
+
+        boolean result = service.deleteNoteIfLeaf(child.getId());
+
+        assertFalse(result);
+        assertTrue(service.getNote(child.getId()).isPresent());
+    }
+
+    @Test
+    @DisplayName("deleteNoteIfLeaf() returns false when note does not exist")
+    void deleteNoteIfLeaf_shouldReturnFalseForMissingNote() {
+        boolean result = service.deleteNoteIfLeaf(UUID.randomUUID());
+
+        assertFalse(result);
+    }
 }
