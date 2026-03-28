@@ -9,6 +9,8 @@ import com.embervault.application.port.in.StampService;
 import com.embervault.domain.Stamp;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ViewModel for the Stamp Editor dialog.
@@ -18,6 +20,9 @@ import javafx.collections.ObservableList;
  * through the {@link StampService}.</p>
  */
 public final class StampEditorViewModel {
+
+    private static final Logger LOG = LoggerFactory.getLogger(
+            StampEditorViewModel.class);
 
     private final StampService stampService;
     private final ObservableList<String> stampNames =
@@ -81,12 +86,23 @@ public final class StampEditorViewModel {
     /**
      * Creates a new stamp with the given name and action.
      *
+     * <p>Returns {@code false} without creating anything if name or action
+     * is null or blank.</p>
+     *
      * @param name   the stamp name
      * @param action the action expression
+     * @return true if the stamp was created, false if validation failed
      */
-    public void createStamp(String name, String action) {
+    public boolean createStamp(String name, String action) {
+        if (name == null || name.isBlank()
+                || action == null || action.isBlank()) {
+            LOG.warn("Cannot create stamp: name and action "
+                    + "must not be blank");
+            return false;
+        }
         stampService.createStamp(name, action);
         refresh();
+        return true;
     }
 
     /**
@@ -102,13 +118,24 @@ public final class StampEditorViewModel {
     /**
      * Updates a stamp by deleting the old one and creating a new one.
      *
+     * <p>Returns {@code false} without modifying anything if name or action
+     * is null or blank.</p>
+     *
      * @param oldId  the id of the stamp to replace
      * @param name   the new name
      * @param action the new action
+     * @return true if the stamp was updated, false if validation failed
      */
-    public void updateStamp(UUID oldId, String name, String action) {
+    public boolean updateStamp(UUID oldId, String name, String action) {
+        if (name == null || name.isBlank()
+                || action == null || action.isBlank()) {
+            LOG.warn("Cannot save stamp: name and action "
+                    + "must not be blank");
+            return false;
+        }
         stampService.deleteStamp(oldId);
         stampService.createStamp(name, action);
         refresh();
+        return true;
     }
 }
