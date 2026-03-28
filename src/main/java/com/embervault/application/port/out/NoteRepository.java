@@ -1,7 +1,9 @@
 package com.embervault.application.port.out;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import com.embervault.domain.Note;
@@ -33,6 +35,19 @@ public interface NoteRepository {
      * @return the list of child notes
      */
     List<Note> findChildren(UUID parentId);
+
+    /**
+     * Returns the ids from the given collection that have at least one child note.
+     *
+     * <p>A child note is one whose {@code $Container} attribute references the
+     * parent's id. This method performs a single scan over all notes, making it
+     * O(M) where M is the total number of notes, regardless of how many ids are
+     * queried.</p>
+     *
+     * @param noteIds the note ids to check
+     * @return the subset of ids that have at least one child
+     */
+    Set<UUID> findNoteIdsWithChildren(Collection<UUID> noteIds);
 
     /**
      * Deletes the note with the given id.
