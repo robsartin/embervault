@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox fx:id="textPaneRoot" xmlns:fx="http://javafx.com/fxml"
+      fx:controller="com.embervault.adapter.in.ui.view.TextPaneViewController"
+      spacing="4">
+
+    <padding>
+        <Insets top="4" right="8" bottom="4" left="8"/>
+    </padding>
+
+    <Label fx:id="placeholderLabel" text="Select a note to edit"
+           style="-fx-text-fill: #888888; -fx-font-style: italic;"/>
+    <TextField fx:id="titleField" promptText="Note title"
+               style="-fx-font-weight: bold; -fx-font-size: 16px;"
+               visible="false" managed="false"/>
+    <TextArea fx:id="textArea" promptText="Note content" wrapText="true"
+              VBox.vgrow="ALWAYS" visible="false" managed="false"/>
+</VBox>

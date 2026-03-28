@@ -2,6 +2,7 @@ package com.embervault;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.StampEditorViewController;
+import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.view.TreemapViewController;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
@@ -19,6 +21,7 @@ import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
+import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
@@ -126,68 +129,26 @@ public class App extends Application {
         NoteEditorViewModel editorViewModel =
                 new NoteEditorViewModel(noteService, schemaRegistry);
 
-        // Load MapView
-        FXMLLoader mapLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/MapView.fxml"));
-        Parent mapView = mapLoader.load();
-        MapViewController mapController = mapLoader.getController();
-        mapController.initViewModel(mapViewModel);
-
-        // Load OutlineView
-        FXMLLoader outlineLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/OutlineView.fxml"));
-        Parent outlineView = outlineLoader.load();
-        OutlineViewController outlineController =
-                outlineLoader.getController();
-        outlineController.initViewModel(outlineViewModel);
-
-        // Load TreemapView
-        FXMLLoader treemapLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/TreemapView.fxml"));
-        Parent treemapView = treemapLoader.load();
-        TreemapViewController treemapController =
-                treemapLoader.getController();
-        treemapController.initViewModel(treemapViewModel);
-
-        // Create HyperbolicViewModel with shared services
+        // Load views
+        Parent mapView = loadView("MapView.fxml",
+                c -> ((MapViewController) c).initViewModel(mapViewModel));
+        Parent outlineView = loadView("OutlineView.fxml",
+                c -> ((OutlineViewController) c).initViewModel(outlineViewModel));
+        Parent treemapView = loadView("TreemapView.fxml",
+                c -> ((TreemapViewController) c).initViewModel(treemapViewModel));
         HyperbolicViewModel hyperbolicViewModel =
                 new HyperbolicViewModel(noteService, linkService);
-
-        // Load HyperbolicView
-        FXMLLoader hyperbolicLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/HyperbolicView.fxml"));
-        Parent hyperbolicView = hyperbolicLoader.load();
-        HyperbolicViewController hyperbolicController =
-                hyperbolicLoader.getController();
-        hyperbolicController.initViewModel(hyperbolicViewModel);
-
-        // Load AttributeBrowserView
-        FXMLLoader browserLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/AttributeBrowserView.fxml"));
-        Parent browserView = browserLoader.load();
-        AttributeBrowserViewController browserController =
-                browserLoader.getController();
-        browserController.initViewModel(browserViewModel);
-
-        // Load NoteEditorView
-        FXMLLoader editorLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/NoteEditorView.fxml"));
-        Parent editorView = editorLoader.load();
-        NoteEditorViewController editorController =
-                editorLoader.getController();
-        editorController.initViewModel(editorViewModel);
-
-        // Wire browser note selection to editor
+        Parent hyperbolicView = loadView("HyperbolicView.fxml",
+                c -> ((HyperbolicViewController) c).initViewModel(hyperbolicViewModel));
+        Parent browserView = loadView("AttributeBrowserView.fxml",
+                c -> ((AttributeBrowserViewController) c).initViewModel(browserViewModel));
+        Parent editorView = loadView("NoteEditorView.fxml",
+                c -> ((NoteEditorViewController) c).initViewModel(editorViewModel));
         browserViewModel.selectedNoteIdProperty().addListener(
                 (obs, oldVal, newVal) -> editorViewModel.setNote(newVal));
-
         SearchViewModel searchViewModel = new SearchViewModel(noteService);
-        FXMLLoader searchLoader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/SearchView.fxml"));
-        Parent searchView = searchLoader.load();
-        SearchViewController searchController =
-                searchLoader.getController();
-        searchController.initViewModel(searchViewModel);
+        Parent searchView = loadView("SearchView.fxml",
+                c -> ((SearchViewController) c).initViewModel(searchViewModel));
         searchViewModel.selectedNoteIdProperty().addListener(
                 (obs, oldVal, newVal) -> {
                     if (newVal != null) {
@@ -196,8 +157,20 @@ public class App extends Application {
                     }
                 });
 
-        // Synchronize: any mutation in any view triggers all to reload
-        // from the shared NoteService/Repository.
+        // Create SelectedNoteViewModel and load TextPaneView
+        SelectedNoteViewModel selectedNoteVm =
+                new SelectedNoteViewModel(noteService);
+        FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/TextPaneView.fxml"));
+        Parent textPaneView = textPaneLoader.load();
+        ((TextPaneViewController) textPaneLoader.getController())
+                .initViewModel(selectedNoteVm);
+        // Wire all views' selection to the text pane
+        wireSelection(mapViewModel.selectedNoteIdProperty(), selectedNoteVm);
+        wireSelection(outlineViewModel.selectedNoteIdProperty(), selectedNoteVm);
+        wireSelection(treemapViewModel.selectedNoteIdProperty(), selectedNoteVm);
+
+        // Synchronize: any mutation triggers all views to reload.
         Runnable refreshAll = () -> {
             mapViewModel.loadNotes();
             outlineViewModel.loadNotes();
@@ -207,12 +180,17 @@ public class App extends Application {
                 hyperbolicViewModel.setFocusNote(
                         hyperbolicViewModel.getFocusNoteId());
             }
+            UUID selId = selectedNoteVm.selectedNoteIdProperty().get();
+            if (selId != null) {
+                selectedNoteVm.setSelectedNoteId(selId);
+            }
         };
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
         treemapViewModel.setOnDataChanged(refreshAll);
         editorViewModel.setOnDataChanged(refreshAll);
         hyperbolicViewModel.setOnDataChanged(refreshAll);
+        selectedNoteVm.setOnDataChanged(refreshAll);
 
         // Wrap each view with a title label
         VBox mapContainer = wrapWithLabel(
@@ -236,13 +214,20 @@ public class App extends Application {
         browserEditorPane.setDividerPositions(0.4);
 
         // SplitPane with Map, Outline, and Treemap
-        SplitPane splitPane = new SplitPane(
+        SplitPane viewsSplitPane = new SplitPane(
                 mapContainer, outlineContainer, treemapContainer);
-        splitPane.setDividerPositions(0.33, 0.66);
+        viewsSplitPane.setDividerPositions(0.33, 0.66);
+
+        // Vertical SplitPane: views on top, text pane on bottom
+        SplitPane mainSplitPane = new SplitPane();
+        mainSplitPane.setOrientation(
+                javafx.geometry.Orientation.VERTICAL);
+        mainSplitPane.getItems().addAll(viewsSplitPane, textPaneView);
+        mainSplitPane.setDividerPositions(0.6);
 
         // Menu bar
         MenuBar menuBar = createMenuBar(
-                mapViewModel, outlineViewModel, splitPane,
+                mapViewModel, outlineViewModel, mainSplitPane,
                 browserEditorPane, hyperbolicContainer,
                 hyperbolicViewModel, project, stampService,
                 mapViewModel.selectedNoteIdProperty(),
@@ -254,7 +239,7 @@ public class App extends Application {
         // BorderPane: top area on top, split pane in center
         BorderPane root = new BorderPane();
         root.setTop(topArea);
-        root.setCenter(splitPane);
+        root.setCenter(mainSplitPane);
 
         Scene scene = new Scene(root, 1024, 768);
         stage.setTitle("EmberVault - " + project.getName());
@@ -462,6 +447,15 @@ public class App extends Application {
                 refreshAll, ownerStage);
     }
 
+    private Parent loadView(String fxml,
+            java.util.function.Consumer<Object> init) throws IOException {
+        FXMLLoader loader = new FXMLLoader(getClass().getResource(
+                "/com/embervault/adapter/in/ui/view/" + fxml));
+        Parent view = loader.load();
+        init.accept(loader.getController());
+        return view;
+    }
+
     private static VBox wrapWithLabel(
             ReadOnlyStringProperty titleProp,
             Parent view) {
@@ -480,17 +474,17 @@ public class App extends Application {
         stampService.createStamp("Mark Done", "$Checked=true");
         stampService.createStamp("Mark Undone", "$Checked=false");
 
-        // Badge stamps
-        stampService.createStamp("Badge:star", "$Badge=star");
-        stampService.createStamp("Badge:flag", "$Badge=flag");
-        stampService.createStamp("Badge:check", "$Badge=check");
-        stampService.createStamp("Badge:warning", "$Badge=warning");
-        stampService.createStamp("Badge:book", "$Badge=book");
-        stampService.createStamp("Badge:person", "$Badge=person");
-        stampService.createStamp("Badge:idea", "$Badge=idea");
-        stampService.createStamp("Badge:heart", "$Badge=heart");
-        stampService.createStamp("Badge:pin", "$Badge=pin");
-        stampService.createStamp("Badge:fire", "$Badge=fire");
+        for (String b : List.of("star", "flag", "check", "warning",
+                "book", "person", "idea", "heart", "pin", "fire")) {
+            stampService.createStamp("Badge:" + b, "$Badge=" + b);
+        }
+    }
+
+    private static void wireSelection(
+            ObjectProperty<UUID> source,
+            SelectedNoteViewModel target) {
+        source.addListener(
+                (obs, oldVal, newVal) -> target.setSelectedNoteId(newVal));
     }
 
     public static void main(String[] args) {
