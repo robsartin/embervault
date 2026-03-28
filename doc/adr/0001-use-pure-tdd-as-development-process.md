@@ -36,6 +36,16 @@ Concretely this means:
 - Every commit on a feature branch must leave all tests passing.
 - Pull requests are expected to show a commit history that reflects the TDD cycle.
 
+### Branch and PR Workflow
+
+All development work is done on **issue branches** and submitted as **pull requests to main**:
+
+- **No direct commits to main.** Branch protection blocks direct pushes.
+- **Branch naming:** `issue-<number>/<short-description>` (e.g., `issue-42/map-outline-views`) or `fix/<description>` for non-issue fixes.
+- **PRs require passing CI:** tests, checkstyle, JaCoCo coverage, and ArchUnit rules must all pass before merge.
+- **Manual merge only.** Auto-merge is disabled. PRs are reviewed and merged by pressing the merge button.
+- **Exploratory spikes** use throwaway branches that are never merged directly — results are reimplemented via TDD on a proper issue branch.
+
 ## Consequences
 
 ### Positive
