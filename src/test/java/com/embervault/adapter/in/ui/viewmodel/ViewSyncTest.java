@@ -116,6 +116,39 @@ class ViewSyncTest {
     }
 
     @Test
+    @DisplayName("Indent middle child in Outline removes it from Map's children (issue #118)")
+    void indentMiddleChild_shouldRemoveFromMapChildren() {
+        // Reproduce exact scenario from issue #118:
+        // root -> A, B, C; indent B under A
+        Note childA = noteService.createChildNote(root.getId(), "A");
+        noteService.createChildNote(root.getId(), "B");
+        Note childC = noteService.createChildNote(root.getId(), "C");
+        mapViewModel.loadNotes();
+        outlineViewModel.loadNotes();
+
+        // Verify initial state: Map shows 3 children
+        assertEquals(3, mapViewModel.getNoteItems().size());
+
+        // Indent B (goes under A, the note above it)
+        outlineViewModel.indentNote(
+                noteService.getChildren(root.getId()).get(1).getId());
+
+        // After indent: Map should show only A and C (2 items), NOT B
+        assertEquals(2, mapViewModel.getNoteItems().size(),
+                "Map should show only 2 top-level notes after indent of B under A");
+        assertEquals("A", mapViewModel.getNoteItems().get(0).getTitle());
+        assertEquals("C", mapViewModel.getNoteItems().get(1).getTitle());
+
+        // A should now have children flag set
+        assertTrue(mapViewModel.getNoteItems().get(0).isHasChildren(),
+                "A should report hasChildren=true after B was indented under it");
+
+        // Verify getChildren at service level too
+        assertEquals(1, noteService.getChildren(childA.getId()).size());
+        assertEquals("B", noteService.getChildren(childA.getId()).get(0).getTitle());
+    }
+
+    @Test
     @DisplayName("Outdenting a note in Outline refreshes Map view")
     void outdentInOutline_shouldRefreshMap() {
         Note child1 = noteService.createChildNote(root.getId(), "Child1");

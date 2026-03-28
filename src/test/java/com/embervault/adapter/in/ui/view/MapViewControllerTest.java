@@ -184,6 +184,37 @@ class MapViewControllerTest {
                 "Reloaded note should be present");
     }
 
+    @Test
+    @DisplayName("loadNotes after indent removes indented note node from canvas (issue #118)")
+    void loadNotes_afterIndent_shouldRemoveIndentedNoteNode() {
+        // Create 3 children: A, B, C
+        viewModel.createChildNote("A");
+        viewModel.createChildNote("B");
+        viewModel.createChildNote("C");
+        // Canvas: 3 note nodes + back button = 4
+        assertEquals(4, mapCanvas.getChildren().size(),
+                "Should have 3 note nodes + back button before indent");
+        assertNotNull(findNodeByTitle("A"));
+        assertNotNull(findNodeByTitle("B"));
+        assertNotNull(findNodeByTitle("C"));
+
+        // Indent B under A (via service, then reload)
+        noteService.indentNote(
+                noteService.getChildren(parentId).get(1).getId());
+        viewModel.loadNotes();
+
+        // After indent: canvas should have 2 note nodes + back button = 3
+        assertEquals(3, mapCanvas.getChildren().size(),
+                "Should have 2 note nodes + back button after indent; "
+                        + "indented note B must be removed from canvas");
+        assertNotNull(findNodeByTitle("A"),
+                "A should still be on canvas");
+        assertNotNull(findNodeByTitle("C"),
+                "C should still be on canvas");
+        assertEquals(null, findNodeByTitle("B"),
+                "B should NOT be on canvas after being indented under A");
+    }
+
     /** Finds a StackPane on the canvas whose title label matches the given text. */
     private StackPane findNodeByTitle(String title) {
         for (Node child : mapCanvas.getChildren()) {

@@ -1,7 +1,9 @@
 package com.embervault.adapter.in.ui.view;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
@@ -146,13 +148,25 @@ public class MapViewController {
                 return;
             }
             if (change.wasReplaced()) {
+                // Collect added IDs so we can detect which removed items are stale
+                Set<UUID> addedIds = new HashSet<>();
                 for (NoteDisplayItem item : change.getAddedSubList()) {
+                    addedIds.add(item.getId());
                     StackPane existing = nodeMap.get(item.getId());
                     if (existing != null) {
                         updateNoteNode(existing, item);
                     } else {
                         renderAllNotes();
                         return;
+                    }
+                }
+                // Remove nodes for items that were removed but not re-added
+                for (NoteDisplayItem removed : change.getRemoved()) {
+                    if (!addedIds.contains(removed.getId())) {
+                        StackPane node = nodeMap.remove(removed.getId());
+                        if (node != null) {
+                            mapCanvas.getChildren().remove(node);
+                        }
                     }
                 }
             } else {

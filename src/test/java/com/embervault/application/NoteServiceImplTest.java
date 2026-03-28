@@ -420,6 +420,37 @@ class NoteServiceImplTest {
     }
 
     @Test
+    @DisplayName("indentNote() removes indented note from original parent's children (issue #118)")
+    void indentNote_shouldRemoveFromOriginalParentChildren() {
+        // Reproduce: root -> A, B, C; indent B under A
+        // Then getChildren(root) should return only A and C, not B
+        Note root = service.createNote("Root", "");
+        Note childA = service.createChildNote(root.getId(), "A");
+        Note childB = service.createChildNote(root.getId(), "B");
+        Note childC = service.createChildNote(root.getId(), "C");
+
+        // Before indent: root has 3 children
+        List<Note> before = service.getChildren(root.getId());
+        assertEquals(3, before.size());
+
+        // Indent B (should go under A, the note above it)
+        service.indentNote(childB.getId());
+
+        // After indent: root should have only A and C
+        List<Note> rootChildren = service.getChildren(root.getId());
+        assertEquals(2, rootChildren.size(),
+                "Root should have 2 children after indenting B under A");
+        assertEquals("A", rootChildren.get(0).getTitle());
+        assertEquals("C", rootChildren.get(1).getTitle());
+
+        // A should now have B as its child
+        List<Note> childrenOfA = service.getChildren(childA.getId());
+        assertEquals(1, childrenOfA.size(),
+                "A should have 1 child (B) after indent");
+        assertEquals("B", childrenOfA.get(0).getTitle());
+    }
+
+    @Test
     @DisplayName("indentNote() throws when note does not exist")
     void indentNote_shouldThrowForMissingNote() {
         assertThrows(NoSuchElementException.class,
