@@ -81,25 +81,24 @@ class MapViewControllerTest {
     @Test
     @DisplayName("nodeMap is populated after initViewModel with existing notes")
     void initViewModel_shouldPopulateNodeMap() {
-        // The parent has no children initially, so nodeMap should be empty
-        // (only the back button is on the canvas)
-        assertEquals(1, mapCanvas.getChildren().size(),
-                "Only back button should be present with no notes");
+        // No note children initially — only back button + zoom toolbar
+        assertEquals(2, mapCanvas.getChildren().size(),
+                "Only back button and zoom toolbar should be present");
     }
 
     @Test
     @DisplayName("adding a note creates only one new node without rebuilding others")
     void addNote_shouldCreateOnlyNewNode() {
         viewModel.createChildNote("First");
-        // Canvas: 1 note node + back button = 2
-        assertEquals(2, mapCanvas.getChildren().size());
+        // Canvas: 1 note + back button + zoom toolbar = 3
+        assertEquals(3, mapCanvas.getChildren().size());
 
         StackPane firstNode = findNodeByTitle("First");
         assertNotNull(firstNode, "Should find node for 'First'");
 
         // Add a second note — the first node instance must be the same object
         viewModel.createChildNote("Second");
-        assertEquals(3, mapCanvas.getChildren().size());
+        assertEquals(4, mapCanvas.getChildren().size());
 
         StackPane firstNodeAfterAdd = findNodeByTitle("First");
         assertSame(firstNode, firstNodeAfterAdd,
@@ -111,14 +110,14 @@ class MapViewControllerTest {
     void removeNote_shouldRemoveOnlyThatNode() {
         NoteDisplayItem first = viewModel.createChildNote("First");
         viewModel.createChildNote("Second");
-        assertEquals(3, mapCanvas.getChildren().size());
+        assertEquals(4, mapCanvas.getChildren().size());
 
         StackPane secondNode = findNodeByTitle("Second");
         assertNotNull(secondNode);
 
         // Remove the first note via the observable list
         viewModel.getNoteItems().remove(first);
-        assertEquals(2, mapCanvas.getChildren().size());
+        assertEquals(3, mapCanvas.getChildren().size());
 
         StackPane secondNodeAfterRemove = findNodeByTitle("Second");
         assertSame(secondNode, secondNodeAfterRemove,
@@ -179,13 +178,13 @@ class MapViewControllerTest {
     @DisplayName("full list replacement (loadNotes) rebuilds nodeMap correctly")
     void loadNotes_shouldRebuildNodeMap() {
         viewModel.createChildNote("Before");
-        assertEquals(2, mapCanvas.getChildren().size());
+        assertEquals(3, mapCanvas.getChildren().size());
 
         // loadNotes uses setAll which fires a full replacement change
         viewModel.loadNotes();
 
-        assertEquals(2, mapCanvas.getChildren().size(),
-                "Should have 1 note node + back button after reload");
+        assertEquals(3, mapCanvas.getChildren().size(),
+                "Should have 1 note + back button + zoom toolbar after reload");
         assertNotNull(findNodeByTitle("Before"),
                 "Reloaded note should be present");
     }
@@ -197,9 +196,9 @@ class MapViewControllerTest {
         viewModel.createChildNote("A");
         viewModel.createChildNote("B");
         viewModel.createChildNote("C");
-        // Canvas: 3 note nodes + back button = 4
-        assertEquals(4, mapCanvas.getChildren().size(),
-                "Should have 3 note nodes + back button before indent");
+        // Canvas: 3 notes + back button + zoom toolbar = 5
+        assertEquals(5, mapCanvas.getChildren().size(),
+                "Should have 3 notes + back button + zoom toolbar before indent");
         assertNotNull(findNodeByTitle("A"));
         assertNotNull(findNodeByTitle("B"));
         assertNotNull(findNodeByTitle("C"));
@@ -209,9 +208,9 @@ class MapViewControllerTest {
                 noteService.getChildren(parentId).get(1).getId());
         viewModel.loadNotes();
 
-        // After indent: canvas should have 2 note nodes + back button = 3
-        assertEquals(3, mapCanvas.getChildren().size(),
-                "Should have 2 note nodes + back button after indent; "
+        // After indent: 2 notes + back button + zoom toolbar = 4
+        assertEquals(4, mapCanvas.getChildren().size(),
+                "Should have 2 notes + back button + toolbar after indent; "
                         + "indented note B must be removed from canvas");
         assertNotNull(findNodeByTitle("A"),
                 "A should still be on canvas");
