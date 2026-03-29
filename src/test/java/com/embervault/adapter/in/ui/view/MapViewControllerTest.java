@@ -14,7 +14,11 @@ import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.domain.AttributeValue;
+import com.embervault.domain.Attributes;
+import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
@@ -373,6 +377,106 @@ class MapViewControllerTest {
         // Check that the mapCanvas parent has a toolbar
         assertNotNull(controller.getViewModel(),
                 "ViewModel should be set");
+    }
+
+    @Test
+    @DisplayName("badge label appears in StackPane when $Badge is set (issue #154)")
+    void badge_shouldAppearWhenBadgeAttributeSet() {
+        // Set zoom to NORMAL tier so badges are visible
+        viewModel.setZoomLevel(1.0);
+
+        // Create a child note and set $Badge=star on it
+        Note child = noteService.createChildNote(parentId, "Badged Note");
+        child.setAttribute(Attributes.BADGE,
+                new AttributeValue.StringValue("star"));
+
+        // Reload notes so the display item picks up the badge
+        viewModel.loadNotes();
+
+        StackPane noteNode = findNodeByUserData(child.getId());
+        assertNotNull(noteNode, "Note node should exist on canvas");
+
+        // Find the badge label — it should be the last child of the StackPane
+        Label badgeLabel = findBadgeLabel(noteNode);
+        assertNotNull(badgeLabel,
+                "Badge label should be present in the StackPane");
+        assertEquals("\u2B50", badgeLabel.getText(),
+                "Badge label should show the star symbol");
+        assertTrue(badgeLabel.isMouseTransparent(),
+                "Badge label should be mouse-transparent");
+
+        // Verify badge is aligned TOP_RIGHT
+        assertEquals(Pos.TOP_RIGHT,
+                StackPane.getAlignment(badgeLabel),
+                "Badge label should be aligned to TOP_RIGHT");
+    }
+
+    @Test
+    @DisplayName("badge label not present when $Badge is empty")
+    void badge_shouldNotAppearWhenBadgeEmpty() {
+        viewModel.setZoomLevel(1.0);
+        viewModel.createChildNote("No Badge");
+
+        StackPane noteNode = findNodeByUserData(
+                viewModel.getNoteItems().get(0).getId());
+        assertNotNull(noteNode);
+
+        Label badgeLabel = findBadgeLabel(noteNode);
+        assertEquals(null, badgeLabel,
+                "Badge label should not be present when badge is empty");
+    }
+
+    @Test
+    @DisplayName("badge label not present at OVERVIEW tier even with badge set")
+    void badge_shouldNotAppearAtOverviewTier() throws Exception {
+        Note child = noteService.createChildNote(parentId, "Overview Badge");
+        child.setAttribute(Attributes.BADGE,
+                new AttributeValue.StringValue("star"));
+        viewModel.loadNotes();
+
+        viewModel.setZoomLevel(0.2); // OVERVIEW tier
+        WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        StackPane noteNode = findNodeByUserData(child.getId());
+        assertNotNull(noteNode, "Note node should exist");
+
+        Label badgeLabel = findBadgeLabel(noteNode);
+        assertEquals(null, badgeLabel,
+                "Badge label should not be present at OVERVIEW tier");
+    }
+
+    @Test
+    @DisplayName("badge label appears at TITLES_ONLY tier (issue #154)")
+    void badge_shouldAppearAtTitlesOnlyTier() throws Exception {
+        Note child = noteService.createChildNote(parentId, "Titles Badge");
+        child.setAttribute(Attributes.BADGE,
+                new AttributeValue.StringValue("star"));
+        viewModel.loadNotes();
+
+        viewModel.setZoomLevel(0.5); // TITLES_ONLY tier
+        WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
+        WaitForAsyncUtils.waitForFxEvents();
+
+        StackPane noteNode = findNodeByUserData(child.getId());
+        assertNotNull(noteNode, "Note node should exist");
+
+        Label badgeLabel = findBadgeLabel(noteNode);
+        assertNotNull(badgeLabel,
+                "Badge label should be present at TITLES_ONLY tier");
+        assertEquals("\u2B50", badgeLabel.getText());
+    }
+
+    /** Finds a Label child of a StackPane that is not inside a VBox (i.e., the badge). */
+    private Label findBadgeLabel(StackPane noteNode) {
+        for (Node child : noteNode.getChildren()) {
+            if (child instanceof Label label
+                    && !(child instanceof Rectangle)
+                    && !(child instanceof VBox)) {
+                return label;
+            }
+        }
+        return null;
     }
 
     /** Finds the VBox child within a StackPane note node. */

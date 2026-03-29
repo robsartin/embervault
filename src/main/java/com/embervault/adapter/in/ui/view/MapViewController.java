@@ -330,6 +330,7 @@ public class MapViewController {
         StackPane notePane;
         if (!tier.isShowTitle()) {
             notePane = new StackPane(rect);
+            notePane.setAlignment(Pos.TOP_LEFT);
         } else {
             double fontSize = tier.getTitleFontSize();
             Label titleLabel = new Label(item.getTitle());
@@ -370,20 +371,18 @@ public class MapViewController {
             Rectangle clip = new Rectangle(item.getWidth(), item.getHeight());
             textBox.setClip(clip);
             notePane = new StackPane(rect, textBox);
-            if (tier.isShowBadge()) {
-                String badge = item.getBadge();
-                if (badge != null && !badge.isEmpty()) {
-                    Label badgeLabel = new Label(badge);
-                    badgeLabel.setFont(Font.font("System", fontSize));
-                    badgeLabel.setMouseTransparent(true);
-                    badgeLabel.setPadding(new Insets(2, 4, 0, 0));
-                    StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
-                    notePane.getChildren().add(badgeLabel);
-                }
+            notePane.setAlignment(Pos.TOP_LEFT);
+            String badge = item.getBadge();
+            if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
+                Label badgeLabel = new Label(badge);
+                badgeLabel.setFont(Font.font("System", fontSize));
+                badgeLabel.setMouseTransparent(true);
+                StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
+                StackPane.setMargin(badgeLabel, new Insets(2, 4, 0, 0));
+                notePane.getChildren().add(badgeLabel);
             }
         }
         notePane.setUserData(item.getId());
-        notePane.setAlignment(Pos.TOP_LEFT);
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
         notePane.setCursor(Cursor.HAND);
