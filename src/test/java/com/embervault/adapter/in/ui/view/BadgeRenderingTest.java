@@ -7,12 +7,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
+import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
+import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
+import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.AttributeValue;
@@ -39,9 +43,9 @@ import org.testfx.util.WaitForAsyncUtils;
 /**
  * Tests that badge symbols render correctly across all view types.
  *
- * <p>Verifies the fix for issue #140: badges must appear in Map,
- * Outline, Treemap, and Attribute Browser views when {@code $Badge}
- * is set on a note.</p>
+ * <p>Verifies the fix for issue #140 and issues #147-#151: badges
+ * must appear in Map, Outline, Treemap, Hyperbolic, and Attribute
+ * Browser views when {@code $Badge} is set on a note.</p>
  */
 @Tag("ui")
 @ExtendWith(ApplicationExtension.class)
@@ -320,6 +324,59 @@ class BadgeRenderingTest {
         assertTrue(foundPlainTitle,
                 "Attribute Browser should show plain title "
                         + "when $Badge is empty");
+    }
+
+    // --- Hyperbolic view badge tests ---
+
+    @Test
+    @DisplayName("Hyperbolic view prepends badge to note label text")
+    void hyperbolicView_shouldPrependBadgeToLabel() {
+        Note child = noteService.createChildNote(parentId, "Linked");
+        child.setAttribute("$Badge",
+                new AttributeValue.StringValue("star"));
+
+        LinkService linkService = new LinkServiceImpl(
+                new InMemoryLinkRepository());
+        HyperbolicViewModel vm = new HyperbolicViewModel(
+                noteService, linkService);
+        vm.setViewportRadius(200);
+        vm.setFocusNote(parentId);
+
+        // Verify the ViewModel returns the badge for the child note
+        String badge = vm.getNoteBadge(child.getId());
+        assertEquals("\u2B50", badge,
+                "Hyperbolic ViewModel should return star badge symbol");
+
+        // Verify composed label text matches what the controller renders
+        String title = child.getTitle();
+        String labelText = badge.isEmpty() ? title : badge + " " + title;
+        assertEquals("\u2B50 Linked", labelText,
+                "Hyperbolic label should prepend badge to title");
+    }
+
+    @Test
+    @DisplayName("Hyperbolic view returns empty badge when $Badge is not set")
+    void hyperbolicView_shouldReturnEmptyBadgeWhenNotSet() {
+        Note child = noteService.createChildNote(parentId, "NoBadge");
+
+        LinkService linkService = new LinkServiceImpl(
+                new InMemoryLinkRepository());
+        HyperbolicViewModel vm = new HyperbolicViewModel(
+                noteService, linkService);
+        vm.setViewportRadius(200);
+        vm.setFocusNote(parentId);
+
+        String badge = vm.getNoteBadge(child.getId());
+        assertEquals("", badge,
+                "Hyperbolic ViewModel should return empty badge "
+                        + "when $Badge is not set");
+
+        // Label text should be plain title
+        String title = child.getTitle();
+        String labelText = badge.isEmpty() ? title : badge + " " + title;
+        assertEquals("NoBadge", labelText,
+                "Hyperbolic label should show plain title "
+                        + "when no badge is set");
     }
 
     // --- Helpers ---
