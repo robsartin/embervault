@@ -83,25 +83,14 @@ public class OutlineViewController {
 
         // Selection listener
         outlineTreeView.getSelectionModel().selectedItemProperty()
-                .addListener((obs, oldVal, newVal) -> {
-                    if (newVal != null && newVal.getValue() != null) {
-                        viewModel.selectNote(newVal.getValue().getId());
-                    } else {
-                        viewModel.selectNote(null);
-                    }
-                });
+                .addListener((obs, oldVal, newVal) ->
+                        handleTreeSelection(newVal));
 
         // Event filter to intercept Tab/Shift+Tab before TreeView handles them
         outlineTreeView.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTreeKeyFilter);
 
         // Key handling: Escape navigates back
-        outlineTreeView.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ESCAPE
-                    && viewModel.canNavigateBackProperty().get()) {
-                viewModel.navigateBack();
-                event.consume();
-            }
-        });
+        outlineTreeView.setOnKeyPressed(this::handleTreeKeyPress);
 
         // Context menu
         outlineTreeView.setContextMenu(createContextMenu());
@@ -110,6 +99,24 @@ public class OutlineViewController {
     /** Returns the associated ViewModel. */
     public OutlineViewModel getViewModel() {
         return viewModel;
+    }
+
+    /** Handles key presses on the tree view: Escape navigates back. */
+    void handleTreeKeyPress(KeyEvent event) {
+        if (event.getCode() == KeyCode.ESCAPE
+                && viewModel.canNavigateBackProperty().get()) {
+            viewModel.navigateBack();
+            event.consume();
+        }
+    }
+
+    /** Handles tree selection changes, updating the ViewModel selection. */
+    void handleTreeSelection(TreeItem<NoteDisplayItem> newVal) {
+        if (newVal != null && newVal.getValue() != null) {
+            viewModel.selectNote(newVal.getValue().getId());
+        } else {
+            viewModel.selectNote(null);
+        }
     }
 
     private void handleTreeKeyFilter(KeyEvent event) {
