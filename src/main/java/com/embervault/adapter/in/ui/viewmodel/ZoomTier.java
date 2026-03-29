@@ -13,7 +13,7 @@ public enum ZoomTier {
     OVERVIEW(false, false, false, 0),
 
     /** 0.4 &le; zoom &lt; 0.8: title text only, compact font. */
-    TITLES_ONLY(true, false, false, 10),
+    TITLES_ONLY(true, false, true, 10),
 
     /** 0.8 &le; zoom &lt; 1.5: title (bold) + truncated content. */
     NORMAL(true, true, true, 14),

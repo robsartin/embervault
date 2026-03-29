@@ -54,11 +54,11 @@ class ZoomTierTest {
     }
 
     @Test
-    @DisplayName("TITLES_ONLY tier shows title but not content")
+    @DisplayName("TITLES_ONLY tier shows title and badge but not content")
     void titlesOnlyTier_shouldShowTitleOnly() {
         assertTrue(ZoomTier.TITLES_ONLY.isShowTitle());
         assertFalse(ZoomTier.TITLES_ONLY.isShowContent());
-        assertFalse(ZoomTier.TITLES_ONLY.isShowBadge());
+        assertTrue(ZoomTier.TITLES_ONLY.isShowBadge());
         assertEquals(10, ZoomTier.TITLES_ONLY.getTitleFontSize());
     }
 
