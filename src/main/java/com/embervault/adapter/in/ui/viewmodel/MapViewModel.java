@@ -36,7 +36,6 @@ public final class MapViewModel {
     private static final double SCALE_Y = 40.0;
     private static final double DEFAULT_WIDTH = 6.0;
     private static final double DEFAULT_HEIGHT = 4.0;
-    private static final String DEFAULT_COLOR_HEX = "#808080";
     private static final double MIN_ZOOM = 0.1;
     private static final double MAX_ZOOM = 5.0;
     private static final double ZOOM_IN_FACTOR = 1.25;
@@ -342,7 +341,7 @@ public final class MapViewModel {
     }
 
     private void updateTabTitle(String title) {
-        tabTitle.set("Map: " + TextUtils.truncate(title, MAX_TITLE_LENGTH));
+        tabTitle.set(TextUtils.tabTitle("Map", title, MAX_TITLE_LENGTH));
     }
 
     /**

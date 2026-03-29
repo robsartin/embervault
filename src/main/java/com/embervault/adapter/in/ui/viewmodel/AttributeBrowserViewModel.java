@@ -194,12 +194,8 @@ public final class AttributeBrowserViewModel {
     }
 
     private void updateTabTitle(String attributeName) {
-        if (attributeName == null || attributeName.isEmpty()) {
-            tabTitle.set("Browser");
-        } else {
-            tabTitle.set("Browser: "
-                    + TextUtils.truncate(attributeName, MAX_TITLE_LENGTH));
-        }
+        tabTitle.set(TextUtils.tabTitle("Browser", attributeName,
+                MAX_TITLE_LENGTH));
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {

@@ -22,4 +22,22 @@ final class TextUtils {
         }
         return text.substring(0, maxLength) + "\u2026";
     }
+
+    /**
+     * Computes a tab title of the form "Prefix: Name", truncating the name
+     * if it exceeds the given maximum length.
+     *
+     * <p>If the name is null or empty, returns just the prefix.</p>
+     *
+     * @param prefix the view type prefix (e.g., "Map", "Outline")
+     * @param name   the name to include, may be null or empty
+     * @param maxLen the maximum length for the name portion before truncation
+     * @return the formatted tab title
+     */
+    static String tabTitle(String prefix, String name, int maxLen) {
+        if (name == null || name.isEmpty()) {
+            return prefix;
+        }
+        return prefix + ": " + truncate(name, maxLen);
+    }
 }
