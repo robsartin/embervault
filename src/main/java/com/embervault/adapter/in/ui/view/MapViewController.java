@@ -106,7 +106,6 @@ public class MapViewController {
             }
         });
 
-        // Scroll wheel zoom toward cursor
         mapCanvas.setOnScroll(event -> {
             double factor = event.getDeltaY() > 0
                     ? SCROLL_ZOOM_FACTOR : 1.0 / SCROLL_ZOOM_FACTOR;
@@ -117,7 +116,6 @@ public class MapViewController {
             event.consume();
         });
 
-        // Return key to create new note; Escape to navigate back
         mapCanvas.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.ENTER) {
                 viewModel.createChildNote("Untitled");
@@ -127,7 +125,6 @@ public class MapViewController {
             }
         });
 
-        // Context menu
         ContextMenu contextMenu = createContextMenu();
         mapCanvas.setOnContextMenuRequested(event -> {
             contextMenu.getItems().get(0).setOnAction(e ->
@@ -191,7 +188,6 @@ public class MapViewController {
         zoomToolbar.setMouseTransparent(false);
         zoomToolbar.setId("zoomToolbar");
 
-        // Add toolbar directly to mapCanvas so it floats on top
         mapCanvas.getChildren().add(zoomToolbar);
     }
 
@@ -271,7 +267,6 @@ public class MapViewController {
         }
     }
 
-    /** Updates an existing node in-place. */
     private void updateNoteNode(StackPane notePane, NoteDisplayItem item) {
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
@@ -301,10 +296,13 @@ public class MapViewController {
                 contentLabel.setMaxWidth(item.getWidth() - 8);
             }
         }
+        String badge = item.getBadge();
+        ZoomTier tier = viewModel.getCurrentTier();
         if (notePane.getChildren().size() > 2
                 && notePane.getChildren().get(2) instanceof Label badgeLabel) {
-            String badge = item.getBadge();
             badgeLabel.setText(badge != null ? badge : "");
+        } else if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
+            notePane.getChildren().add(createBadgeLabel(badge, item));
         }
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
             if (notePane.getChildren().get(0) instanceof Rectangle rect) {
@@ -316,7 +314,6 @@ public class MapViewController {
 
     private StackPane createNoteNode(NoteDisplayItem item) {
         ZoomTier tier = viewModel.getCurrentTier();
-
         Rectangle rect = new Rectangle(item.getWidth(), item.getHeight());
         rect.setFill(Color.web(item.getColorHex()));
         rect.setStroke(currentColors != null
@@ -372,15 +369,7 @@ public class MapViewController {
             notePane.setAlignment(Pos.TOP_LEFT);
             String badge = item.getBadge();
             if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
-                Label badgeLabel = new Label(badge);
-                badgeLabel.setFont(Font.font(BADGE_FONT_SIZE));
-                badgeLabel.setTextFill(Color.web(
-                        ViewColorConfig.contrastTextColor(item.getColorHex())));
-                badgeLabel.setEffect(new DropShadow(2, Color.gray(0.3, 0.6)));
-                badgeLabel.setMouseTransparent(true);
-                StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
-                StackPane.setMargin(badgeLabel, new Insets(2, 4, 0, 0));
-                notePane.getChildren().add(badgeLabel);
+                notePane.getChildren().add(createBadgeLabel(badge, item));
             }
         }
         notePane.setUserData(item.getId());
@@ -448,6 +437,17 @@ public class MapViewController {
             }
         });
         return dragging;
+    }
+
+    private Label createBadgeLabel(String badge, NoteDisplayItem item) {
+        Label l = new Label(badge);
+        l.setFont(Font.font(BADGE_FONT_SIZE));
+        l.setTextFill(Color.web(ViewColorConfig.contrastTextColor(item.getColorHex())));
+        l.setEffect(new DropShadow(2, Color.gray(0.3, 0.6)));
+        l.setMouseTransparent(true);
+        StackPane.setAlignment(l, Pos.TOP_RIGHT);
+        StackPane.setMargin(l, new Insets(2, 4, 0, 0));
+        return l;
     }
 
     /** Checks if target is a descendant of ancestor. */

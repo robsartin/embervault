@@ -503,6 +503,38 @@ class MapViewControllerTest {
         return null;
     }
 
+    @Test
+    @DisplayName("RED/GREEN: badge visible after setting attribute and reloading")
+    void badge_shouldAppearAfterSetAndReload() {
+        // Step 1: Create note via ViewModel (user creates note)
+        NoteDisplayItem item = viewModel.createChildNote("Stamp Test");
+
+        // Step 2: Set badge on the note (simulates stamp application)
+        noteService.getNote(item.getId()).ifPresent(note ->
+                note.setAttribute(Attributes.BADGE,
+                        new AttributeValue.StringValue("star")));
+
+        // Step 3: Reload notes (simulates refreshAll after stamp)
+        viewModel.loadNotes();
+
+        // Step 4: Verify the display item has the badge
+        NoteDisplayItem reloaded = viewModel.getNoteItems().stream()
+                .filter(i -> i.getId().equals(item.getId()))
+                .findFirst().orElse(null);
+        assertNotNull(reloaded, "Reloaded display item should exist");
+        assertEquals("\u2B50", reloaded.getBadge(),
+                "Display item should have star badge after reload");
+
+        // Step 5: Verify the rendered node has the badge label
+        StackPane noteNode = findNodeByUserData(item.getId());
+        assertNotNull(noteNode, "Note should exist on canvas after reload");
+        Label badgeLabel = findBadgeLabel(noteNode);
+        assertNotNull(badgeLabel,
+                "Badge label should be rendered after set + reload");
+        assertEquals("\u2B50", badgeLabel.getText(),
+                "Badge label text should be star symbol");
+    }
+
     /** Finds the VBox child within a StackPane note node. */
     private VBox findTextBox(StackPane noteNode) {
         for (Node child : noteNode.getChildren()) {

@@ -73,6 +73,7 @@ class TextPaneViewControllerTest {
         injectField("textArea", textArea);
 
         controller.initViewModel(viewModel);
+        WaitForAsyncUtils.waitForFxEvents();
     }
 
     @Test
@@ -142,15 +143,17 @@ class TextPaneViewControllerTest {
     @Test
     @DisplayName("title saved on focus lost")
     void titleField_savesOnFocusLost(FxRobot robot) {
-        viewModel.setSelectedNoteId(noteId);
+        robot.interact(() -> viewModel.setSelectedNoteId(noteId));
+        WaitForAsyncUtils.waitForFxEvents();
 
         robot.interact(() -> {
             titleField.requestFocus();
             titleField.setText("Renamed Note");
         });
+        WaitForAsyncUtils.waitForFxEvents();
 
-        // Move focus away to trigger save
         robot.interact(() -> textArea.requestFocus());
+        WaitForAsyncUtils.waitForFxEvents();
 
         assertEquals("Renamed Note", viewModel.titleProperty().get(),
                 "Title should be saved after focus lost");
@@ -166,7 +169,8 @@ class TextPaneViewControllerTest {
     @Test
     @DisplayName("title saved on Enter key")
     void titleField_savesOnEnter(FxRobot robot) {
-        viewModel.setSelectedNoteId(noteId);
+        robot.interact(() -> viewModel.setSelectedNoteId(noteId));
+        WaitForAsyncUtils.waitForFxEvents();
 
         robot.interact(() -> {
             titleField.requestFocus();
@@ -184,14 +188,14 @@ class TextPaneViewControllerTest {
     @Test
     @DisplayName("text saved on focus lost")
     void textArea_savesOnFocusLost(FxRobot robot) {
-        viewModel.setSelectedNoteId(noteId);
+        robot.interact(() -> viewModel.setSelectedNoteId(noteId));
+        WaitForAsyncUtils.waitForFxEvents();
 
         robot.interact(() -> {
             textArea.requestFocus();
             textArea.setText("Updated body text");
         });
-
-        // Move focus away to trigger save
+        WaitForAsyncUtils.waitForFxEvents();
         robot.interact(() -> titleField.requestFocus());
 
         assertEquals("Updated body text", viewModel.textProperty().get(),
@@ -201,10 +205,14 @@ class TextPaneViewControllerTest {
     @Test
     @DisplayName("clearing selection hides editor and shows placeholder")
     void clearSelection_showsPlaceholder() {
-        viewModel.setSelectedNoteId(noteId);
+        javafx.application.Platform.runLater(
+                () -> viewModel.setSelectedNoteId(noteId));
+        WaitForAsyncUtils.waitForFxEvents();
         assertTrue(titleField.isVisible());
 
-        viewModel.setSelectedNoteId(null);
+        javafx.application.Platform.runLater(
+                () -> viewModel.setSelectedNoteId(null));
+        WaitForAsyncUtils.waitForFxEvents();
 
         assertTrue(placeholderLabel.isVisible(),
                 "Placeholder should reappear after clearing selection");
