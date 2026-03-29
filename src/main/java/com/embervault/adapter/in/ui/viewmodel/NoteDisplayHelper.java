@@ -39,4 +39,5 @@ final class NoteDisplayHelper {
                 .map(v -> ((AttributeValue.NumberValue) v).value())
                 .orElse(defaultVal);
     }
+
 }

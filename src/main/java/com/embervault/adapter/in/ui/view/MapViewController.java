@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
+import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import com.embervault.adapter.in.ui.viewmodel.ZoomTier;
 import javafx.animation.PauseTransition;
 import javafx.collections.ListChangeListener;
@@ -56,11 +57,13 @@ public class MapViewController {
 
     private MapViewModel viewModel;
     private Button backButton;
+    private HBox zoomToolbar;
     private final Map<UUID, StackPane> nodeMap = new HashMap<>();
     private Scale zoomScale;
     private Label zoomLabel;
     private PauseTransition zoomRenderDebounce;
     private boolean rendering;
+    private ViewColorConfig currentColors;
 
     /** Injects the ViewModel and binds UI controls. */
     public void initViewModel(MapViewModel viewModel) {
@@ -169,17 +172,17 @@ public class MapViewController {
 
         zoomLabel = new Label("100%");
 
-        HBox toolbar = new HBox(4, zoomOutBtn, zoomInBtn, fitAllBtn, zoomLabel);
-        toolbar.setAlignment(Pos.CENTER_LEFT);
-        toolbar.setPadding(new Insets(4));
-        toolbar.setStyle("-fx-background-color: rgba(245,245,245,0.9);");
-        toolbar.setLayoutX(BACK_BUTTON_PADDING);
-        toolbar.setLayoutY(BACK_BUTTON_PADDING);
-        toolbar.setMouseTransparent(false);
-        toolbar.setId("zoomToolbar");
+        zoomToolbar = new HBox(4, zoomOutBtn, zoomInBtn, fitAllBtn, zoomLabel);
+        zoomToolbar.setAlignment(Pos.CENTER_LEFT);
+        zoomToolbar.setPadding(new Insets(4));
+        zoomToolbar.setStyle("-fx-background-color: rgba(245,245,245,0.9);");
+        zoomToolbar.setLayoutX(BACK_BUTTON_PADDING);
+        zoomToolbar.setLayoutY(BACK_BUTTON_PADDING);
+        zoomToolbar.setMouseTransparent(false);
+        zoomToolbar.setId("zoomToolbar");
 
         // Add toolbar directly to mapCanvas so it floats on top
-        mapCanvas.getChildren().add(toolbar);
+        mapCanvas.getChildren().add(zoomToolbar);
     }
 
     private void renderAllNotes() {
@@ -195,7 +198,7 @@ public class MapViewController {
                 nodeMap.put(item.getId(), n);
                 mapCanvas.getChildren().add(n);
             }
-            mapCanvas.getChildren().add(backButton);
+            mapCanvas.getChildren().addAll(backButton, zoomToolbar);
         } finally {
             rendering = false;
         }
@@ -260,37 +263,26 @@ public class MapViewController {
 
     /** Updates an existing node in-place. */
     private void updateNoteNode(StackPane notePane, NoteDisplayItem item) {
-        // Update position
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
-
-        // Update rectangle (child 0)
         if (notePane.getChildren().get(0) instanceof Rectangle rect) {
             rect.setWidth(item.getWidth());
             rect.setHeight(item.getHeight());
             rect.setFill(Color.web(item.getColorHex()));
         }
-
-        // Update text labels (child 1 is VBox) — only present in non-OVERVIEW tiers
         if (notePane.getChildren().size() > 1
                 && notePane.getChildren().get(1) instanceof VBox textBox) {
             textBox.setMaxWidth(item.getWidth());
             textBox.setMaxHeight(item.getHeight());
-
-            // Update clip
             if (textBox.getClip() instanceof Rectangle clip) {
                 clip.setWidth(item.getWidth());
                 clip.setHeight(item.getHeight());
             }
-
-            // Update title label (first child of VBox)
             if (!textBox.getChildren().isEmpty()
                     && textBox.getChildren().get(0) instanceof Label titleLabel) {
                 titleLabel.setText(item.getTitle());
                 titleLabel.setMaxWidth(item.getWidth() - 8);
             }
-
-            // Update content label if present (second child of VBox)
             if (textBox.getChildren().size() > 1
                     && textBox.getChildren().get(1)
                             instanceof Label contentLabel) {
@@ -299,15 +291,11 @@ public class MapViewController {
                 contentLabel.setMaxWidth(item.getWidth() - 8);
             }
         }
-
-        // Update badge label if present (child 2)
         if (notePane.getChildren().size() > 2
                 && notePane.getChildren().get(2) instanceof Label badgeLabel) {
             String badge = item.getBadge();
             badgeLabel.setText(badge != null ? badge : "");
         }
-
-        // Update selection highlight
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
             if (notePane.getChildren().get(0) instanceof Rectangle rect) {
                 rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
@@ -321,29 +309,28 @@ public class MapViewController {
 
         Rectangle rect = new Rectangle(item.getWidth(), item.getHeight());
         rect.setFill(Color.web(item.getColorHex()));
-        rect.setStroke(Color.BLACK);
+        rect.setStroke(currentColors != null
+                ? Color.web(currentColors.borderColor()) : Color.BLACK);
         rect.setStrokeWidth(NORMAL_BORDER_WIDTH);
         rect.setArcWidth(4);
         rect.setArcHeight(4);
 
         StackPane notePane;
-
         if (!tier.isShowTitle()) {
-            // OVERVIEW: rectangle only, no labels
             notePane = new StackPane(rect);
         } else {
             double fontSize = tier.getTitleFontSize();
             Label titleLabel = new Label(item.getTitle());
             titleLabel.setFont(Font.font("System", FontWeight.BOLD, fontSize));
+            titleLabel.setTextFill(Color.web(
+                    ViewColorConfig.contrastTextColor(item.getColorHex())));
             titleLabel.setTextAlignment(TextAlignment.LEFT);
             titleLabel.setAlignment(Pos.TOP_LEFT);
             titleLabel.setMaxWidth(item.getWidth() - 8);
             titleLabel.setWrapText(true);
             titleLabel.setMouseTransparent(false);
             titleLabel.setPadding(new Insets(4, 4, 2, 4));
-
             VBox textBox = new VBox(titleLabel);
-
             if (tier.isShowContent()) {
                 String content = item.getContent();
                 if (content != null && !content.isEmpty()) {
@@ -351,6 +338,9 @@ public class MapViewController {
                             ? DETAILED_CONTENT_FONT_SIZE : CONTENT_FONT_SIZE;
                     Label contentLabel = new Label(content);
                     contentLabel.setFont(Font.font("System", contentSize));
+                    contentLabel.setTextFill(Color.web(
+                            ViewColorConfig.contrastTextColor(
+                                    item.getColorHex())));
                     contentLabel.setTextAlignment(TextAlignment.LEFT);
                     contentLabel.setAlignment(Pos.TOP_LEFT);
                     contentLabel.setMaxWidth(item.getWidth() - 8);
@@ -362,18 +352,12 @@ public class MapViewController {
                     textBox.getChildren().add(contentLabel);
                 }
             }
-
             textBox.setMaxWidth(item.getWidth());
             textBox.setMaxHeight(item.getHeight());
             textBox.setAlignment(Pos.TOP_LEFT);
-
-            // Clip the text container to the rectangle bounds
             Rectangle clip = new Rectangle(item.getWidth(), item.getHeight());
             textBox.setClip(clip);
-
             notePane = new StackPane(rect, textBox);
-
-            // Badge label in top-right corner
             if (tier.isShowBadge()) {
                 String badge = item.getBadge();
                 if (badge != null && !badge.isEmpty()) {
@@ -386,21 +370,12 @@ public class MapViewController {
                 }
             }
         }
-
         notePane.setUserData(item.getId());
         notePane.setAlignment(Pos.TOP_LEFT);
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
         notePane.setCursor(Cursor.HAND);
-
-        // Drag support – returns a flag array so click handlers can check
-        // whether the gesture was a drag rather than a click.
         final boolean[] dragging = enableDrag(notePane, item);
-
-        // Double-click handler at the notePane (StackPane) level so the VBox
-        // cannot intercept events that should reach the rectangle.
-        // For tiers with title labels, clicking on title starts inline edit;
-        // anything else drills down.
         notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
@@ -423,11 +398,11 @@ public class MapViewController {
                 event.consume();
             }
         });
-
-        // Highlight if currently selected
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
             rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
-            rect.setStroke(Color.DODGERBLUE);
+            rect.setStroke(currentColors != null
+                    ? Color.web(currentColors.selectionColor())
+                    : Color.DODGERBLUE);
         }
 
         return notePane;
@@ -437,7 +412,6 @@ public class MapViewController {
     private boolean[] enableDrag(StackPane notePane, NoteDisplayItem item) {
         final double[] dragDelta = new double[2];
         final boolean[] dragging = {false};
-
         notePane.setOnMousePressed(event -> {
             dragDelta[0] = notePane.getLayoutX() - event.getSceneX();
             dragDelta[1] = notePane.getLayoutY() - event.getSceneY();
@@ -445,9 +419,7 @@ public class MapViewController {
             notePane.toFront();
             viewModel.selectNote(item.getId());
             highlightSelected(notePane);
-            // Do NOT consume – let the event reach child click handlers
         });
-
         notePane.setOnMouseDragged(event -> {
             dragging[0] = true;
             double newX = Math.max(0, event.getSceneX() + dragDelta[0]);
@@ -456,7 +428,6 @@ public class MapViewController {
             notePane.setLayoutY(newY);
             event.consume();
         });
-
         notePane.setOnMouseReleased(event -> {
             if (dragging[0]) {
                 viewModel.updateNotePosition(
@@ -464,7 +435,6 @@ public class MapViewController {
                 event.consume();
             }
         });
-
         return dragging;
     }
 
@@ -484,17 +454,36 @@ public class MapViewController {
     }
 
     private void highlightSelected(StackPane selected) {
+        Color borderCol = currentColors != null
+                ? Color.web(currentColors.borderColor()) : Color.BLACK;
+        Color selCol = currentColors != null
+                ? Color.web(currentColors.selectionColor())
+                : Color.DODGERBLUE;
         for (Node child : mapCanvas.getChildren()) {
             if (child instanceof StackPane sp && !sp.getChildren().isEmpty()
                     && sp.getChildren().get(0) instanceof Rectangle r) {
                 r.setStrokeWidth(NORMAL_BORDER_WIDTH);
-                r.setStroke(Color.BLACK);
+                r.setStroke(borderCol);
             }
         }
         if (!selected.getChildren().isEmpty()
                 && selected.getChildren().get(0) instanceof Rectangle r) {
             r.setStrokeWidth(SELECTED_BORDER_WIDTH);
-            r.setStroke(Color.DODGERBLUE);
+            r.setStroke(selCol);
         }
+    }
+
+    /**
+     * Applies a color scheme to the map view.
+     *
+     * @param colors the view color config to apply
+     */
+    public void applyColorScheme(ViewColorConfig colors) {
+        this.currentColors = colors;
+        mapCanvas.setStyle("-fx-background-color: "
+                + colors.canvasBackground() + ";");
+        zoomToolbar.setStyle("-fx-background-color: "
+                + colors.toolbarBackground() + ";");
+        renderAllNotes();
     }
 }
