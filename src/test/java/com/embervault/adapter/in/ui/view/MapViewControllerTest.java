@@ -432,6 +432,7 @@ class MapViewControllerTest {
         Note child = noteService.createChildNote(parentId, "Overview Badge");
         child.setAttribute(Attributes.BADGE,
                 new AttributeValue.StringValue("star"));
+        viewModel.loadNotes();
 
         viewModel.setZoomLevel(0.2); // OVERVIEW tier
         WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
@@ -451,6 +452,7 @@ class MapViewControllerTest {
         Note child = noteService.createChildNote(parentId, "Titles Badge");
         child.setAttribute(Attributes.BADGE,
                 new AttributeValue.StringValue("star"));
+        viewModel.loadNotes();
 
         viewModel.setZoomLevel(0.5); // TITLES_ONLY tier
         WaitForAsyncUtils.sleep(200, TimeUnit.MILLISECONDS);
