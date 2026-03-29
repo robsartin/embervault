@@ -1,8 +1,13 @@
-package com.embervault.application;
+package com.embervault;
 
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.adapter.out.persistence.InMemoryStampRepository;
+import com.embervault.application.DocumentContext;
+import com.embervault.application.LinkServiceImpl;
+import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.ProjectServiceImpl;
+import com.embervault.application.StampServiceImpl;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
@@ -13,6 +18,11 @@ import com.embervault.domain.Project;
 
 /**
  * Convenience factory for creating a fully wired document.
+ *
+ * <p>Lives in the composition-root package ({@code com.embervault}) because it
+ * wires concrete adapter implementations to application-layer ports. Placing it
+ * here keeps the {@code application} package free of adapter dependencies,
+ * respecting the Dependency Inversion Principle.</p>
  *
  * <p>Encapsulates the wiring of repositories, services, and the project so
  * that a developer can create a ready-to-use document in a single call:</p>
