@@ -1,11 +1,16 @@
 package com.embervault.adapter.in.ui.view;
 
+import java.util.function.Consumer;
+
+import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
 import com.embervault.adapter.in.ui.viewmodel.CategoryItem;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.VBox;
@@ -23,6 +28,17 @@ public class AttributeBrowserViewController {
     @FXML private TreeView<String> categoryTreeView;
 
     private AttributeBrowserViewModel viewModel;
+    private Consumer<String> onViewSwitch;
+
+    /**
+     * Sets the callback invoked when the user selects a view-switch
+     * menu item. The callback receives the {@link ViewType} name.
+     *
+     * @param callback the view-switch callback
+     */
+    public void setOnViewSwitch(Consumer<String> callback) {
+        this.onViewSwitch = callback;
+    }
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -64,6 +80,23 @@ public class AttributeBrowserViewController {
         root.setExpanded(true);
         categoryTreeView.setRoot(root);
         categoryTreeView.setShowRoot(false);
+
+        // Context menu with view-switch items
+        categoryTreeView.setContextMenu(createContextMenu());
+    }
+
+    private ContextMenu createContextMenu() {
+        ContextMenu menu = new ContextMenu();
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.BROWSER, onViewSwitch));
+        // Remove leading separator when there are no preceding items
+        if (!menu.getItems().isEmpty()
+                && menu.getItems().get(0)
+                        instanceof javafx.scene.control.SeparatorMenuItem) {
+            menu.getItems().remove(0);
+        }
+        return menu;
     }
 
     /** Returns the associated ViewModel. */

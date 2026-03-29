@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import java.util.function.Consumer;
+
+import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
@@ -64,6 +67,17 @@ public class MapViewController {
     private PauseTransition zoomRenderDebounce;
     private boolean rendering;
     private ViewColorConfig currentColors;
+    private Consumer<String> onViewSwitch;
+
+    /**
+     * Sets the callback invoked when the user selects a view-switch
+     * menu item. The callback receives the {@link ViewType} name.
+     *
+     * @param callback the view-switch callback
+     */
+    public void setOnViewSwitch(Consumer<String> callback) {
+        this.onViewSwitch = callback;
+    }
 
     /** Injects the ViewModel and binds UI controls. */
     public void initViewModel(MapViewModel viewModel) {
@@ -139,10 +153,11 @@ public class MapViewController {
         MenuItem createNote = new MenuItem("Create Note");
         // Action is set dynamically in the context menu request handler to capture coordinates
 
-        MenuItem outlineView = new MenuItem("Outline View");
-        outlineView.setOnAction(e -> LOG.debug("Outline View placeholder selected"));
-
-        return new ContextMenu(createNote, new SeparatorMenuItem(), outlineView);
+        ContextMenu menu = new ContextMenu(createNote);
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.MAP, onViewSwitch));
+        return menu;
     }
 
     private void setupZoom() {

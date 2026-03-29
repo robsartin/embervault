@@ -5,6 +5,9 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import java.util.function.Consumer;
+
+import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.TreemapRect;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
@@ -53,6 +56,17 @@ public class TreemapViewController {
     private TreemapViewModel viewModel;
     private Button backButton;
     private ViewColorConfig currentColors;
+    private Consumer<String> onViewSwitch;
+
+    /**
+     * Sets the callback invoked when the user selects a view-switch
+     * menu item. The callback receives the {@link ViewType} name.
+     *
+     * @param callback the view-switch callback
+     */
+    public void setOnViewSwitch(Consumer<String> callback) {
+        this.onViewSwitch = callback;
+    }
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -110,15 +124,11 @@ public class TreemapViewController {
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setOnAction(e -> viewModel.createChildNote("Untitled"));
 
-        MenuItem mapView = new MenuItem("Map View");
-        mapView.setOnAction(e -> LOG.debug("Map View placeholder selected"));
-
-        MenuItem outlineView = new MenuItem("Outline View");
-        outlineView.setOnAction(
-                e -> LOG.debug("Outline View placeholder selected"));
-
-        return new ContextMenu(createNote, new SeparatorMenuItem(),
-                mapView, outlineView);
+        ContextMenu menu = new ContextMenu(createNote);
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.TREEMAP, onViewSwitch));
+        return menu;
     }
 
     private void renderAllNotes() {
