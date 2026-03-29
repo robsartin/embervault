@@ -118,6 +118,16 @@ public class TreemapViewController {
         return viewModel;
     }
 
+    /** Handles a single click on a treemap cell, selecting the note. */
+    void handleCellClick(NoteDisplayItem item) {
+        viewModel.selectNote(item.getId());
+    }
+
+    /** Handles a double-click on a treemap cell, drilling down into the note. */
+    void handleCellDoubleClick(NoteDisplayItem item) {
+        viewModel.drillDown(item.getId());
+    }
+
     private ContextMenu createContextMenu() {
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setOnAction(e -> viewModel.createChildNote("Untitled"));
@@ -200,7 +210,7 @@ public class TreemapViewController {
 
         // Click to select
         notePane.setOnMousePressed(event -> {
-            viewModel.selectNote(item.getId());
+            handleCellClick(item);
             highlightSelected(notePane);
         });
 
@@ -208,7 +218,7 @@ public class TreemapViewController {
         notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY) {
-                viewModel.drillDown(item.getId());
+                handleCellDoubleClick(item);
                 event.consume();
             }
         });
