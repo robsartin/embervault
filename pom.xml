@@ -62,14 +62,14 @@
             </properties>
         </profile>
         <profile>
-            <id>skip-ui-tests</id>
+            <id>ui-tests</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <excludedGroups>ui</excludedGroups>
+                            <excludedGroups combine.self="override"/>
                         </configuration>
                     </plugin>
                 </plugins>
@@ -169,6 +169,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven-surefire-plugin.version}</version>
                     <configuration>
+                        <excludedGroups>ui</excludedGroups>
                         <argLine>
                             @{argLine}
                             --add-exports javafx.graphics/com.sun.javafx.application=ALL-UNNAMED

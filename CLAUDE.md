@@ -5,7 +5,11 @@ EmberVault is a Tinderbox-inspired note-taking application built with JavaFX. Ja
 ## Build
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 25) ./mvnw verify
+# Logic tests only (no display needed):
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw verify
+
+# Full suite including UI tests (requires display or xvfb):
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw verify -Pui-tests
 ```
 
 ## Pure TDD Workflow (mandatory for all code changes)
@@ -101,8 +105,9 @@ All enforced by `mvn verify`:
 ## Test Conventions
 
 - `@Tag("ui")` on all TestFX UI tests
-- CI runs UI tests under `xvfb` (X virtual framebuffer)
-- `skip-ui-tests` Maven profile to exclude `@Tag("ui")` tests locally: `./mvnw verify -Pskip-ui-tests`
+- `mvn verify` excludes `@Tag("ui")` tests by default (no display needed)
+- `mvn verify -Pui-tests` includes UI tests (requires display or xvfb)
+- CI runs full suite with `-Pui-tests` under `xvfb` (X virtual framebuffer)
 
 ## PR Workflow
 
