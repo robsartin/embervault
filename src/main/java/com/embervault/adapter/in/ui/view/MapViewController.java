@@ -30,14 +30,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import org.slf4j.Logger;
@@ -49,13 +46,10 @@ public class MapViewController {
     private static final Logger LOG = LoggerFactory.getLogger(MapViewController.class);
     private static final double SELECTED_BORDER_WIDTH = 3.0;
     private static final double NORMAL_BORDER_WIDTH = 1.0;
-    private static final double TITLE_FONT_SIZE = 14.0;
-    private static final double CONTENT_FONT_SIZE = 11.0;
     private static final double BADGE_FONT_SIZE = 16.0;
 
     private static final double BACK_BUTTON_PADDING = 5.0;
     private static final double SCROLL_ZOOM_FACTOR = 1.1;
-    private static final double DETAILED_CONTENT_FONT_SIZE = 14.0;
     private static final double ZOOM_PERCENTAGE = 100.0;
 
     @FXML private Pane mapCanvas;
@@ -322,64 +316,11 @@ public class MapViewController {
 
     private StackPane createNoteNode(NoteDisplayItem item) {
         ZoomTier tier = viewModel.getCurrentTier();
-        Rectangle rect = new Rectangle(item.getWidth(), item.getHeight());
-        rect.setFill(Color.web(item.getColorHex()));
-        rect.setStroke(currentColors != null
-                ? Color.web(currentColors.borderColor()) : Color.BLACK);
-        rect.setStrokeWidth(NORMAL_BORDER_WIDTH);
-        rect.setArcWidth(4);
-        rect.setArcHeight(4);
+        String borderColor = currentColors != null
+                ? currentColors.borderColor() : "#000000";
+        ZoomTierRenderer renderer = tier.createRenderer();
+        StackPane notePane = renderer.render(item, borderColor);
 
-        StackPane notePane;
-        if (!tier.isShowTitle()) {
-            notePane = new StackPane(rect);
-            notePane.setAlignment(Pos.TOP_LEFT);
-        } else {
-            double fontSize = tier.getTitleFontSize();
-            Label titleLabel = new Label(item.getTitle());
-            titleLabel.setFont(Font.font("System", FontWeight.BOLD, fontSize));
-            titleLabel.setTextFill(Color.web(
-                    ViewColorConfig.contrastTextColor(item.getColorHex())));
-            titleLabel.setTextAlignment(TextAlignment.LEFT);
-            titleLabel.setAlignment(Pos.TOP_LEFT);
-            titleLabel.setMaxWidth(item.getWidth() - 8);
-            titleLabel.setWrapText(true);
-            titleLabel.setMouseTransparent(false);
-            titleLabel.setPadding(new Insets(4, 4, 2, 4));
-            VBox textBox = new VBox(titleLabel);
-            if (tier.isShowContent()) {
-                String content = item.getContent();
-                if (content != null && !content.isEmpty()) {
-                    double contentSize = tier == ZoomTier.DETAILED
-                            ? DETAILED_CONTENT_FONT_SIZE : CONTENT_FONT_SIZE;
-                    Label contentLabel = new Label(content);
-                    contentLabel.setFont(Font.font("System", contentSize));
-                    contentLabel.setTextFill(Color.web(
-                            ViewColorConfig.contrastTextColor(
-                                    item.getColorHex())));
-                    contentLabel.setTextAlignment(TextAlignment.LEFT);
-                    contentLabel.setAlignment(Pos.TOP_LEFT);
-                    contentLabel.setMaxWidth(item.getWidth() - 8);
-                    contentLabel.setMaxHeight(Double.MAX_VALUE);
-                    contentLabel.setWrapText(true);
-                    contentLabel.setMouseTransparent(true);
-                    contentLabel.setPadding(new Insets(0, 4, 4, 4));
-                    VBox.setVgrow(contentLabel, Priority.ALWAYS);
-                    textBox.getChildren().add(contentLabel);
-                }
-            }
-            textBox.setMaxWidth(item.getWidth());
-            textBox.setMaxHeight(item.getHeight());
-            textBox.setAlignment(Pos.TOP_LEFT);
-            Rectangle clip = new Rectangle(item.getWidth(), item.getHeight());
-            textBox.setClip(clip);
-            notePane = new StackPane(rect, textBox);
-            notePane.setAlignment(Pos.TOP_LEFT);
-            String badge = item.getBadge();
-            if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
-                notePane.getChildren().add(createBadgeLabel(badge, item));
-            }
-        }
         notePane.setUserData(item.getId());
         notePane.setLayoutX(item.getXpos());
         notePane.setLayoutY(item.getYpos());
@@ -389,12 +330,15 @@ public class MapViewController {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
                     && !dragging[0]) {
-                if (tier.isShowTitle() && notePane.getChildren().size() > 1) {
+                if (tier.isShowTitle()
+                        && notePane.getChildren().size() > 1) {
                     VBox tb = (VBox) notePane.getChildren().get(1);
                     Label tl = (Label) tb.getChildren().get(0);
-                    Rectangle rc = (Rectangle) notePane.getChildren().get(0);
+                    Rectangle rc =
+                            (Rectangle) notePane.getChildren().get(0);
                     if (event.getTarget() == tl
-                            || isDescendantOf(event.getTarget(), tl)) {
+                            || isDescendantOf(
+                                    event.getTarget(), tl)) {
                         InlineEditHelper.startInlineEdit(
                                 notePane, tl, rc, item, viewModel,
                                 mapCanvas);
@@ -407,7 +351,10 @@ public class MapViewController {
                 event.consume();
             }
         });
-        if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
+        if (item.getId().equals(
+                viewModel.selectedNoteIdProperty().get())) {
+            Rectangle rect =
+                    (Rectangle) notePane.getChildren().get(0);
             rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
             rect.setStroke(currentColors != null
                     ? Color.web(currentColors.selectionColor())

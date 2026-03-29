@@ -1,5 +1,7 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import com.embervault.adapter.in.ui.view.ZoomTierRenderer;
+
 /**
  * Defines semantic zoom tiers for the Map view.
  *
@@ -56,6 +58,22 @@ public enum ZoomTier {
     /** Returns the title font size for this tier, or 0 if no title is shown. */
     public int getTitleFontSize() {
         return titleFontSize;
+    }
+
+    /**
+     * Creates the appropriate renderer for this zoom tier.
+     *
+     * @return a new ZoomTierRenderer for this tier
+     */
+    public ZoomTierRenderer createRenderer() {
+        return switch (this) {
+            case OVERVIEW -> new ZoomTierRenderer.OverviewRenderer();
+            case TITLES_ONLY ->
+                    new ZoomTierRenderer.TitlesOnlyRenderer();
+            case NORMAL -> new ZoomTierRenderer.NormalRenderer();
+            case DETAILED ->
+                    new ZoomTierRenderer.DetailedRenderer();
+        };
     }
 
     /**
