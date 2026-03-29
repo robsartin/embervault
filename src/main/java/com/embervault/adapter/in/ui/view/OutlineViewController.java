@@ -1,7 +1,9 @@
 package com.embervault.adapter.in.ui.view;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
+import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
@@ -11,7 +13,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
@@ -40,6 +41,17 @@ public class OutlineViewController {
 
     private OutlineViewModel viewModel;
     private Button backButton;
+    private Consumer<String> onViewSwitch;
+
+    /**
+     * Sets the callback invoked when the user selects a view-switch
+     * menu item. The callback receives the {@link ViewType} name.
+     *
+     * @param callback the view-switch callback
+     */
+    public void setOnViewSwitch(Consumer<String> callback) {
+        this.onViewSwitch = callback;
+    }
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -121,10 +133,11 @@ public class OutlineViewController {
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setOnAction(e -> createChildUnderSelected());
 
-        MenuItem mapView = new MenuItem("Map View");
-        mapView.setOnAction(e -> LOG.debug("Map View placeholder selected"));
-
-        return new ContextMenu(createNote, new SeparatorMenuItem(), mapView);
+        ContextMenu menu = new ContextMenu(createNote);
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.OUTLINE, onViewSwitch));
+        return menu;
     }
 
     private void buildTree() {

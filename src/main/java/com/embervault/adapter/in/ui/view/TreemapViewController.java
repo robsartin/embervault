@@ -3,8 +3,10 @@ package com.embervault.adapter.in.ui.view;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.TreemapRect;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
@@ -18,7 +20,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
@@ -53,6 +54,17 @@ public class TreemapViewController {
     private TreemapViewModel viewModel;
     private Button backButton;
     private ViewColorConfig currentColors;
+    private Consumer<String> onViewSwitch;
+
+    /**
+     * Sets the callback invoked when the user selects a view-switch
+     * menu item. The callback receives the {@link ViewType} name.
+     *
+     * @param callback the view-switch callback
+     */
+    public void setOnViewSwitch(Consumer<String> callback) {
+        this.onViewSwitch = callback;
+    }
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -110,15 +122,11 @@ public class TreemapViewController {
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setOnAction(e -> viewModel.createChildNote("Untitled"));
 
-        MenuItem mapView = new MenuItem("Map View");
-        mapView.setOnAction(e -> LOG.debug("Map View placeholder selected"));
-
-        MenuItem outlineView = new MenuItem("Outline View");
-        outlineView.setOnAction(
-                e -> LOG.debug("Outline View placeholder selected"));
-
-        return new ContextMenu(createNote, new SeparatorMenuItem(),
-                mapView, outlineView);
+        ContextMenu menu = new ContextMenu(createNote);
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.TREEMAP, onViewSwitch));
+        return menu;
     }
 
     private void renderAllNotes() {

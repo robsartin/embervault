@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.api.FxRobot;
 import org.testfx.framework.junit5.ApplicationExtension;
 import org.testfx.framework.junit5.Start;
+import org.testfx.util.WaitForAsyncUtils;
 
 /**
  * Tests for {@link TextPaneViewController}.
@@ -170,8 +171,11 @@ class TextPaneViewControllerTest {
         robot.interact(() -> {
             titleField.requestFocus();
             titleField.setText("Enter Title");
-            titleField.fireEvent(new javafx.event.ActionEvent());
         });
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.interact(() ->
+                titleField.fireEvent(new javafx.event.ActionEvent()));
+        WaitForAsyncUtils.waitForFxEvents();
 
         assertEquals("Enter Title", viewModel.titleProperty().get(),
                 "Title should be saved after Enter");

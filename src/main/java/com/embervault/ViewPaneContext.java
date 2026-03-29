@@ -164,9 +164,13 @@ public final class ViewPaneContext {
                 vm.setBaseNoteId(baseNoteId);
                 vm.setOnDataChanged(refreshAll);
                 wireSelection(vm.selectedNoteIdProperty());
-                Parent view = loadFxml(newType, c ->
-                        ((MapViewController) c)
-                                .initViewModel(vm));
+                Parent view = loadFxml(newType, c -> {
+                    MapViewController ctrl =
+                            (MapViewController) c;
+                    ctrl.setOnViewSwitch(name ->
+                            switchView(ViewType.valueOf(name)));
+                    ctrl.initViewModel(vm);
+                });
                 replaceView(view);
                 newTitleProp = vm.tabTitleProperty();
                 currentViewRefresh = vm::loadNotes;
@@ -178,9 +182,13 @@ public final class ViewPaneContext {
                 vm.setBaseNoteId(baseNoteId);
                 vm.setOnDataChanged(refreshAll);
                 wireSelection(vm.selectedNoteIdProperty());
-                Parent view = loadFxml(newType, c ->
-                        ((OutlineViewController) c)
-                                .initViewModel(vm));
+                Parent view = loadFxml(newType, c -> {
+                    OutlineViewController ctrl =
+                            (OutlineViewController) c;
+                    ctrl.setOnViewSwitch(name ->
+                            switchView(ViewType.valueOf(name)));
+                    ctrl.initViewModel(vm);
+                });
                 replaceView(view);
                 newTitleProp = vm.tabTitleProperty();
                 currentViewRefresh = vm::loadNotes;
@@ -192,9 +200,13 @@ public final class ViewPaneContext {
                 vm.setBaseNoteId(baseNoteId);
                 vm.setOnDataChanged(refreshAll);
                 wireSelection(vm.selectedNoteIdProperty());
-                Parent view = loadFxml(newType, c ->
-                        ((TreemapViewController) c)
-                                .initViewModel(vm));
+                Parent view = loadFxml(newType, c -> {
+                    TreemapViewController ctrl =
+                            (TreemapViewController) c;
+                    ctrl.setOnViewSwitch(name ->
+                            switchView(ViewType.valueOf(name)));
+                    ctrl.initViewModel(vm);
+                });
                 replaceView(view);
                 newTitleProp = vm.tabTitleProperty();
                 currentViewRefresh = vm::loadNotes;
@@ -209,9 +221,13 @@ public final class ViewPaneContext {
                 if (baseNoteId != null) {
                     vm.setFocusNote(baseNoteId);
                 }
-                Parent view = loadFxml(newType, c ->
-                        ((HyperbolicViewController) c)
-                                .initViewModel(vm));
+                Parent view = loadFxml(newType, c -> {
+                    HyperbolicViewController ctrl =
+                            (HyperbolicViewController) c;
+                    ctrl.setOnViewSwitch(name ->
+                            switchView(ViewType.valueOf(name)));
+                    ctrl.initViewModel(vm);
+                });
                 replaceView(view);
                 newTitleProp = vm.tabTitleProperty();
                 currentViewRefresh = () -> {
@@ -226,9 +242,13 @@ public final class ViewPaneContext {
                         new AttributeBrowserViewModel(
                                 noteService, schemaRegistry);
                 vm.setOnDataChanged(refreshAll);
-                Parent view = loadFxml(newType, c ->
-                        ((AttributeBrowserViewController) c)
-                                .initViewModel(vm));
+                Parent view = loadFxml(newType, c -> {
+                    AttributeBrowserViewController ctrl =
+                            (AttributeBrowserViewController) c;
+                    ctrl.setOnViewSwitch(name ->
+                            switchView(ViewType.valueOf(name)));
+                    ctrl.initViewModel(vm);
+                });
                 replaceView(view);
                 newTitleProp = vm.tabTitleProperty();
                 currentViewRefresh = vm::groupNotes;

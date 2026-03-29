@@ -3,7 +3,9 @@ package com.embervault.adapter.in.ui.view;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
+import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicEdge;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicNode;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
@@ -47,10 +49,21 @@ public class HyperbolicViewController {
 
     private HyperbolicViewModel viewModel;
     private Button backButton;
+    private Consumer<String> onViewSwitch;
     private double dragStartX;
     private double dragStartY;
     private double panOffsetX;
     private double panOffsetY;
+
+    /**
+     * Sets the callback invoked when the user selects a view-switch
+     * menu item. The callback receives the {@link ViewType} name.
+     *
+     * @param callback the view-switch callback
+     */
+    public void setOnViewSwitch(Consumer<String> callback) {
+        this.onViewSwitch = callback;
+    }
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -149,7 +162,11 @@ public class HyperbolicViewController {
         createLinkItem.setOnAction(e ->
                 LOG.debug("Create Link placeholder"));
 
-        return new ContextMenu(focusItem, createLinkItem);
+        ContextMenu menu = new ContextMenu(focusItem, createLinkItem);
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.HYPERBOLIC, onViewSwitch));
+        return menu;
     }
 
     private void renderAll() {
@@ -247,7 +264,11 @@ public class HyperbolicViewController {
         createLinkItem.setOnAction(e ->
                 LOG.debug("Create Link to {} placeholder", noteId));
 
-        return new ContextMenu(focusItem, createLinkItem);
+        ContextMenu menu = new ContextMenu(focusItem, createLinkItem);
+        menu.getItems().addAll(
+                ViewSwitchMenuHelper.createViewSwitchItems(
+                        ViewType.HYPERBOLIC, onViewSwitch));
+        return menu;
     }
 
     private void highlightSelected(UUID selectedId) {
