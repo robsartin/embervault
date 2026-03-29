@@ -65,7 +65,7 @@ public final class InMemoryNoteRepository implements NoteRepository {
         Set<UUID> candidates = new HashSet<>(noteIds);
         Set<UUID> result = new HashSet<>();
         for (Note note : store.values()) {
-            note.getAttribute("$Container")
+            note.getAttribute(CONTAINER)
                     .filter(v -> v instanceof AttributeValue.StringValue)
                     .map(v -> ((AttributeValue.StringValue) v).value())
                     .ifPresent(containerIdStr -> {
