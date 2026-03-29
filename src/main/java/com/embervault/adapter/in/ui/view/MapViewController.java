@@ -25,7 +25,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -106,24 +108,9 @@ public class MapViewController {
             }
         });
 
-        mapCanvas.setOnScroll(event -> {
-            double factor = event.getDeltaY() > 0
-                    ? SCROLL_ZOOM_FACTOR : 1.0 / SCROLL_ZOOM_FACTOR;
-            double newZoom = viewModel.zoomLevelProperty().get() * factor;
-            zoomScale.setPivotX(event.getX());
-            zoomScale.setPivotY(event.getY());
-            viewModel.setZoomLevel(newZoom);
-            event.consume();
-        });
+        mapCanvas.setOnScroll(this::handleScrollZoom);
 
-        mapCanvas.setOnKeyPressed(event -> {
-            if (event.getCode() == KeyCode.ENTER) {
-                viewModel.createChildNote("Untitled");
-            } else if (event.getCode() == KeyCode.ESCAPE
-                    && viewModel.canNavigateBackProperty().get()) {
-                viewModel.navigateBack();
-            }
-        });
+        mapCanvas.setOnKeyPressed(this::handleKeyPress);
 
         ContextMenu contextMenu = createContextMenu();
         mapCanvas.setOnContextMenuRequested(event -> {
@@ -139,6 +126,27 @@ public class MapViewController {
     /** Returns the associated ViewModel. */
     public MapViewModel getViewModel() {
         return viewModel;
+    }
+
+    /** Handles scroll-to-zoom, adjusting zoom level toward the cursor position. */
+    void handleScrollZoom(ScrollEvent event) {
+        double factor = event.getDeltaY() > 0
+                ? SCROLL_ZOOM_FACTOR : 1.0 / SCROLL_ZOOM_FACTOR;
+        double newZoom = viewModel.zoomLevelProperty().get() * factor;
+        zoomScale.setPivotX(event.getX());
+        zoomScale.setPivotY(event.getY());
+        viewModel.setZoomLevel(newZoom);
+        event.consume();
+    }
+
+    /** Handles key presses: Enter creates a note, Escape navigates back. */
+    void handleKeyPress(KeyEvent event) {
+        if (event.getCode() == KeyCode.ENTER) {
+            viewModel.createChildNote("Untitled");
+        } else if (event.getCode() == KeyCode.ESCAPE
+                && viewModel.canNavigateBackProperty().get()) {
+            viewModel.navigateBack();
+        }
     }
 
     private ContextMenu createContextMenu() {
@@ -431,8 +439,7 @@ public class MapViewController {
         });
         notePane.setOnMouseReleased(event -> {
             if (dragging[0]) {
-                viewModel.updateNotePosition(
-                        item.getId(), notePane.getLayoutX(), notePane.getLayoutY());
+                viewModel.updateNotePosition(item.getId(), notePane.getLayoutX(), notePane.getLayoutY());
                 event.consume();
             }
         });
@@ -451,26 +458,21 @@ public class MapViewController {
     }
 
     /** Checks if target is a descendant of ancestor. */
-    private static boolean isDescendantOf(Object target, javafx.scene.Node ancestor) {
-        if (!(target instanceof javafx.scene.Node node)) {
+    private static boolean isDescendantOf(Object target, Node ancestor) {
+        if (!(target instanceof Node node)) {
             return false;
         }
-        javafx.scene.Node current = node.getParent();
-        while (current != null) {
-            if (current == ancestor) {
+        for (Node cur = node.getParent(); cur != null; cur = cur.getParent()) {
+            if (cur == ancestor) {
                 return true;
             }
-            current = current.getParent();
         }
         return false;
     }
 
     private void highlightSelected(StackPane selected) {
-        Color borderCol = currentColors != null
-                ? Color.web(currentColors.borderColor()) : Color.BLACK;
-        Color selCol = currentColors != null
-                ? Color.web(currentColors.selectionColor())
-                : Color.DODGERBLUE;
+        Color borderCol = currentColors != null ? Color.web(currentColors.borderColor()) : Color.BLACK;
+        Color selCol = currentColors != null ? Color.web(currentColors.selectionColor()) : Color.DODGERBLUE;
         for (Node child : mapCanvas.getChildren()) {
             if (child instanceof StackPane sp && !sp.getChildren().isEmpty()
                     && sp.getChildren().get(0) instanceof Rectangle r) {
@@ -485,10 +487,7 @@ public class MapViewController {
         }
     }
 
-    /**
-     * Applies a color scheme to the map view.
-     * @param colors the view color config to apply
-     */
+    /** Applies a color scheme to the map view. */
     public void applyColorScheme(ViewColorConfig colors) {
         this.currentColors = colors;
         mapCanvas.setStyle("-fx-background-color: "
