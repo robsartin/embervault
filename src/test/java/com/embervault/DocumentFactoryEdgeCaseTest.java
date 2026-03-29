@@ -69,7 +69,7 @@ class DocumentFactoryEdgeCaseTest {
                 .createStamp("Tag:important",
                         "$Tag=important");
         ctx.stampService().applyStamp(
-                stamp.getId(), child.getId());
+                stamp.id(), child.getId());
 
         // Verify the attribute was set on the note visible
         // through the shared repository
@@ -77,7 +77,10 @@ class DocumentFactoryEdgeCaseTest {
                 ctx.noteRepository().findById(child.getId());
         assertTrue(updated.isPresent());
         assertEquals("important",
-                updated.get().getAttributes().get("Tag"),
+                updated.get().getAttribute("$Tag")
+                        .map(v -> ((com.embervault.domain.AttributeValue
+                                .StringValue) v).value())
+                        .orElse(null),
                 "Stamp should have written attribute via "
                         + "shared repository");
     }
