@@ -1,7 +1,5 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
-import static com.embervault.domain.Attributes.BADGE;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -15,8 +13,6 @@ import java.util.UUID;
 
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
-import com.embervault.domain.AttributeValue;
-import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Link;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -96,8 +92,8 @@ public final class HyperbolicViewModel {
         focusNoteId.set(noteId);
 
         noteService.getNote(noteId).ifPresent(note ->
-                tabTitle.set("Hyperbolic: "
-                        + TextUtils.truncate(note.getTitle(), MAX_TITLE_LENGTH)));
+                tabTitle.set(TextUtils.tabTitle("Hyperbolic",
+                        note.getTitle(), MAX_TITLE_LENGTH)));
 
         computeLayout();
     }
@@ -204,9 +200,7 @@ public final class HyperbolicViewModel {
      */
     public String getNoteBadge(UUID noteId) {
         return noteService.getNote(noteId)
-                .flatMap(note -> note.getAttribute(BADGE))
-                .map(v -> ((AttributeValue.StringValue) v).value())
-                .flatMap(BadgeRegistry::getBadgeSymbol)
+                .map(NoteDisplayHelper::resolveBadge)
                 .orElse("");
     }
 

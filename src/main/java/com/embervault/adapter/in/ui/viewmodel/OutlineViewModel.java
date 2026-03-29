@@ -295,7 +295,7 @@ public final class OutlineViewModel {
     }
 
     private void updateTabTitle(String title) {
-        tabTitle.set("Outline: " + TextUtils.truncate(title, MAX_TITLE_LENGTH));
+        tabTitle.set(TextUtils.tabTitle("Outline", title, MAX_TITLE_LENGTH));
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {

@@ -26,7 +26,6 @@ import javafx.collections.ObservableList;
 public final class TreemapViewModel {
 
     private static final int MAX_TITLE_LENGTH = 20;
-    private static final String DEFAULT_COLOR_HEX = "#808080";
 
     private final ReadOnlyStringWrapper tabTitle = new ReadOnlyStringWrapper();
     private final ObservableList<NoteDisplayItem> noteItems =
@@ -191,7 +190,7 @@ public final class TreemapViewModel {
     }
 
     private void updateTabTitle(String title) {
-        tabTitle.set("Treemap: " + TextUtils.truncate(title, MAX_TITLE_LENGTH));
+        tabTitle.set(TextUtils.tabTitle("Treemap", title, MAX_TITLE_LENGTH));
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {

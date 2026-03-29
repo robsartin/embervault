@@ -45,4 +45,37 @@ class TextUtilsTest {
     void truncate_shouldWorkWithMaxLengthOfOne() {
         assertEquals("a\u2026", TextUtils.truncate("abc", 1));
     }
+
+    @Test
+    @DisplayName("tabTitle returns prefix only when name is null")
+    void tabTitle_shouldReturnPrefixOnlyWhenNameIsNull() {
+        assertEquals("Map", TextUtils.tabTitle("Map", null, 20));
+    }
+
+    @Test
+    @DisplayName("tabTitle returns prefix only when name is empty")
+    void tabTitle_shouldReturnPrefixOnlyWhenNameIsEmpty() {
+        assertEquals("Map", TextUtils.tabTitle("Map", "", 20));
+    }
+
+    @Test
+    @DisplayName("tabTitle combines prefix and short name")
+    void tabTitle_shouldCombinePrefixAndShortName() {
+        assertEquals("Map: Hello", TextUtils.tabTitle("Map", "Hello", 20));
+    }
+
+    @Test
+    @DisplayName("tabTitle truncates long name with ellipsis")
+    void tabTitle_shouldTruncateLongName() {
+        assertEquals("Outline: A Very Long Note Tit\u2026",
+                TextUtils.tabTitle("Outline",
+                        "A Very Long Note Title That Should Be Truncated", 20));
+    }
+
+    @Test
+    @DisplayName("tabTitle handles exact-length name")
+    void tabTitle_shouldHandleExactLengthName() {
+        String name = "12345678901234567890"; // exactly 20 chars
+        assertEquals("Map: " + name, TextUtils.tabTitle("Map", name, 20));
+    }
 }
