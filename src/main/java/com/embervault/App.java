@@ -8,6 +8,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
+import com.embervault.adapter.in.ui.view.ColorSchemeMenuHelper;
 import com.embervault.adapter.in.ui.view.HyperbolicViewController;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.NoteEditorViewController;
@@ -58,10 +59,8 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -328,19 +327,12 @@ public class App extends Application {
         });
 
         // Color Scheme submenu
-        Menu colorSchemeMenu = new Menu("Color Scheme");
-        ToggleGroup schemeToggle = new ToggleGroup();
-        for (ColorScheme scheme
-                : ColorSchemeRegistry.getAllSchemes()) {
-            RadioMenuItem item = new RadioMenuItem(scheme.name());
-            item.setToggleGroup(schemeToggle);
-            if ("Standard".equals(scheme.name())) {
-                item.setSelected(true);
-            }
-            item.setOnAction(e ->
-                    ctx.colorSchemeApplier().accept(scheme));
-            colorSchemeMenu.getItems().add(item);
-        }
+        List<String> schemeNames = ColorSchemeRegistry.getAllSchemes()
+                .stream().map(ColorScheme::name).toList();
+        Menu colorSchemeMenu = ColorSchemeMenuHelper
+                .createColorSchemeMenu(schemeNames, "Standard",
+                        name -> ColorSchemeRegistry.getScheme(name)
+                                .ifPresent(ctx.colorSchemeApplier()));
 
         Menu viewMenu = new Menu("View");
         viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
