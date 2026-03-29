@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 import java.util.function.Consumer;
 
 import com.embervault.ViewType;
@@ -24,7 +23,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -72,7 +70,6 @@ public class MapViewController {
     /**
      * Sets the callback invoked when the user selects a view-switch
      * menu item. The callback receives the {@link ViewType} name.
-     *
      * @param callback the view-switch callback
      */
     public void setOnViewSwitch(Consumer<String> callback) {
@@ -490,7 +487,6 @@ public class MapViewController {
 
     /**
      * Applies a color scheme to the map view.
-     *
      * @param colors the view color config to apply
      */
     public void applyColorScheme(ViewColorConfig colors) {

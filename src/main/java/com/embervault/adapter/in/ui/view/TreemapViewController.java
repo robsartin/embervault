@@ -3,9 +3,8 @@ package com.embervault.adapter.in.ui.view;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
@@ -21,7 +20,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.Pane;
