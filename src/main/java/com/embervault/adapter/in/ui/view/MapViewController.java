@@ -23,6 +23,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.HBox;
@@ -48,6 +49,7 @@ public class MapViewController {
     private static final double NORMAL_BORDER_WIDTH = 1.0;
     private static final double TITLE_FONT_SIZE = 14.0;
     private static final double CONTENT_FONT_SIZE = 11.0;
+    private static final double BADGE_FONT_SIZE = 16.0;
 
     private static final double BACK_BUTTON_PADDING = 5.0;
     private static final double SCROLL_ZOOM_FACTOR = 1.1;
@@ -67,11 +69,7 @@ public class MapViewController {
     private ViewColorConfig currentColors;
     private Consumer<String> onViewSwitch;
 
-    /**
-     * Sets the callback invoked when the user selects a view-switch
-     * menu item. The callback receives the {@link ViewType} name.
-     * @param callback the view-switch callback
-     */
+    /** Sets the callback invoked when the user selects a view-switch menu item. */
     public void setOnViewSwitch(Consumer<String> callback) {
         this.onViewSwitch = callback;
     }
@@ -375,7 +373,10 @@ public class MapViewController {
             String badge = item.getBadge();
             if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
                 Label badgeLabel = new Label(badge);
-                badgeLabel.setFont(Font.font("System", fontSize));
+                badgeLabel.setFont(Font.font(BADGE_FONT_SIZE));
+                badgeLabel.setTextFill(Color.web(
+                        ViewColorConfig.contrastTextColor(item.getColorHex())));
+                badgeLabel.setEffect(new DropShadow(2, Color.gray(0.3, 0.6)));
                 badgeLabel.setMouseTransparent(true);
                 StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
                 StackPane.setMargin(badgeLabel, new Insets(2, 4, 0, 0));
