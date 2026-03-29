@@ -219,4 +219,18 @@ class ArchitectureTest {
                 .allowEmptyShould(true)
                 .check(classes);
     }
+
+    @Test
+    @DisplayName("ADR-0009: Application services must not depend on adapter packages")
+    void applicationServicesMustNotDependOnAdapters() {
+        noClasses()
+                .that().resideInAPackage("com.embervault.application..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("com.embervault.adapter..")
+                .because("ADR-0009 mandates that application services depend on ports "
+                        + "(abstractions), not on adapter implementations "
+                        + "(dependency flows inward only)")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
 }
