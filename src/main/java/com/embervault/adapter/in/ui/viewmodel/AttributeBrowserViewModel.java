@@ -1,8 +1,5 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
-import static com.embervault.domain.Attributes.BADGE;
-import static com.embervault.domain.Attributes.COLOR;
-
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -16,9 +13,7 @@ import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.AttributeType;
 import com.embervault.domain.AttributeValue;
-import com.embervault.domain.BadgeRegistry;
 import com.embervault.domain.Note;
-import com.embervault.domain.TbxColor;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -37,8 +32,6 @@ public final class AttributeBrowserViewModel {
 
     private static final int MAX_TITLE_LENGTH = 20;
     private static final String NONE_CATEGORY = "(none)";
-    private static final String DEFAULT_COLOR_HEX = "#808080";
-
     private static final Set<AttributeType> GROUPABLE_TYPES = EnumSet.of(
             AttributeType.STRING,
             AttributeType.BOOLEAN,
@@ -210,18 +203,11 @@ public final class AttributeBrowserViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        String colorHex = note.getAttribute(COLOR)
-                .map(v -> ((AttributeValue.ColorValue) v).value())
-                .map(TbxColor::toHex)
-                .orElse(DEFAULT_COLOR_HEX);
-        String badge = note.getAttribute(BADGE)
-                .map(v -> ((AttributeValue.StringValue) v).value())
-                .flatMap(BadgeRegistry::getBadgeSymbol)
-                .orElse("");
-
         return new NoteDisplayItem(
                 note.getId(), note.getTitle(), note.getContent(),
-                0, 0, 0, 0, colorHex,
-                noteService.hasChildren(note.getId()), badge);
+                0, 0, 0, 0,
+                NoteDisplayHelper.resolveColorHex(note),
+                noteService.hasChildren(note.getId()),
+                NoteDisplayHelper.resolveBadge(note));
     }
 }

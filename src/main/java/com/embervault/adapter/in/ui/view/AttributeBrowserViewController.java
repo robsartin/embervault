@@ -81,7 +81,11 @@ public class AttributeBrowserViewController {
             categoryNode.setExpanded(true);
 
             for (NoteDisplayItem note : category.notes()) {
-                TreeItem<String> noteNode = new TreeItem<>(note.getTitle());
+                String badge = note.getBadge();
+                String displayTitle = (badge != null && !badge.isEmpty())
+                        ? badge + " " + note.getTitle()
+                        : note.getTitle();
+                TreeItem<String> noteNode = new TreeItem<>(displayTitle);
                 noteNode.setGraphic(null);
                 categoryNode.getChildren().add(noteNode);
             }
@@ -90,10 +94,14 @@ public class AttributeBrowserViewController {
         }
     }
 
-    private void findNoteByTitle(String title) {
+    private void findNoteByTitle(String displayTitle) {
         for (CategoryItem category : viewModel.getCategories()) {
             for (NoteDisplayItem note : category.notes()) {
-                if (note.getTitle().equals(title)) {
+                String badge = note.getBadge();
+                String expected = (badge != null && !badge.isEmpty())
+                        ? badge + " " + note.getTitle()
+                        : note.getTitle();
+                if (expected.equals(displayTitle)) {
                     viewModel.selectNote(note.getId());
                     return;
                 }
