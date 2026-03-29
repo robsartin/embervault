@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.TreemapRect;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
+import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
@@ -51,6 +52,7 @@ public class TreemapViewController {
 
     private TreemapViewModel viewModel;
     private Button backButton;
+    private ViewColorConfig currentColors;
 
     /**
      * Injects the ViewModel and binds UI controls to its properties.
@@ -148,7 +150,8 @@ public class TreemapViewController {
 
         Rectangle rect = new Rectangle(rectWidth, rectHeight);
         rect.setFill(Color.web(item.getColorHex()));
-        rect.setStroke(Color.BLACK);
+        rect.setStroke(currentColors != null
+                ? Color.web(currentColors.borderColor()) : Color.BLACK);
         rect.setStrokeWidth(NORMAL_BORDER_WIDTH);
         rect.setArcWidth(4);
         rect.setArcHeight(4);
@@ -157,6 +160,8 @@ public class TreemapViewController {
         Label titleLabel = new Label(labelText);
         titleLabel.setFont(Font.font("System", FontWeight.BOLD,
                 TITLE_FONT_SIZE));
+        titleLabel.setTextFill(Color.web(
+                ViewColorConfig.contrastTextColor(item.getColorHex())));
         titleLabel.setTextAlignment(TextAlignment.CENTER);
         titleLabel.setAlignment(Pos.CENTER);
         titleLabel.setMaxWidth(rectWidth - 4);
@@ -203,7 +208,9 @@ public class TreemapViewController {
         // Highlight if currently selected
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
             rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
-            rect.setStroke(Color.DODGERBLUE);
+            rect.setStroke(currentColors != null
+                    ? Color.web(currentColors.selectionColor())
+                    : Color.DODGERBLUE);
         }
 
         return notePane;
@@ -223,17 +230,34 @@ public class TreemapViewController {
     }
 
     private void highlightSelected(StackPane selected) {
+        Color borderCol = currentColors != null
+                ? Color.web(currentColors.borderColor()) : Color.BLACK;
+        Color selCol = currentColors != null
+                ? Color.web(currentColors.selectionColor())
+                : Color.DODGERBLUE;
         for (Node child : treemapCanvas.getChildren()) {
             if (child instanceof StackPane sp && !sp.getChildren().isEmpty()
                     && sp.getChildren().get(0) instanceof Rectangle r) {
                 r.setStrokeWidth(NORMAL_BORDER_WIDTH);
-                r.setStroke(Color.BLACK);
+                r.setStroke(borderCol);
             }
         }
         if (!selected.getChildren().isEmpty()
                 && selected.getChildren().get(0) instanceof Rectangle r) {
             r.setStrokeWidth(SELECTED_BORDER_WIDTH);
-            r.setStroke(Color.DODGERBLUE);
+            r.setStroke(selCol);
         }
+    }
+
+    /**
+     * Applies a color scheme to the treemap view.
+     *
+     * @param colors the view color config to apply
+     */
+    public void applyColorScheme(ViewColorConfig colors) {
+        this.currentColors = colors;
+        treemapCanvas.setStyle("-fx-background-color: "
+                + colors.canvasBackground() + ";");
+        renderAllNotes();
     }
 }

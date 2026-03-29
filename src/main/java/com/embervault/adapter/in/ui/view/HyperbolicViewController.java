@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicEdge;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicNode;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
+import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
@@ -270,5 +271,16 @@ public class HyperbolicViewController {
 
     private String noteBadge(UUID noteId) {
         return viewModel.getNoteBadge(noteId);
+    }
+
+    /**
+     * Applies a color scheme to the hyperbolic view.
+     *
+     * @param colors the view color config to apply
+     */
+    public void applyColorScheme(ViewColorConfig colors) {
+        hyperbolicCanvas.setStyle("-fx-background-color: "
+                + colors.canvasBackground() + ";");
+        renderAll();
     }
 }

@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
+import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -382,5 +383,18 @@ public class OutlineViewController {
                 setGraphic(null);
             }
         }
+    }
+
+    /**
+     * Applies a color scheme to the outline view.
+     *
+     * @param colors the view color config to apply
+     */
+    public void applyColorScheme(ViewColorConfig colors) {
+        outlineRoot.setStyle("-fx-background-color: "
+                + colors.panelBackground() + ";");
+        outlineTreeView.setStyle("-fx-background-color: "
+                + colors.panelBackground() + "; -fx-control-inner-background: "
+                + colors.panelBackground() + ";");
     }
 }

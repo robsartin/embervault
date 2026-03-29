@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
 import com.embervault.adapter.in.ui.view.HyperbolicViewController;
@@ -24,6 +25,7 @@ import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
+import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.adapter.out.persistence.InMemoryStampRepository;
@@ -39,6 +41,8 @@ import com.embervault.application.port.out.LinkRepository;
 import com.embervault.application.port.out.NoteRepository;
 import com.embervault.application.port.out.StampRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
+import com.embervault.domain.ColorScheme;
+import com.embervault.domain.ColorSchemeRegistry;
 import com.embervault.domain.Project;
 import com.embervault.domain.Stamp;
 import javafx.application.Application;
@@ -53,8 +57,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
@@ -74,72 +80,57 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        // Create an empty project on startup
         ProjectService projectService = new ProjectServiceImpl();
         Project project = projectService.createEmptyProject();
-
-        // Create shared NoteRepository and NoteService
         NoteRepository noteRepository = new InMemoryNoteRepository();
         NoteService noteService = new NoteServiceImpl(noteRepository);
-
-        // Create shared LinkRepository and LinkService
         LinkRepository linkRepository = new InMemoryLinkRepository();
         LinkService linkService = new LinkServiceImpl(linkRepository);
-
-        // Create StampRepository and StampService
         StampRepository stampRepository = new InMemoryStampRepository();
         StampService stampService = new StampServiceImpl(
                 stampRepository, noteRepository);
-
-        // Pre-populate built-in stamps
         populateBuiltInStamps(stampService);
-
-        // Save root note to repository so children can reference it
         noteRepository.save(project.getRootNote());
-
-        // Create a welcome note so the views have something to display
         noteService.createChildNote(project.getRootNote().getId(),
                 "Welcome to EmberVault");
-
-        // Observable note title for binding to ViewModels
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
-
-        // Create ViewModels with shared NoteService
         MapViewModel mapViewModel = new MapViewModel(
                 rootNoteTitle, noteService);
         mapViewModel.setBaseNoteId(project.getRootNote().getId());
-
         OutlineViewModel outlineViewModel = new OutlineViewModel(
                 rootNoteTitle, noteService);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
-
         TreemapViewModel treemapViewModel = new TreemapViewModel(
                 rootNoteTitle, noteService);
         treemapViewModel.setBaseNoteId(project.getRootNote().getId());
-
-        // Create shared AttributeSchemaRegistry
         AttributeSchemaRegistry schemaRegistry = new AttributeSchemaRegistry();
-
-        // Create Attribute Browser ViewModel
         AttributeBrowserViewModel browserViewModel =
                 new AttributeBrowserViewModel(noteService, schemaRegistry);
-
-        // Create Note Editor ViewModel
         NoteEditorViewModel editorViewModel =
                 new NoteEditorViewModel(noteService, schemaRegistry);
-
-        // Load views
-        Parent mapView = loadView("MapView.fxml",
-                c -> ((MapViewController) c).initViewModel(mapViewModel));
-        Parent outlineView = loadView("OutlineView.fxml",
-                c -> ((OutlineViewController) c).initViewModel(outlineViewModel));
-        Parent treemapView = loadView("TreemapView.fxml",
-                c -> ((TreemapViewController) c).initViewModel(treemapViewModel));
+        var mapCtrl = new MapViewController[1];
+        var outlineCtrl = new OutlineViewController[1];
+        var treemapCtrl = new TreemapViewController[1];
+        var hyperbolicCtrl = new HyperbolicViewController[1];
+        Parent mapView = loadView("MapView.fxml", c -> {
+            mapCtrl[0] = (MapViewController) c;
+            mapCtrl[0].initViewModel(mapViewModel);
+        });
+        Parent outlineView = loadView("OutlineView.fxml", c -> {
+            outlineCtrl[0] = (OutlineViewController) c;
+            outlineCtrl[0].initViewModel(outlineViewModel);
+        });
+        Parent treemapView = loadView("TreemapView.fxml", c -> {
+            treemapCtrl[0] = (TreemapViewController) c;
+            treemapCtrl[0].initViewModel(treemapViewModel);
+        });
         HyperbolicViewModel hyperbolicViewModel =
                 new HyperbolicViewModel(noteService, linkService);
-        Parent hyperbolicView = loadView("HyperbolicView.fxml",
-                c -> ((HyperbolicViewController) c).initViewModel(hyperbolicViewModel));
+        Parent hyperbolicView = loadView("HyperbolicView.fxml", c -> {
+            hyperbolicCtrl[0] = (HyperbolicViewController) c;
+            hyperbolicCtrl[0].initViewModel(hyperbolicViewModel);
+        });
         Parent browserView = loadView("AttributeBrowserView.fxml",
                 c -> ((AttributeBrowserViewController) c).initViewModel(browserViewModel));
         Parent editorView = loadView("NoteEditorView.fxml",
@@ -156,8 +147,6 @@ public class App extends Application {
                         outlineViewModel.selectNote(newVal);
                     }
                 });
-
-        // Create SelectedNoteViewModel and load TextPaneView
         SelectedNoteViewModel selectedNoteVm =
                 new SelectedNoteViewModel(noteService);
         FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
@@ -165,14 +154,9 @@ public class App extends Application {
         Parent textPaneView = textPaneLoader.load();
         ((TextPaneViewController) textPaneLoader.getController())
                 .initViewModel(selectedNoteVm);
-        // Wire all views' selection to the text pane
         wireSelection(mapViewModel.selectedNoteIdProperty(), selectedNoteVm);
         wireSelection(outlineViewModel.selectedNoteIdProperty(), selectedNoteVm);
         wireSelection(treemapViewModel.selectedNoteIdProperty(), selectedNoteVm);
-
-        // Create ViewPaneContext instances for switchable panes.
-        // refreshAll is defined as a lambda that delegates to each
-        // pane context, so pane switches are automatically reflected.
         ViewPaneContext mapPane = new ViewPaneContext(
                 ViewType.MAP,
                 mapViewModel.tabTitleProperty(), mapView,
@@ -188,11 +172,6 @@ public class App extends Application {
                 treemapViewModel.tabTitleProperty(), treemapView,
                 project.getRootNote().getId(),
                 treemapViewModel::loadNotes);
-
-        // SYNC CONTRACT — every mutation calls notifyDataChanged(), which
-        // invokes this refreshAll lambda to reload all views from the
-        // single authoritative NoteRepository. No view caches Note objects
-        // across refreshes. New views: add refresh here + wire below.
         Runnable refreshAll = () -> {
             mapPane.refreshCurrentView();
             outlinePane.refreshCurrentView();
@@ -215,43 +194,40 @@ public class App extends Application {
         hyperbolicViewModel.setOnDataChanged(refreshAll);
         selectedNoteVm.setOnDataChanged(refreshAll);
         searchViewModel.setOnDataChanged(refreshAll);
-
-        // Wire shared deps into pane contexts for view switching
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 refreshAll, selectedNoteVm, rootNoteTitle);
         mapPane.setDeps(paneDeps);
         outlinePane.setDeps(paneDeps);
         treemapPane.setDeps(paneDeps);
-
         VBox mapContainer = mapPane.getContainer();
         VBox outlineContainer = outlinePane.getContainer();
         VBox treemapContainer = treemapPane.getContainer();
         VBox hyperbolicContainer = wrapWithLabel(
                 hyperbolicViewModel.tabTitleProperty(), hyperbolicView);
-
-        // Browser + Editor combined pane
         VBox browserContainer = wrapWithLabel(
                 browserViewModel.tabTitleProperty(), browserView);
-
         VBox editorContainer = new VBox(editorView);
         VBox.setVgrow(editorView, Priority.ALWAYS);
-
         SplitPane browserEditorPane = new SplitPane(
                 browserContainer, editorContainer);
         browserEditorPane.setDividerPositions(0.4);
-
-        // SplitPane with Map, Outline, and Treemap
         SplitPane viewsSplitPane = new SplitPane(
                 mapContainer, outlineContainer, treemapContainer);
         viewsSplitPane.setDividerPositions(0.33, 0.66);
-
-        // Vertical SplitPane: views on top, text pane on bottom
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(
                 javafx.geometry.Orientation.VERTICAL);
         mainSplitPane.getItems().addAll(viewsSplitPane, textPaneView);
         mainSplitPane.setDividerPositions(0.6);
+
+        Consumer<ColorScheme> colorSchemeApplier = scheme -> {
+            ViewColorConfig cfg = ViewColorConfig.fromScheme(scheme);
+            mapCtrl[0].applyColorScheme(cfg);
+            outlineCtrl[0].applyColorScheme(cfg);
+            treemapCtrl[0].applyColorScheme(cfg);
+            hyperbolicCtrl[0].applyColorScheme(cfg);
+        };
 
         // Build shared context for menu construction
         AppContext ctx = new AppContext(
@@ -259,7 +235,7 @@ public class App extends Application {
                 mainSplitPane, browserEditorPane, hyperbolicContainer,
                 project, stampService,
                 mapViewModel.selectedNoteIdProperty(),
-                refreshAll, stage);
+                refreshAll, stage, colorSchemeApplier);
 
         // Menu bar
         MenuBar menuBar = createMenuBar(ctx);
@@ -346,9 +322,25 @@ public class App extends Application {
             }
         });
 
+        // Color Scheme submenu
+        Menu colorSchemeMenu = new Menu("Color Scheme");
+        ToggleGroup schemeToggle = new ToggleGroup();
+        for (ColorScheme scheme
+                : ColorSchemeRegistry.getAllSchemes()) {
+            RadioMenuItem item = new RadioMenuItem(scheme.name());
+            item.setToggleGroup(schemeToggle);
+            if ("Standard".equals(scheme.name())) {
+                item.setSelected(true);
+            }
+            item.setOnAction(e ->
+                    ctx.colorSchemeApplier().accept(scheme));
+            colorSchemeMenu.getItems().add(item);
+        }
+
         Menu viewMenu = new Menu("View");
         viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
-                treemapViewItem, hyperbolicViewItem, browserViewItem);
+                treemapViewItem, hyperbolicViewItem, browserViewItem,
+                new SeparatorMenuItem(), colorSchemeMenu);
 
         // Edit menu
         MenuItem findItem = new MenuItem("Find");
