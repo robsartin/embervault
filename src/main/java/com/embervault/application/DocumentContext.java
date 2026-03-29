@@ -9,7 +9,7 @@ import com.embervault.domain.Project;
 /**
  * Holds a fully wired document with all services and the project.
  *
- * <p>Returned by {@link DocumentFactory#createEmpty()} so that a developer
+ * <p>Returned by {@link com.embervault.DocumentFactory#createEmpty()} so that a developer
  * can get a ready-to-use document without understanding the internal wiring
  * of the application. All services share the same underlying repositories.</p>
  *
