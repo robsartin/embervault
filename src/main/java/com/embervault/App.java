@@ -41,6 +41,7 @@ import com.embervault.application.port.out.LinkRepository;
 import com.embervault.application.port.out.NoteRepository;
 import com.embervault.application.port.out.StampRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
+import com.embervault.domain.Attributes;
 import com.embervault.domain.ColorScheme;
 import com.embervault.domain.ColorSchemeRegistry;
 import com.embervault.domain.Project;
@@ -222,7 +223,11 @@ public class App extends Application {
         mainSplitPane.setDividerPositions(0.6);
 
         Consumer<ColorScheme> colorSchemeApplier = scheme -> {
-            ViewColorConfig cfg = ViewColorConfig.fromScheme(scheme);
+            ViewColorConfig cfg = new ViewColorConfig(
+                    scheme.canvasBackground(), scheme.panelBackground(),
+                    scheme.textColor(), scheme.secondaryTextColor(),
+                    scheme.borderColor(), scheme.selectionColor(),
+                    scheme.toolbarBackground(), scheme.accentColor());
             mapCtrl[0].applyColorScheme(cfg);
             outlineCtrl[0].applyColorScheme(cfg);
             treemapCtrl[0].applyColorScheme(cfg);
@@ -467,15 +472,15 @@ public class App extends Application {
     }
 
     private void populateBuiltInStamps(StampService stampService) {
-        stampService.createStamp("Color:red", "$Color=red");
-        stampService.createStamp("Color:green", "$Color=green");
-        stampService.createStamp("Color:blue", "$Color=blue");
-        stampService.createStamp("Mark Done", "$Checked=true");
-        stampService.createStamp("Mark Undone", "$Checked=false");
+        stampService.createStamp("Color:red", Attributes.COLOR + "=red");
+        stampService.createStamp("Color:green", Attributes.COLOR + "=green");
+        stampService.createStamp("Color:blue", Attributes.COLOR + "=blue");
+        stampService.createStamp("Mark Done", Attributes.CHECKED + "=true");
+        stampService.createStamp("Mark Undone", Attributes.CHECKED + "=false");
 
         for (String b : List.of("star", "flag", "check", "warning",
                 "book", "person", "idea", "heart", "pin", "fire")) {
-            stampService.createStamp("Badge:" + b, "$Badge=" + b);
+            stampService.createStamp("Badge:" + b, Attributes.BADGE + "=" + b);
         }
     }
 

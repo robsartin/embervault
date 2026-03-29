@@ -2,9 +2,17 @@ package com.embervault.architecture;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.embervault.domain.DomainException;
 import com.tngtech.archunit.core.domain.JavaClasses;
@@ -232,5 +240,62 @@ class ArchitectureTest {
                         + "(dependency flows inward only)")
                 .allowEmptyShould(true)
                 .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0010: Service implementations must reside in application package")
+    void serviceImplementationsMustResideInApplicationPackage() {
+        classes()
+                .that().haveSimpleNameEndingWith("ServiceImpl")
+                .should().resideInAPackage("com.embervault.application..")
+                .because("ADR-0010 mandates that service implementations live in the "
+                        + "application layer, not in adapters or domain")
+                .allowEmptyShould(true)
+                .check(classes);
+    }
+
+    @Test
+    @DisplayName("ADR-0018: No raw $-prefixed attribute strings outside Attributes.java")
+    void noRawAttributeStringsOutsideAttributes() throws IOException {
+        Path srcDir = Paths.get("src", "main", "java", "com", "embervault");
+        Path attributesFile = srcDir.resolve("domain").resolve("Attributes.java");
+
+        // Pattern matches string literals containing "$" followed by a capital
+        // letter (the Tinderbox attribute naming convention, e.g. "$Color").
+        // Allows "$" in Javadoc comments and non-attribute contexts.
+        Pattern rawAttrPattern = Pattern.compile("\"\\$[A-Z][A-Za-z]*\"");
+
+        List<String> violations = new ArrayList<>();
+
+        try (Stream<Path> paths = Files.walk(srcDir)) {
+            paths.filter(p -> p.toString().endsWith(".java"))
+                    .filter(p -> !p.equals(attributesFile))
+                    .forEach(path -> {
+                        try {
+                            List<String> lines = Files.readAllLines(path);
+                            for (int i = 0; i < lines.size(); i++) {
+                                String line = lines.get(i).trim();
+                                // Skip comments and Javadoc
+                                if (line.startsWith("//") || line.startsWith("*")
+                                        || line.startsWith("/*")) {
+                                    continue;
+                                }
+                                Matcher m = rawAttrPattern.matcher(line);
+                                if (m.find()) {
+                                    violations.add(path.getFileName()
+                                            + ":" + (i + 1) + " -> " + line);
+                                }
+                            }
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        }
+
+        if (!violations.isEmpty()) {
+            fail("ADR-0018: Raw $-prefixed attribute strings found outside "
+                    + "Attributes.java. Use Attributes.* constants instead:\n"
+                    + String.join("\n", violations));
+        }
     }
 }
