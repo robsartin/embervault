@@ -467,6 +467,30 @@ class MapViewControllerTest {
         assertEquals("\u2B50", badgeLabel.getText());
     }
 
+    @Test
+    @DisplayName("TDD: badge visible on newly created note in Map root")
+    void tdd_badgeVisibleOnNewNoteInMapRoot() {
+        // Create note and set badge
+        Note child = noteService.createChildNote(parentId, "Badge Test");
+        child.setAttribute(Attributes.BADGE, new AttributeValue.StringValue("star"));
+        viewModel.loadNotes();
+
+        // Find the note node
+        StackPane noteNode = findNodeByUserData(child.getId());
+        assertNotNull(noteNode, "Note node should exist on canvas");
+
+        // Find badge label
+        Label badgeLabel = findBadgeLabel(noteNode);
+        assertNotNull(badgeLabel, "Badge label should exist on note");
+        assertEquals("\u2B50", badgeLabel.getText(), "Badge should show star symbol");
+
+        // Badge should be visible with proper styling
+        assertTrue(badgeLabel.getOpacity() > 0, "Badge should have non-zero opacity");
+        assertNotNull(badgeLabel.getTextFill(), "Badge should have text fill color");
+        assertFalse(badgeLabel.getTextFill().equals(javafx.scene.paint.Color.TRANSPARENT),
+                "Badge text fill should not be transparent");
+    }
+
     /** Finds a Label child of a StackPane that is not inside a VBox (i.e., the badge). */
     private Label findBadgeLabel(StackPane noteNode) {
         for (Node child : noteNode.getChildren()) {
