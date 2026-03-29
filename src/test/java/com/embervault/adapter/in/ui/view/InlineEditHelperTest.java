@@ -89,8 +89,8 @@ class InlineEditHelperTest {
     }
 
     @Test
-    @DisplayName("focus-lost commits a valid rename")
-    void focusLost_shouldCommitRename() {
+    @DisplayName("Enter commits a valid rename")
+    void enter_shouldCommitRename() {
         NoteDisplayItem item = viewModel.createChildNote("Original");
         Label titleLabel = new Label("Original");
         StackPane notePane = buildNotePane(titleLabel, 120);
@@ -101,10 +101,10 @@ class InlineEditHelperTest {
 
         VBox textBox = (VBox) notePane.getChildren().get(1);
         TextField tf = (TextField) textBox.getChildren().get(0);
-        tf.setText("Renamed");
-
-        // Simulate focus lost by firing the listener manually
-        tf.getParent().requestFocus();
+        javafx.application.Platform.runLater(() -> {
+            tf.setText("Renamed");
+            tf.fireEvent(new javafx.event.ActionEvent());
+        });
         TestFxHelper.waitForFx();
 
         assertEquals("Renamed", titleLabel.getText(),
@@ -126,7 +126,9 @@ class InlineEditHelperTest {
         TextField tf = (TextField) textBox.getChildren().get(0);
         tf.setText("   ");
 
-        tf.getParent().requestFocus();
+        javafx.application.Platform.runLater(
+                () -> tf.getParent().requestFocus());
+        TestFxHelper.waitForFx();
         TestFxHelper.waitForFx();
 
         assertEquals("Original", titleLabel.getText(),
@@ -177,10 +179,10 @@ class InlineEditHelperTest {
 
         VBox textBox = (VBox) notePane.getChildren().get(1);
         TextField tf = (TextField) textBox.getChildren().get(0);
-        tf.setText("NewTitle");
-
-        // Trigger focus-lost commit
-        tf.getParent().requestFocus();
+        javafx.application.Platform.runLater(() -> {
+            tf.setText("NewTitle");
+            tf.fireEvent(new javafx.event.ActionEvent());
+        });
         TestFxHelper.waitForFx();
 
         assertTrue(textBox.getChildren().contains(titleLabel),
