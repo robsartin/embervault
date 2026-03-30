@@ -39,6 +39,7 @@ public class OutlineViewController {
     private OutlineViewModel viewModel;
     private Button backButton;
     private Consumer<String> onViewSwitch;
+    private UUID pendingEditNoteId;
 
     /** Sets the view-switch callback. */
     public void setOnViewSwitch(Consumer<String> callback) {
@@ -82,14 +83,6 @@ public class OutlineViewController {
         // Key handling: Escape navigates back
         outlineTreeView.setOnKeyPressed(this::handleTreeKeyPress);
 
-        // Click on empty space exits edit mode
-        outlineTreeView.setOnMouseClicked(event -> {
-            if (event.getButton() == MouseButton.PRIMARY
-                    && isAnyoneEditing()) {
-                commitAllEdits();
-            }
-        });
-
         // Context menu
         outlineTreeView.setContextMenu(createContextMenu());
     }
@@ -121,11 +114,17 @@ public class OutlineViewController {
             TreeItem<NoteDisplayItem> selected =
                     outlineTreeView.getSelectionModel()
                             .getSelectedItem();
-            if (selected != null && selected.getValue() != null) {
+            if (selected != null
+                    && selected.getValue() != null) {
                 NoteDisplayItem newItem =
                         viewModel.createSiblingNote(
-                                selected.getValue().getId(), "");
-                refreshAndEdit(newItem.getId());
+                                selected.getValue().getId(),
+                                "");
+                UUID newId = newItem.getId();
+                Platform.runLater(() -> {
+                    pendingEditNoteId = newId;
+                    outlineTreeView.refresh();
+                });
                 event.consume();
             }
         } else if (event.getCode() == KeyCode.TAB) {
@@ -156,8 +155,10 @@ public class OutlineViewController {
     }
 
     private void buildTree() {
+        // Root item represents the base note (hidden)
         TreeItem<NoteDisplayItem> rootTreeItem = new TreeItem<>();
         rootTreeItem.setExpanded(true);
+
         for (NoteDisplayItem item : viewModel.getRootItems()) {
             TreeItem<NoteDisplayItem> treeItem = buildTreeItem(item);
             rootTreeItem.getChildren().add(treeItem);
@@ -181,43 +182,29 @@ public class OutlineViewController {
     }
 
     private void createChildUnderSelected() {
-        TreeItem<NoteDisplayItem> sel =
-                outlineTreeView.getSelectionModel()
-                        .getSelectedItem();
-        UUID pid = sel != null && sel.getValue() != null
-                ? sel.getValue().getId()
-                : viewModel.getBaseNoteId();
-        if (pid != null) {
-            viewModel.createChildNote(pid, "Untitled");
+        TreeItem<NoteDisplayItem> selected = outlineTreeView.getSelectionModel()
+                .getSelectedItem();
+        UUID parentId;
+        if (selected != null && selected.getValue() != null) {
+            parentId = selected.getValue().getId();
+        } else {
+            parentId = viewModel.getBaseNoteId();
+        }
+        if (parentId != null) {
+            viewModel.createChildNote(parentId, "Untitled");
         }
     }
 
-    private void refreshAndEdit(UUID noteIdToSelect) {
-        TreeItem<NoteDisplayItem> target = findTreeItem(
-                outlineTreeView.getRoot(), noteIdToSelect);
-        if (target != null) {
-            outlineTreeView.getSelectionModel().select(target);
-            Platform.runLater(() -> {
-                OutlineNoteTreeCell cell =
-                        findCellForItem(target);
-                if (cell != null) {
-                    cell.startInlineEdit();
-                }
-            });
-        }
-    }
-
-    private TreeItem<NoteDisplayItem> findTreeItem(
-            TreeItem<NoteDisplayItem> root, UUID noteId) {
+    private TreeItem<NoteDisplayItem> findTreeItem(TreeItem<NoteDisplayItem> root,
+            UUID noteId) {
         if (root == null || noteId == null) {
             return null;
         }
-        if (root.getValue() != null
-                && noteId.equals(root.getValue().getId())) {
+        if (root.getValue() != null && noteId.equals(root.getValue().getId())) {
             return root;
         }
-        for (var child : root.getChildren()) {
-            var found = findTreeItem(child, noteId);
+        for (TreeItem<NoteDisplayItem> child : root.getChildren()) {
+            TreeItem<NoteDisplayItem> found = findTreeItem(child, noteId);
             if (found != null) {
                 return found;
             }
@@ -225,37 +212,14 @@ public class OutlineViewController {
         return null;
     }
 
-    private void commitAllEdits() {
-        for (var node : outlineTreeView
-                .lookupAll(".tree-cell")) {
-            if (node instanceof OutlineNoteTreeCell cell
-                    && cell.editing) {
-                cell.commitInlineEdit();
-            }
-        }
-    }
-
     private boolean isAnyoneEditing() {
-        for (var node : outlineTreeView
-                .lookupAll(".tree-cell")) {
+        for (var node : outlineTreeView.lookupAll(".tree-cell")) {
             if (node instanceof OutlineNoteTreeCell cell
                     && cell.editing) {
                 return true;
             }
         }
         return false;
-    }
-
-    private OutlineNoteTreeCell findCellForItem(
-            TreeItem<NoteDisplayItem> target) {
-        for (var node : outlineTreeView
-                .lookupAll(".tree-cell")) {
-            if (node instanceof OutlineNoteTreeCell cell
-                    && cell.getTreeItem() == target) {
-                return cell;
-            }
-        }
-        return null;
     }
 
     private final class OutlineNoteTreeCell
@@ -287,11 +251,14 @@ public class OutlineViewController {
                 }
                 Dragboard db = startDragAndDrop(
                         TransferMode.MOVE);
-                ClipboardContent cc = new ClipboardContent();
-                cc.putString(getItem().getId().toString());
-                db.setContent(cc);
+                ClipboardContent content =
+                        new ClipboardContent();
+                content.putString(
+                        getItem().getId().toString());
+                db.setContent(content);
                 event.consume();
             });
+
             setOnDragOver(event -> {
                 if (event.getGestureSource() != this
                         && event.getDragboard().hasString()) {
@@ -300,13 +267,15 @@ public class OutlineViewController {
                 }
                 event.consume();
             });
+
             setOnDragEntered(event -> {
                 if (event.getGestureSource() != this
                         && event.getDragboard().hasString()) {
-                    setStyle("-fx-border-color: dodgerblue;"
-                            + " -fx-border-width: 0 0 2 0;");
+                    setStyle("-fx-border-color: dodgerblue; "
+                            + "-fx-border-width: 0 0 2 0;");
                 }
             });
+
             setOnDragExited(event -> setStyle(""));
 
             setOnDragDropped(event -> {
@@ -322,8 +291,11 @@ public class OutlineViewController {
             editing = true;
             textField = new TextField(getItem().getTitle());
             textField.selectAll();
-            textField.addEventFilter(KeyEvent.KEY_PRESSED,
-                    this::handleEditKeyPress);
+
+            // Key handling on the text field
+            textField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEditKeyPress);
+
+            // Focus lost: always commit
             textField.focusedProperty().addListener(
                     (obs, wasFocused, isFocused) -> {
                         if (!isFocused && editing) {
@@ -341,17 +313,34 @@ public class OutlineViewController {
                 NoteDisplayItem currentItem = getItem();
                 commitInlineEdit();
                 if (currentItem != null) {
-                    NoteDisplayItem newItem = viewModel.createSiblingNote(
-                            currentItem.getId(), "");
-                    refreshAndEdit(newItem.getId());
+                    NoteDisplayItem newItem =
+                            viewModel.createSiblingNote(
+                                    currentItem.getId(), "");
+                    UUID newId = newItem.getId();
+                    Platform.runLater(() -> {
+                        pendingEditNoteId = newId;
+                        TreeItem<NoteDisplayItem> t =
+                                findTreeItem(
+                                        outlineTreeView
+                                                .getRoot(),
+                                        newId);
+                        if (t != null) {
+                            outlineTreeView
+                                    .getSelectionModel()
+                                    .select(t);
+                            // Force cell update
+                            outlineTreeView.refresh();
+                        }
+                    });
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.TAB) {
                 NoteDisplayItem currentItem = getItem();
-                String savedText = textField != null
-                        ? textField.getText() : null;
                 commitInlineEdit();
                 if (currentItem != null) {
+                    // Set pending BEFORE indent (which
+                    // triggers rebuild)
+                    pendingEditNoteId = currentItem.getId();
                     if (event.isShiftDown()) {
                         viewModel.outdentNote(
                                 currentItem.getId());
@@ -359,13 +348,6 @@ public class OutlineViewController {
                         viewModel.indentNote(
                                 currentItem.getId());
                     }
-                    // Double runLater: first for tree rebuild,
-                    // second for cell layout
-                    Platform.runLater(() ->
-                            Platform.runLater(() ->
-                                    refreshAndEdit(
-                                            currentItem
-                                                    .getId())));
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.BACK_SPACE
@@ -379,7 +361,10 @@ public class OutlineViewController {
                     textField = null;
                     viewModel.deleteNote(noteId);
                     if (previousId != null) {
-                        refreshAndEdit(previousId);
+                        Platform.runLater(() -> {
+                            pendingEditNoteId = previousId;
+                            outlineTreeView.refresh();
+                        });
                     }
                 }
                 event.consume();
@@ -397,21 +382,34 @@ public class OutlineViewController {
                 return;
             }
             UUID draggedId = UUID.fromString(db.getString());
-            if (draggedId.equals(getItem().getId())) {
+            UUID targetId = getItem().getId();
+
+            // Don't drop on self
+            if (draggedId.equals(targetId)) {
                 event.setDropCompleted(false);
                 return;
             }
+
+            // Don't drop on own descendant
             TreeItem<NoteDisplayItem> target = getTreeItem();
-            if (isDescendant(target, draggedId)
-                    || target.getParent() == null) {
+            if (isDescendant(target, draggedId)) {
                 event.setDropCompleted(false);
                 return;
             }
+
+            // Determine drop position: place before target
             TreeItem<NoteDisplayItem> parent =
                     target.getParent();
-            UUID parentId = parent.getValue() != null
-                    ? parent.getValue().getId()
-                    : viewModel.getBaseNoteId();
+            if (parent == null) {
+                event.setDropCompleted(false);
+                return;
+            }
+            UUID parentId;
+            if (parent.getValue() != null) {
+                parentId = parent.getValue().getId();
+            } else {
+                parentId = viewModel.getBaseNoteId();
+            }
             int position = parent.getChildren()
                     .indexOf(target);
             viewModel.moveNoteToPosition(
@@ -474,6 +472,12 @@ public class OutlineViewController {
             } else if (editing && textField != null) {
                 setText(null);
                 setGraphic(textField);
+            } else if (pendingEditNoteId != null
+                    && pendingEditNoteId.equals(item.getId())) {
+                pendingEditNoteId = null;
+                Platform.runLater(this::startInlineEdit);
+                setText(badgedTitle(item));
+                setGraphic(null);
             } else {
                 setText(badgedTitle(item));
                 setGraphic(null);
