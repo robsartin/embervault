@@ -1,5 +1,12 @@
 package com.embervault;
 
+import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
+import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
+import com.embervault.adapter.out.persistence.InMemoryStampRepository;
+import com.embervault.application.LinkServiceImpl;
+import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.ProjectServiceImpl;
+import com.embervault.application.StampServiceImpl;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
@@ -24,4 +31,26 @@ public record SharedServices(
         LinkService linkService,
         StampService stampService,
         AttributeSchemaRegistry schemaRegistry
-) { }
+) {
+
+    /**
+     * Creates a new set of shared services with in-memory repositories.
+     *
+     * @return a fully wired SharedServices instance
+     */
+    public static SharedServices create() {
+        Project project =
+                new ProjectServiceImpl().createEmptyProject();
+        InMemoryNoteRepository noteRepo = new InMemoryNoteRepository();
+        NoteService noteService = new NoteServiceImpl(noteRepo);
+        LinkService linkService =
+                new LinkServiceImpl(new InMemoryLinkRepository());
+        StampService stampService = new StampServiceImpl(
+                new InMemoryStampRepository(), noteRepo);
+        noteRepo.save(project.getRootNote());
+        AttributeSchemaRegistry schemaRegistry =
+                new AttributeSchemaRegistry();
+        return new SharedServices(project, noteService, linkService,
+                stampService, schemaRegistry);
+    }
+}
