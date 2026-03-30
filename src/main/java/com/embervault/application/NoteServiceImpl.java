@@ -162,6 +162,46 @@ public final class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    public Note moveNoteToPosition(UUID noteId,
+            UUID newParentId, int position) {
+        Note note = repository.findById(noteId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Note not found: " + noteId));
+        repository.findById(newParentId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Parent not found: " + newParentId));
+
+        // Get target parent's children BEFORE changing container
+        // so the dragged note doesn't appear in the wrong list
+        List<Note> targetSiblings =
+                new java.util.ArrayList<>(
+                        repository.findChildren(newParentId)
+                                .stream()
+                                .filter(s -> !s.getId()
+                                        .equals(noteId))
+                                .toList());
+
+        // Set the note's container to the new parent
+        note.setAttribute(CONTAINER,
+                new AttributeValue.StringValue(
+                        newParentId.toString()));
+
+        // Insert at the requested position
+        int insertAt = Math.min(position,
+                targetSiblings.size());
+        targetSiblings.add(insertAt, note);
+
+        // Recalculate outline order for all siblings
+        for (int i = 0; i < targetSiblings.size(); i++) {
+            targetSiblings.get(i).setAttribute(OUTLINE_ORDER,
+                    new AttributeValue.NumberValue(i));
+            repository.save(targetSiblings.get(i));
+        }
+
+        return note;
+    }
+
+    @Override
     public Note createSiblingNote(UUID siblingId, String title) {
         Note sibling = repository.findById(siblingId)
                 .orElseThrow(() -> new NoSuchElementException(

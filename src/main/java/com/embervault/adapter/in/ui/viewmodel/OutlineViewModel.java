@@ -177,6 +177,21 @@ public final class OutlineViewModel {
     }
 
     /**
+     * Moves a note to a position within a parent and reloads.
+     *
+     * @param noteId      the note to move
+     * @param newParentId the target parent
+     * @param position    zero-based position among siblings
+     */
+    public void moveNoteToPosition(UUID noteId,
+            UUID newParentId, int position) {
+        noteService.moveNoteToPosition(noteId, newParentId,
+                position);
+        loadNotes();
+        dataChangeSupport.notifyDataChanged();
+    }
+
+    /**
      * Renames a note, updating the display item in the root items list if present.
      *
      * @param noteId   the note id
