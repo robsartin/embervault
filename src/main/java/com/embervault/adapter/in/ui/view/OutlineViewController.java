@@ -120,9 +120,22 @@ public class OutlineViewController {
     }
 
     private void handleTreeKeyFilter(KeyEvent event) {
-        if (event.getCode() == KeyCode.TAB) {
-            TreeItem<NoteDisplayItem> selected = outlineTreeView.getSelectionModel()
-                    .getSelectedItem();
+        if (event.getCode() == KeyCode.ENTER
+                && !isAnyoneEditing()) {
+            TreeItem<NoteDisplayItem> selected =
+                    outlineTreeView.getSelectionModel()
+                            .getSelectedItem();
+            if (selected != null && selected.getValue() != null) {
+                NoteDisplayItem newItem =
+                        viewModel.createSiblingNote(
+                                selected.getValue().getId(), "");
+                refreshAndEdit(newItem.getId());
+                event.consume();
+            }
+        } else if (event.getCode() == KeyCode.TAB) {
+            TreeItem<NoteDisplayItem> selected =
+                    outlineTreeView.getSelectionModel()
+                            .getSelectedItem();
             if (selected != null && selected.getValue() != null) {
                 UUID noteId = selected.getValue().getId();
                 if (event.isShiftDown()) {
@@ -130,7 +143,6 @@ public class OutlineViewController {
                 } else {
                     viewModel.indentNote(noteId);
                 }
-                refreshAndEdit(noteId);
                 event.consume();
             }
         }
@@ -226,6 +238,16 @@ public class OutlineViewController {
         return null;
     }
 
+    private boolean isAnyoneEditing() {
+        for (var node : outlineTreeView.lookupAll(".tree-cell")) {
+            if (node instanceof OutlineNoteTreeCell cell
+                    && cell.editing) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @SuppressWarnings("unchecked")
     private OutlineNoteTreeCell findCellForItem(TreeItem<NoteDisplayItem> target) {
         int row = outlineTreeView.getRow(target);
@@ -251,7 +273,6 @@ public class OutlineViewController {
 
         private TextField textField;
         private boolean editing;
-        private boolean escapeCancelled;
 
         OutlineNoteTreeCell() {
             setOnMouseClicked(event -> {
@@ -277,23 +298,19 @@ public class OutlineViewController {
                 return;
             }
             editing = true;
-            escapeCancelled = false;
             textField = new TextField(getItem().getTitle());
             textField.selectAll();
 
             // Key handling on the text field
             textField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEditKeyPress);
 
-            // Focus lost: commit unless Escape was pressed
-            textField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
-                if (!isFocused && editing) {
-                    if (escapeCancelled) {
-                        cancelInlineEdit();
-                    } else {
-                        commitInlineEdit();
-                    }
-                }
-            });
+            // Focus lost: always commit
+            textField.focusedProperty().addListener(
+                    (obs, wasFocused, isFocused) -> {
+                        if (!isFocused && editing) {
+                            commitInlineEdit();
+                        }
+                    });
 
             setText(null);
             setGraphic(textField);
@@ -338,8 +355,8 @@ public class OutlineViewController {
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.ESCAPE) {
-                escapeCancelled = true;
-                cancelInlineEdit();
+                commitInlineEdit();
+                outlineTreeView.requestFocus();
                 event.consume();
             }
         }
@@ -363,18 +380,6 @@ public class OutlineViewController {
             textField = null;
         }
 
-        private void cancelInlineEdit() {
-            if (!editing) {
-                return;
-            }
-            editing = false;
-            if (getItem() != null) {
-                setText(badgedTitle(getItem()));
-            }
-            setGraphic(null);
-            textField = null;
-        }
-
         private String badgedTitle(NoteDisplayItem item) {
             String badge = item.getBadge();
             if (badge != null && !badge.isEmpty()) {
@@ -387,14 +392,12 @@ public class OutlineViewController {
         protected void updateItem(NoteDisplayItem item, boolean empty) {
             super.updateItem(item, empty);
             if (empty || item == null) {
-                // Cell recycled — commit any in-progress edit before clearing
-                if (editing && textField != null && !escapeCancelled) {
+                if (editing && textField != null) {
                     commitInlineEdit();
                 }
                 setText(null);
                 setGraphic(null);
                 editing = false;
-                escapeCancelled = false;
             } else if (editing && textField != null) {
                 setText(null);
                 setGraphic(textField);
