@@ -12,7 +12,6 @@ import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -23,8 +22,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,8 +37,6 @@ public class HyperbolicViewController {
     private static final Logger LOG = LoggerFactory.getLogger(HyperbolicViewController.class);
     private static final double SMALL_NODE_THRESHOLD = 12.0;
     private static final double BACK_BUTTON_PADDING = 5.0;
-    private static final double EDGE_OPACITY = 0.3;
-    private static final double LABEL_FONT_SIZE = 12.0;
     private static final double SELECTED_STROKE_WIDTH = 3.0;
     private static final double NORMAL_STROKE_WIDTH = 1.5;
 
@@ -187,10 +182,8 @@ public class HyperbolicViewController {
             double[] src = positionMap.get(edge.sourceId());
             double[] dst = positionMap.get(edge.destinationId());
             if (src != null && dst != null) {
-                Line line = new Line(src[0], src[1], dst[0], dst[1]);
-                line.setStroke(Color.gray(0.6, EDGE_OPACITY));
-                line.setStrokeWidth(1.0);
-                line.setMouseTransparent(true);
+                Line line = HyperbolicNodeFactory.createEdgeLine(
+                        src[0], src[1], dst[0], dst[1]);
                 hyperbolicCanvas.getChildren().add(line);
             }
         }
@@ -200,11 +193,8 @@ public class HyperbolicViewController {
             double nx = centerX + node.x();
             double ny = centerY + node.y();
 
-            Circle circle = new Circle(nx, ny, node.displayRadius());
-            circle.setFill(Color.web("#4A90D9"));
-            circle.setStroke(Color.WHITE);
-            circle.setStrokeWidth(NORMAL_STROKE_WIDTH);
-            circle.setCursor(Cursor.HAND);
+            Circle circle = HyperbolicNodeFactory.createNodeCircle(
+                    nx, ny, node.displayRadius(), "#4A90D9");
             circle.setUserData(node.noteId());
 
             // Click to select
@@ -235,13 +225,8 @@ public class HyperbolicViewController {
                 String title = noteTitle(node.noteId());
                 String badge = noteBadge(node.noteId());
                 String labelText = badge.isEmpty() ? title : badge + " " + title;
-                Label label = new Label(labelText);
-                label.setFont(Font.font("System", FontWeight.BOLD, LABEL_FONT_SIZE));
-                label.setTextFill(Color.WHITE);
-                label.setMouseTransparent(true);
-                label.setLayoutX(nx - node.displayRadius());
-                label.setLayoutY(ny - LABEL_FONT_SIZE / 2);
-                label.setMaxWidth(node.displayRadius() * 2);
+                Label label = HyperbolicNodeFactory.createNodeLabel(
+                        labelText, nx, ny, node.displayRadius());
                 hyperbolicCanvas.getChildren().add(label);
             } else {
                 // Tooltip for small nodes

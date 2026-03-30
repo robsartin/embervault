@@ -13,12 +13,9 @@ import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -26,9 +23,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
-import javafx.scene.text.TextAlignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,10 +38,7 @@ public class TreemapViewController {
     private static final Logger LOG = LoggerFactory.getLogger(TreemapViewController.class);
     private static final double SELECTED_BORDER_WIDTH = 3.0;
     private static final double NORMAL_BORDER_WIDTH = 1.0;
-    private static final double TITLE_FONT_SIZE = 13.0;
-    private static final double RECT_PADDING = 2.0;
     private static final double BACK_BUTTON_PADDING = 5.0;
-    private static final int MAX_LABEL_LENGTH = 30;
 
     @FXML private Pane treemapCanvas;
 
@@ -163,50 +154,10 @@ public class TreemapViewController {
     }
 
     private StackPane createNoteNode(NoteDisplayItem item, TreemapRect tr) {
-        double rectWidth = Math.max(0, tr.width() - RECT_PADDING * 2);
-        double rectHeight = Math.max(0, tr.height() - RECT_PADDING * 2);
-
-        Rectangle rect = new Rectangle(rectWidth, rectHeight);
-        rect.setFill(Color.web(item.getColorHex()));
-        rect.setStroke(currentColors != null
-                ? Color.web(currentColors.borderColor()) : Color.BLACK);
-        rect.setStrokeWidth(NORMAL_BORDER_WIDTH);
-        rect.setArcWidth(4);
-        rect.setArcHeight(4);
-
-        String labelText = truncateLabel(item.getTitle(), rectWidth);
-        Label titleLabel = new Label(labelText);
-        titleLabel.setFont(Font.font("System", FontWeight.BOLD,
-                TITLE_FONT_SIZE));
-        titleLabel.setTextFill(Color.web(
-                ViewColorConfig.contrastTextColor(item.getColorHex())));
-        titleLabel.setTextAlignment(TextAlignment.CENTER);
-        titleLabel.setAlignment(Pos.CENTER);
-        titleLabel.setMaxWidth(rectWidth - 4);
-        titleLabel.setMaxHeight(rectHeight - 4);
-        titleLabel.setWrapText(true);
-        titleLabel.setPadding(new Insets(2));
-        titleLabel.setMouseTransparent(true);
-
-        Rectangle clip = new Rectangle(rectWidth, rectHeight);
-        StackPane notePane = new StackPane(rect, titleLabel);
-
-        // Badge in top-right corner if space permits
-        String badge = item.getBadge();
-        if (badge != null && !badge.isEmpty() && rectWidth > 30 && rectHeight > 20) {
-            Label badgeLabel = new Label(badge);
-            badgeLabel.setFont(Font.font("System", TITLE_FONT_SIZE));
-            badgeLabel.setMouseTransparent(true);
-            badgeLabel.setPadding(new Insets(2, 4, 0, 0));
-            StackPane.setAlignment(badgeLabel, Pos.TOP_RIGHT);
-            notePane.getChildren().add(badgeLabel);
-        }
-
-        notePane.setClip(clip);
-        notePane.setUserData(item.getId());
-        notePane.setAlignment(Pos.CENTER);
-        notePane.setLayoutX(tr.x() + RECT_PADDING);
-        notePane.setLayoutY(tr.y() + RECT_PADDING);
+        String borderColor = currentColors != null
+                ? currentColors.borderColor() : "#000000";
+        StackPane notePane = TreemapNodeFactory.createTreemapCell(
+                item, tr, borderColor);
 
         // Click to select
         notePane.setOnMousePressed(event -> {
@@ -225,6 +176,8 @@ public class TreemapViewController {
 
         // Highlight if currently selected
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
+            Rectangle rect =
+                    (Rectangle) notePane.getChildren().get(0);
             rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
             rect.setStroke(currentColors != null
                     ? Color.web(currentColors.selectionColor())
@@ -234,18 +187,6 @@ public class TreemapViewController {
         return notePane;
     }
 
-    private String truncateLabel(String title, double availableWidth) {
-        double charsPerWidth = availableWidth / (TITLE_FONT_SIZE * 0.6);
-        int maxChars = Math.min(MAX_LABEL_LENGTH,
-                (int) charsPerWidth);
-        if (maxChars <= 0) {
-            return "";
-        }
-        if (title.length() <= maxChars) {
-            return title;
-        }
-        return title.substring(0, maxChars) + "\u2026";
-    }
 
     private void highlightSelected(StackPane selected) {
         Color borderCol = currentColors != null
