@@ -1,5 +1,6 @@
 package com.embervault;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -7,6 +8,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.StampEditorViewController;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
+import com.embervault.adapter.out.persistence.ProjectFileManager;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.Stamp;
 import javafx.fxml.FXMLLoader;
@@ -19,6 +21,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +41,7 @@ final class MenuBarFactory {
     private MenuBarFactory() { }
 
     static MenuBar create(WindowContext ctx) {
+        Menu fileMenu = buildFileMenu(ctx);
         Menu noteMenu = buildNoteMenu(ctx);
         Menu editMenu = buildEditMenu(ctx);
         Menu stampsMenu = new Menu("Stamps");
@@ -45,9 +49,56 @@ final class MenuBarFactory {
         Menu windowMenu = buildWindowMenu(ctx);
 
         MenuBar menuBar = new MenuBar(
-                noteMenu, editMenu, stampsMenu, windowMenu);
+                fileMenu, noteMenu, editMenu,
+                stampsMenu, windowMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
+    }
+
+    private static Menu buildFileMenu(WindowContext ctx) {
+        MenuItem saveItem = new MenuItem("Save...");
+        saveItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.S,
+                        KeyCombination.SHORTCUT_DOWN));
+        saveItem.setOnAction(e -> {
+            DirectoryChooser chooser = new DirectoryChooser();
+            chooser.setTitle("Save Project");
+            File dir = chooser.showDialog(ctx.ownerStage());
+            if (dir != null) {
+                SharedServices svc = ctx.sharedServices();
+                ProjectFileManager.save(
+                        dir.toPath(),
+                        svc.project(),
+                        svc.noteService(),
+                        svc.linkService(),
+                        svc.stampService(),
+                        svc.schemaRegistry());
+            }
+        });
+
+        MenuItem openItem = new MenuItem("Open...");
+        openItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.O,
+                        KeyCombination.SHORTCUT_DOWN));
+        openItem.setOnAction(e -> {
+            DirectoryChooser chooser = new DirectoryChooser();
+            chooser.setTitle("Open Project");
+            File dir = chooser.showDialog(ctx.ownerStage());
+            if (dir != null) {
+                SharedServices svc = ctx.sharedServices();
+                ProjectFileManager.load(
+                        dir.toPath(),
+                        svc.noteService(),
+                        svc.linkService(),
+                        svc.stampService(),
+                        svc.schemaRegistry());
+                ctx.refreshAll().run();
+            }
+        });
+
+        Menu menu = new Menu("File");
+        menu.getItems().addAll(openItem, saveItem);
+        return menu;
     }
 
     private static Menu buildNoteMenu(WindowContext ctx) {
