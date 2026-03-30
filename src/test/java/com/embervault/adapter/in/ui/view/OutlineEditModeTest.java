@@ -98,7 +98,7 @@ class OutlineEditModeTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
         robot.interact(() -> startEditOnSelected());
-        WaitForAsyncUtils.waitForFxEvents();
+        waitSettled();
         assertNotNull(findEditingTextField(),
                 "Precondition: should be editing");
 
@@ -129,7 +129,7 @@ class OutlineEditModeTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
         robot.interact(() -> startEditOnSelected());
-        WaitForAsyncUtils.waitForFxEvents();
+        waitSettled();
         assertNotNull(findEditingTextField(),
                 "Precondition: should be editing");
 
@@ -159,26 +159,22 @@ class OutlineEditModeTest {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private void startEditOnSelected() {
-        for (var node : outlineTreeView
-                .lookupAll(".tree-cell")) {
-            if (node instanceof TreeCell<?> cell
-                    && cell.getTreeItem() != null
-                    && cell.getTreeItem()
-                    == outlineTreeView.getSelectionModel()
-                            .getSelectedItem()) {
-                // Use reflection to call startInlineEdit
-                try {
-                    var method = cell.getClass()
-                            .getDeclaredMethod(
-                                    "startInlineEdit");
-                    method.setAccessible(true);
-                    method.invoke(cell);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-                return;
+        // Use the controller's pendingEditNoteId mechanism
+        // which is reliable even when cells haven't rendered
+        var selected = outlineTreeView.getSelectionModel()
+                .getSelectedItem();
+        if (selected != null && selected.getValue() != null) {
+            try {
+                var field = OutlineViewController.class
+                        .getDeclaredField(
+                                "pendingEditNoteId");
+                field.setAccessible(true);
+                field.set(controller,
+                        selected.getValue().getId());
+                outlineTreeView.refresh();
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException(e);
             }
         }
     }
