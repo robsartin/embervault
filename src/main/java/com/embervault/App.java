@@ -73,9 +73,14 @@ public class App extends Application {
         OutlineViewModel outlineViewModel = new OutlineViewModel(
                 rootNoteTitle, noteService);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
-        Parent outlineView = loadView("OutlineView.fxml", c ->
-                ((OutlineViewController) c)
-                        .initViewModel(outlineViewModel));
+        var paneHolder = new ViewPaneContext[1];
+        Parent outlineView = loadView("OutlineView.fxml", c -> {
+            OutlineViewController ctrl = (OutlineViewController) c;
+            ctrl.setOnViewSwitch(name ->
+                    paneHolder[0].switchView(
+                            ViewType.valueOf(name)));
+            ctrl.initViewModel(outlineViewModel);
+        });
 
         // Search
         SearchViewModel searchViewModel = new SearchViewModel(noteService);
@@ -106,6 +111,7 @@ public class App extends Application {
                 outlineViewModel.tabTitleProperty(), outlineView,
                 project.getRootNote().getId(),
                 outlineViewModel::loadNotes);
+        paneHolder[0] = outlinePane;
         Runnable localRefresh = () -> {
             outlinePane.refreshCurrentView();
             UUID selId = selectedNoteVm.selectedNoteIdProperty().get();
