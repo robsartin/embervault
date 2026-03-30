@@ -107,7 +107,11 @@ public final class WindowFactory {
         WindowContext winCtx = new WindowContext(
                 services, windowManager,
                 mapVm.selectedNoteIdProperty(),
-                refreshAll, newStage, null);
+                refreshAll, newStage, null,
+                newRootId -> {
+                    mapVm.setBaseNoteId(newRootId);
+                    mapVm.loadNotes();
+                });
         javafx.scene.control.MenuBar menuBar =
                 MenuBarFactory.create(winCtx);
         BorderPane root = new BorderPane();

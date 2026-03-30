@@ -10,6 +10,7 @@ import com.embervault.application.StampServiceImpl;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
+import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Project;
 
@@ -20,6 +21,7 @@ import com.embervault.domain.Project;
  * ensuring they operate on the same underlying data.</p>
  *
  * @param project         the current project with root note
+ * @param noteRepository  the note repository
  * @param noteService     the note service
  * @param linkService     the link service
  * @param stampService    the stamp service
@@ -27,6 +29,7 @@ import com.embervault.domain.Project;
  */
 public record SharedServices(
         Project project,
+        NoteRepository noteRepository,
         NoteService noteService,
         LinkService linkService,
         StampService stampService,
@@ -50,7 +53,8 @@ public record SharedServices(
         noteRepo.save(project.getRootNote());
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
-        return new SharedServices(project, noteService, linkService,
+        return new SharedServices(project, noteRepo,
+                noteService, linkService,
                 stampService, schemaRegistry);
     }
 }

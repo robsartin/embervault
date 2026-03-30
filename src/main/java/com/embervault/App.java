@@ -136,7 +136,11 @@ public class App extends Application {
                 sharedServices, windowManager,
                 outlineViewModel.selectedNoteIdProperty(),
                 refreshAll, stage,
-                searchViewModel::toggleVisible);
+                searchViewModel::toggleVisible,
+                newRootId -> {
+                    outlineViewModel.setBaseNoteId(newRootId);
+                    outlineViewModel.loadNotes();
+                });
         MenuBar menuBar = MenuBarFactory.create(winCtx);
         VBox topArea = new VBox(menuBar, searchView);
         BorderPane root = new BorderPane();

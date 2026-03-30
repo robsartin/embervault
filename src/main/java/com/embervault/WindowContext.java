@@ -1,6 +1,7 @@
 package com.embervault;
 
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import javafx.beans.property.ObjectProperty;
 import javafx.stage.Stage;
@@ -18,6 +19,8 @@ import javafx.stage.Stage;
  * @param refreshAll     callback to refresh all windows
  * @param ownerStage     this window's stage (for modal dialogs)
  * @param onFind         callback for Edit &gt; Find, or null
+ * @param onBaseNoteChanged callback when loaded project changes
+ *                          root note, or null
  */
 public record WindowContext(
         SharedServices sharedServices,
@@ -25,5 +28,6 @@ public record WindowContext(
         ObjectProperty<UUID> selectedNoteId,
         Runnable refreshAll,
         Stage ownerStage,
-        Runnable onFind) {
+        Runnable onFind,
+        Consumer<UUID> onBaseNoteChanged) {
 }
