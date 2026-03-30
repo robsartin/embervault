@@ -17,9 +17,13 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TreeCell;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -282,14 +286,51 @@ public class OutlineViewController {
                 }
 
                 if (event.getClickCount() == 2) {
-                    // Double-click -> drill down
                     viewModel.drillDown(getItem().getId());
                     event.consume();
-                } else if (event.getClickCount() == 1 && !editing) {
-                    // Single click -> immediate edit
+                } else if (event.getClickCount() == 1
+                        && !editing) {
                     startInlineEdit();
                     event.consume();
                 }
+            });
+
+            setOnDragDetected(event -> {
+                if (getItem() == null || editing) {
+                    return;
+                }
+                Dragboard db = startDragAndDrop(
+                        TransferMode.MOVE);
+                ClipboardContent content =
+                        new ClipboardContent();
+                content.putString(
+                        getItem().getId().toString());
+                db.setContent(content);
+                event.consume();
+            });
+
+            setOnDragOver(event -> {
+                if (event.getGestureSource() != this
+                        && event.getDragboard().hasString()) {
+                    event.acceptTransferModes(
+                            TransferMode.MOVE);
+                }
+                event.consume();
+            });
+
+            setOnDragEntered(event -> {
+                if (event.getGestureSource() != this
+                        && event.getDragboard().hasString()) {
+                    setStyle("-fx-border-color: dodgerblue; "
+                            + "-fx-border-width: 0 0 2 0;");
+                }
+            });
+
+            setOnDragExited(event -> setStyle(""));
+
+            setOnDragDropped(event -> {
+                handleDragDropped(event);
+                event.consume();
             });
         }
 
@@ -359,6 +400,32 @@ public class OutlineViewController {
                 outlineTreeView.requestFocus();
                 event.consume();
             }
+        }
+
+        private void handleDragDropped(DragEvent event) {
+            Dragboard db = event.getDragboard();
+            if (!db.hasString() || getItem() == null) {
+                event.setDropCompleted(false);
+                return;
+            }
+            UUID draggedId = UUID.fromString(db.getString());
+            TreeItem<NoteDisplayItem> target = getTreeItem();
+            if (target == null || target.getParent() == null) {
+                event.setDropCompleted(false);
+                return;
+            }
+            TreeItem<NoteDisplayItem> parent =
+                    target.getParent();
+            UUID parentId;
+            if (parent.getValue() != null) {
+                parentId = parent.getValue().getId();
+            } else {
+                parentId = viewModel.getBaseNoteId();
+            }
+            int position = parent.getChildren().indexOf(target);
+            viewModel.moveNoteToPosition(
+                    draggedId, parentId, position);
+            event.setDropCompleted(true);
         }
 
         private void commitInlineEdit() {

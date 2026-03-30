@@ -79,6 +79,22 @@ public interface NoteService {
     Note moveNote(UUID noteId, UUID newParentId);
 
     /**
+     * Moves a note to a specific position within a parent.
+     *
+     * <p>If the parent differs from the note's current container,
+     * the note is reparented. The note is placed at the given
+     * position index among the parent's children, and sibling
+     * orders are recalculated.</p>
+     *
+     * @param noteId      the note to move
+     * @param newParentId the target parent note id
+     * @param position    the zero-based position among siblings
+     * @return the updated note
+     */
+    Note moveNoteToPosition(UUID noteId, UUID newParentId,
+            int position);
+
+    /**
      * Renames the note with the given id.
      *
      * @param noteId   the note id

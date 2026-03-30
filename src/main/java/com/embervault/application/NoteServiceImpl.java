@@ -162,6 +162,37 @@ public final class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    public Note moveNoteToPosition(UUID noteId,
+            UUID newParentId, int position) {
+        Note note = repository.findById(noteId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Note not found: " + noteId));
+        repository.findById(newParentId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Parent not found: " + newParentId));
+
+        note.setAttribute(CONTAINER,
+                new AttributeValue.StringValue(
+                        newParentId.toString()));
+
+        // Recalculate outline orders for all children
+        List<Note> siblings = repository.findChildren(newParentId)
+                .stream()
+                .filter(s -> !s.getId().equals(noteId))
+                .collect(java.util.stream.Collectors
+                        .toCollection(java.util.ArrayList::new));
+        int insertAt = Math.min(position, siblings.size());
+        siblings.add(insertAt, note);
+        for (int i = 0; i < siblings.size(); i++) {
+            siblings.get(i).setAttribute(OUTLINE_ORDER,
+                    new AttributeValue.NumberValue(i));
+            repository.save(siblings.get(i));
+        }
+
+        return note;
+    }
+
+    @Override
     public Note createSiblingNote(UUID siblingId, String title) {
         Note sibling = repository.findById(siblingId)
                 .orElseThrow(() -> new NoSuchElementException(
