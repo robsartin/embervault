@@ -2,6 +2,7 @@ module com.embervault {
     requires javafx.controls;
     requires javafx.fxml;
     requires org.slf4j;
+    requires org.snakeyaml.engine.v2;
 
     opens com.embervault to javafx.fxml;
     exports com.embervault;
