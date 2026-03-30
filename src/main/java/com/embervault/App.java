@@ -1,45 +1,31 @@
 package com.embervault;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
-import com.embervault.adapter.in.ui.view.StampEditorViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
-import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Project;
-import com.embervault.domain.Stamp;
 import javafx.application.Application;
 import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.ReadOnlyStringProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Label;
-import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyCodeCombination;
-import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -144,13 +130,12 @@ public class App extends Application {
                 outlinePane.getContainer(), textPaneView);
         mainSplitPane.setDividerPositions(0.6);
 
-        AppContext ctx = new AppContext(
-                outlineViewModel, searchViewModel,
-                project, stampService,
+        WindowContext winCtx = new WindowContext(
+                sharedServices, windowManager,
                 outlineViewModel.selectedNoteIdProperty(),
-                refreshAll, stage);
-
-        MenuBar menuBar = createMenuBar(ctx);
+                refreshAll, stage,
+                searchViewModel::toggleVisible);
+        MenuBar menuBar = MenuBarFactory.create(winCtx);
         VBox topArea = new VBox(menuBar, searchView);
         BorderPane root = new BorderPane();
         root.setTop(topArea);
@@ -162,140 +147,6 @@ public class App extends Application {
         stage.show();
     }
 
-    private MenuBar createMenuBar(AppContext ctx) {
-        MenuItem createNote = new MenuItem("Create Note");
-        createNote.setAccelerator(
-                new KeyCodeCombination(KeyCode.N,
-                        KeyCombination.SHORTCUT_DOWN));
-        createNote.setOnAction(e ->
-                ctx.outlineViewModel().createChildNote(
-                        ctx.selectedNoteId().get(), "Untitled"));
-        Menu noteMenu = new Menu("Note");
-        noteMenu.getItems().add(createNote);
-        Menu stampsMenu = new Menu("Stamps");
-        buildStampsMenu(stampsMenu, ctx);
-
-        // Edit menu
-        MenuItem findItem = new MenuItem("Find");
-        findItem.setAccelerator(
-                new KeyCodeCombination(KeyCode.F,
-                        KeyCombination.SHORTCUT_DOWN));
-        findItem.setOnAction(e ->
-                ctx.searchViewModel().toggleVisible());
-
-        Menu editMenu = new Menu("Edit");
-        editMenu.getItems().add(findItem);
-
-        // Window menu
-        MenuItem newWindowItem = new MenuItem("New Window");
-        newWindowItem.setAccelerator(
-                new KeyCodeCombination(KeyCode.N,
-                        KeyCombination.SHORTCUT_DOWN,
-                        KeyCombination.SHIFT_DOWN));
-        newWindowItem.setOnAction(e -> {
-            try {
-                WindowFactory.openNewWindow(
-                        sharedServices, windowManager);
-            } catch (IOException ex) {
-                LOG.error("Failed to open new window", ex);
-            }
-        });
-        Menu windowMenu = new Menu("Window");
-        windowMenu.getItems().add(newWindowItem);
-
-        MenuBar menuBar = new MenuBar(
-                noteMenu, editMenu, stampsMenu, windowMenu);
-        menuBar.setUseSystemMenuBar(true);
-        return menuBar;
-    }
-
-    private void buildStampsMenu(Menu stampsMenu, AppContext ctx) {
-        stampsMenu.getItems().clear();
-
-        // "Inspect Stamps..." item
-        MenuItem inspectItem = new MenuItem("Inspect Stamps...");
-        inspectItem.setOnAction(e -> {
-            try {
-                openStampEditor(stampsMenu, ctx);
-            } catch (IOException ex) {
-                LOG.error("Failed to open stamp editor", ex);
-            }
-        });
-        stampsMenu.getItems().add(inspectItem);
-        stampsMenu.getItems().add(new SeparatorMenuItem());
-
-        // Build dynamic stamp items
-        Map<String, Menu> subMenus = new HashMap<>();
-
-        for (Stamp stamp : ctx.stampService().getAllStamps()) {
-            String name = stamp.name();
-            UUID stampId = stamp.id();
-
-            // Check for exactly one colon for submenu
-            int colonIndex = name.indexOf(':');
-            boolean hasSubmenu = colonIndex > 0
-                    && colonIndex == name.lastIndexOf(':');
-
-            if (hasSubmenu) {
-                String menuName = name.substring(0, colonIndex);
-                String itemName = name.substring(colonIndex + 1);
-
-                Menu subMenu = subMenus.computeIfAbsent(menuName,
-                        k -> {
-                            Menu m = new Menu(k);
-                            stampsMenu.getItems().add(m);
-                            return m;
-                        });
-
-                MenuItem item = new MenuItem(itemName);
-                item.setOnAction(ev -> applyStampToSelected(
-                        ctx, stampId));
-                subMenu.getItems().add(item);
-            } else {
-                MenuItem item = new MenuItem(name);
-                item.setOnAction(ev -> applyStampToSelected(
-                        ctx, stampId));
-                stampsMenu.getItems().add(item);
-            }
-        }
-    }
-
-    private void applyStampToSelected(AppContext ctx,
-            UUID stampId) {
-        UUID noteId = ctx.selectedNoteId().get();
-        if (noteId == null) {
-            LOG.warn("No note selected to apply stamp to");
-            return;
-        }
-        try {
-            ctx.stampService().applyStamp(stampId, noteId);
-            ctx.refreshAll().run();
-        } catch (Exception ex) {
-            LOG.error("Failed to apply stamp", ex);
-        }
-    }
-
-    private void openStampEditor(Menu stampsMenu,
-            AppContext ctx) throws IOException {
-        FXMLLoader loader = new FXMLLoader(getClass().getResource(
-                "/com/embervault/adapter/in/ui/view/"
-                        + "StampEditorView.fxml"));
-        Parent editorRoot = loader.load();
-        StampEditorViewController controller = loader.getController();
-        StampEditorViewModel editorVm =
-                new StampEditorViewModel(ctx.stampService());
-        controller.initViewModel(editorVm);
-
-        Stage editorStage = new Stage();
-        editorStage.setTitle("Inspect Stamps");
-        editorStage.setScene(new Scene(editorRoot));
-        editorStage.initOwner(ctx.ownerStage());
-        editorStage.showAndWait();
-
-        // Rebuild stamps menu after editor closes
-        buildStampsMenu(stampsMenu, ctx);
-    }
-
     private Parent loadView(String fxml,
             java.util.function.Consumer<Object> init) throws IOException {
         FXMLLoader loader = new FXMLLoader(getClass().getResource(
@@ -303,17 +154,6 @@ public class App extends Application {
         Parent view = loader.load();
         init.accept(loader.getController());
         return view;
-    }
-
-    private static VBox wrapWithLabel(
-            ReadOnlyStringProperty titleProp,
-            Parent view) {
-        Label label = new Label();
-        label.textProperty().bind(titleProp);
-        label.setStyle("-fx-font-weight: bold; -fx-padding: 4 8;");
-        VBox container = new VBox(label, view);
-        VBox.setVgrow(view, Priority.ALWAYS);
-        return container;
     }
 
     private void populateBuiltInStamps(StampService stampService) {

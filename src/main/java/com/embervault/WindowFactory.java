@@ -102,7 +102,14 @@ public final class WindowFactory {
         mainSplitPane.getItems().addAll(
                 mapPane.getContainer(), textPaneView);
         mainSplitPane.setDividerPositions(0.6);
+        WindowContext winCtx = new WindowContext(
+                services, windowManager,
+                mapVm.selectedNoteIdProperty(),
+                refreshAll, newStage, null);
+        javafx.scene.control.MenuBar menuBar =
+                MenuBarFactory.create(winCtx);
         BorderPane root = new BorderPane();
+        root.setTop(menuBar);
         root.setCenter(mainSplitPane);
         Scene scene = new Scene(root, 800, 600);
         newStage.setTitle("EmberVault - " + project.getName());
