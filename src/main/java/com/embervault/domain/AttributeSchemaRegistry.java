@@ -16,6 +16,7 @@ import static com.embervault.domain.Attributes.NAME;
 import static com.embervault.domain.Attributes.OUTLINE_ORDER;
 import static com.embervault.domain.Attributes.PROTOTYPE;
 import static com.embervault.domain.Attributes.SHAPE;
+import static com.embervault.domain.Attributes.STAMPS;
 import static com.embervault.domain.Attributes.SUBTITLE;
 import static com.embervault.domain.Attributes.TEXT;
 import static com.embervault.domain.Attributes.URL;
@@ -148,6 +149,10 @@ public final class AttributeSchemaRegistry {
                 new AttributeValue.SetValue(Set.of()));
         systemAttr(FLAGS, AttributeType.SET, new AttributeValue.SetValue(Set.of()));
         systemAttr(BADGE, AttributeType.STRING, new AttributeValue.StringValue(""));
+
+        // Project metadata
+        systemAttr(STAMPS, AttributeType.LIST,
+                new AttributeValue.ListValue(List.of()));
     }
 
     private void systemAttr(String name, AttributeType type, AttributeValue defaultValue) {

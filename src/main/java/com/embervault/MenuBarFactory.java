@@ -86,12 +86,16 @@ final class MenuBarFactory {
             File dir = chooser.showDialog(ctx.ownerStage());
             if (dir != null) {
                 SharedServices svc = ctx.sharedServices();
-                ProjectFileManager.load(
+                UUID rootId = ProjectFileManager.load(
                         dir.toPath(),
+                        svc.noteRepository(),
                         svc.noteService(),
                         svc.linkService(),
                         svc.stampService(),
                         svc.schemaRegistry());
+                if (ctx.onBaseNoteChanged() != null) {
+                    ctx.onBaseNoteChanged().accept(rootId);
+                }
                 ctx.refreshAll().run();
             }
         });

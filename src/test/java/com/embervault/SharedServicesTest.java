@@ -36,7 +36,7 @@ class SharedServicesTest {
         Project project = new ProjectServiceImpl().createEmptyProject();
 
         SharedServices services = new SharedServices(
-                project, noteService, linkService,
+                project, noteRepo, noteService, linkService,
                 stampService, registry);
 
         assertNotNull(services.project());
