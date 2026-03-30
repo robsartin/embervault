@@ -288,17 +288,21 @@ public class MapViewController {
                     && event.getButton() == MouseButton.PRIMARY
                     && !dragging[0]) {
                 if (tier.isShowTitle()
-                        && notePane.getChildren().size() > 1) {
-                    VBox tb = (VBox) notePane.getChildren().get(1);
-                    Label tl = (Label) tb.getChildren().get(0);
+                        && notePane.getChildren().size() > 1
+                        && notePane.getChildren().get(1)
+                                instanceof VBox tb
+                        && !tb.getChildren().isEmpty()
+                        && tb.getChildren().get(0)
+                                instanceof Label tl) {
                     Rectangle rc =
-                            (Rectangle) notePane.getChildren().get(0);
+                            (Rectangle) notePane
+                                    .getChildren().get(0);
                     if (event.getTarget() == tl
                             || isDescendantOf(
                                     event.getTarget(), tl)) {
                         InlineEditHelper.startInlineEdit(
-                                notePane, tl, rc, item, viewModel,
-                                mapCanvas);
+                                notePane, tl, rc, item,
+                                viewModel, mapCanvas);
                     } else {
                         viewModel.drillDown(item.getId());
                     }
