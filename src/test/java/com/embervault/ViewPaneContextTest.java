@@ -246,4 +246,23 @@ class ViewPaneContextTest {
         assertTrue(paneContext.getLabel().getText()
                 .startsWith("Treemap:"));
     }
+
+    @Test
+    @DisplayName("container has context menu request handler")
+    void container_shouldHaveContextMenuHandler() {
+        VBox container = paneContext.getContainer();
+        assertNotNull(container.getOnContextMenuRequested(),
+                "Container should handle context menu requests");
+    }
+
+    @Test
+    @DisplayName("context menu item action triggers view switch")
+    void contextMenuItem_shouldTriggerSwitch() {
+        ContextMenu menu = paneContext.getLabel()
+                .getContextMenu();
+        // Fire the OUTLINE menu item action (index 1)
+        menu.getItems().get(1).fire();
+        assertEquals(ViewType.OUTLINE,
+                paneContext.getCurrentViewType());
+    }
 }

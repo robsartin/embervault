@@ -56,6 +56,7 @@ public final class ViewPaneContext {
     private ViewType currentViewType;
     private UUID baseNoteId;
     private Runnable currentViewRefresh = () -> { };
+    private ContextMenu labelContextMenu;
 
     /**
      * Creates a new ViewPaneContext with the given initial state.
@@ -87,9 +88,16 @@ public final class ViewPaneContext {
         label.textProperty().bind(titleProperty);
         label.setStyle(
                 "-fx-font-weight: bold; -fx-padding: 4 8;");
-        label.setContextMenu(buildContextMenu());
+        this.labelContextMenu = buildContextMenu();
+        label.setContextMenu(labelContextMenu);
 
         this.container = new VBox(label, initialView);
+        container.setOnContextMenuRequested(event -> {
+            if (event.getTarget() != label) {
+                labelContextMenu.show(container,
+                        event.getScreenX(), event.getScreenY());
+            }
+        });
         VBox.setVgrow(initialView, Priority.ALWAYS);
     }
 
@@ -260,7 +268,8 @@ public final class ViewPaneContext {
 
         label.textProperty().bind(newTitleProp);
         currentViewType = newType;
-        label.setContextMenu(buildContextMenu());
+        labelContextMenu = buildContextMenu();
+        label.setContextMenu(labelContextMenu);
     }
 
     private ContextMenu buildContextMenu() {
