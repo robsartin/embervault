@@ -146,35 +146,46 @@ class OutlineEditModeTest {
     @DisplayName("Shift+Tab while editing stays in edit mode")
     void shiftTab_whileEditing_staysInEditMode(
             FxRobot robot) {
+        // Use indent then Shift+Tab to test outdent
+        // (avoids nested tree cell rendering issues)
         robot.interact(() -> {
-            NoteDisplayItem first =
-                    viewModel.createChildNote(parentId,
-                            "First");
-            noteService.createChildNote(
-                    first.getId(), "Nested");
-            viewModel.loadNotes();
+            viewModel.createChildNote(parentId, "First");
+            viewModel.createChildNote(parentId, "Second");
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        // Select "Nested" programmatically and click it
+        // Indent "Second" under "First" first
+        robot.interact(() -> {
+            outlineTreeView.getSelectionModel().select(
+                    outlineTreeView.getRoot()
+                            .getChildren().get(1));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.interact(() -> {
+            viewModel.indentNote(
+                    outlineTreeView.getSelectionModel()
+                            .getSelectedItem().getValue()
+                            .getId());
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // Select the now-nested "Second" and edit it
         robot.interact(() -> {
             var root = outlineTreeView.getRoot();
             var firstItem = root.getChildren().get(0);
             firstItem.setExpanded(true);
+        });
+        waitSettled();
+        robot.interact(() -> {
+            var firstItem = outlineTreeView.getRoot()
+                    .getChildren().get(0);
             if (!firstItem.getChildren().isEmpty()) {
                 outlineTreeView.getSelectionModel()
                         .select(firstItem.getChildren()
                                 .get(0));
-                outlineTreeView.scrollTo(
-                        outlineTreeView.getRow(
-                                firstItem.getChildren()
-                                        .get(0)));
             }
         });
-        WaitForAsyncUtils.waitForFxEvents();
-
-        // Start editing programmatically (clickOn is
-        // unreliable in headless xvfb)
+        waitSettled();
         robot.interact(() -> startEditOnSelected());
         WaitForAsyncUtils.waitForFxEvents();
         assertNotNull(findEditingTextField(),
