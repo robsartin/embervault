@@ -17,7 +17,6 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
@@ -281,13 +280,8 @@ public class MapViewController {
         ZoomTier tier = viewModel.getCurrentTier();
         String borderColor = currentColors != null
                 ? currentColors.borderColor() : "#000000";
-        ZoomTierRenderer renderer = tier.createRenderer();
-        StackPane notePane = renderer.render(item, borderColor);
-
-        notePane.setUserData(item.getId());
-        notePane.setLayoutX(item.getXpos());
-        notePane.setLayoutY(item.getYpos());
-        notePane.setCursor(Cursor.HAND);
+        StackPane notePane = NoteNodeFactory.createRenderedNotePane(
+                item, tier, borderColor);
         final boolean[] dragging = enableDrag(notePane, item);
         notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
