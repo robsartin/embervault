@@ -12,7 +12,6 @@ import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
@@ -197,11 +196,8 @@ public class HyperbolicViewController {
             double nx = centerX + node.x();
             double ny = centerY + node.y();
 
-            Circle circle = new Circle(nx, ny, node.displayRadius());
-            circle.setFill(Color.web("#4A90D9"));
-            circle.setStroke(Color.WHITE);
-            circle.setStrokeWidth(NORMAL_STROKE_WIDTH);
-            circle.setCursor(Cursor.HAND);
+            Circle circle = HyperbolicNodeFactory.createNodeCircle(
+                    nx, ny, node.displayRadius(), "#4A90D9");
             circle.setUserData(node.noteId());
 
             // Click to select
