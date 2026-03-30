@@ -267,44 +267,8 @@ public class MapViewController {
     }
 
     private void updateNoteNode(StackPane notePane, NoteDisplayItem item) {
-        notePane.setLayoutX(item.getXpos());
-        notePane.setLayoutY(item.getYpos());
-        if (notePane.getChildren().get(0) instanceof Rectangle rect) {
-            rect.setWidth(item.getWidth());
-            rect.setHeight(item.getHeight());
-            rect.setFill(Color.web(item.getColorHex()));
-        }
-        if (notePane.getChildren().size() > 1
-                && notePane.getChildren().get(1) instanceof VBox textBox) {
-            textBox.setMaxWidth(item.getWidth());
-            textBox.setMaxHeight(item.getHeight());
-            if (textBox.getClip() instanceof Rectangle clip) {
-                clip.setWidth(item.getWidth());
-                clip.setHeight(item.getHeight());
-            }
-            if (!textBox.getChildren().isEmpty()
-                    && textBox.getChildren().get(0) instanceof Label titleLabel) {
-                titleLabel.setText(item.getTitle());
-                titleLabel.setMaxWidth(item.getWidth() - 8);
-            }
-            if (textBox.getChildren().size() > 1
-                    && textBox.getChildren().get(1)
-                            instanceof Label contentLabel) {
-                contentLabel.setText(
-                        item.getContent() != null ? item.getContent() : "");
-                contentLabel.setMaxWidth(item.getWidth() - 8);
-            }
-        }
-        String badge = item.getBadge();
-        ZoomTier tier = viewModel.getCurrentTier();
-        if (notePane.getChildren().size() > 2
-                && notePane.getChildren().get(2) instanceof Label badgeLabel) {
-            badgeLabel.setText(badge != null ? badge : "");
-        } else if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
-            notePane.getChildren().add(
-                    NoteNodeFactory.createBadgeLabel(
-                            badge, item.getColorHex()));
-        }
+        NoteNodeFactory.updateNoteNode(
+                notePane, item, viewModel.getCurrentTier());
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
             if (notePane.getChildren().get(0) instanceof Rectangle rect) {
                 rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
