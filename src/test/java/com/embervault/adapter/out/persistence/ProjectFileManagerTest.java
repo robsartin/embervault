@@ -16,6 +16,7 @@ import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.AttributeSchemaRegistry;
+import com.embervault.domain.Note;
 import com.embervault.domain.Project;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -208,6 +209,68 @@ class ProjectFileManagerTest {
         assertTrue(loadNoteService.getNote(rootId)
                         .isPresent(),
                 "Should load root note from base dir");
+    }
+
+    @Test
+    @DisplayName("round-trip preserves grandchildren")
+    void roundTrip_preservesGrandchildren(@TempDir Path tmp) {
+        Path projectDir = tmp.resolve("Deep");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+        UUID rootId = ctx.project.getRootNote().getId();
+        Note child = ctx.noteService.createChildNote(
+                rootId, "Child");
+        ctx.noteService.createChildNote(
+                child.getId(), "Grandchild A");
+        ctx.noteService.createChildNote(
+                child.getId(), "Grandchild B");
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        InMemoryNoteRepository loadRepo =
+                new InMemoryNoteRepository();
+        NoteService loadNoteService =
+                new NoteServiceImpl(loadRepo);
+        UUID loadedRoot = ProjectFileManager.load(projectDir,
+                loadRepo, loadNoteService,
+                new LinkServiceImpl(
+                        new InMemoryLinkRepository()),
+                new StampServiceImpl(
+                        new InMemoryStampRepository(),
+                        loadRepo),
+                ctx.registry);
+
+        // Child loaded
+        assertEquals(1,
+                loadNoteService.getChildren(loadedRoot)
+                        .size(),
+                "Root should have 1 child");
+        Note loadedChild =
+                loadNoteService.getChildren(loadedRoot)
+                        .get(0);
+        assertEquals("Child", loadedChild.getTitle());
+
+        // Grandchildren loaded with correct container
+        var grandchildren = loadNoteService.getChildren(
+                loadedChild.getId());
+        assertEquals(2, grandchildren.size(),
+                "Child should have 2 grandchildren");
+        // Verify container attribute is set
+        for (Note gc : grandchildren) {
+            var container = gc.getAttribute(
+                    com.embervault.domain.Attributes
+                            .CONTAINER);
+            assertTrue(container.isPresent(),
+                    "Grandchild should have $Container");
+            assertEquals(loadedChild.getId().toString(),
+                    ((com.embervault.domain.AttributeValue
+                            .StringValue) container.get())
+                            .value(),
+                    "Grandchild $Container should be "
+                            + "child's ID");
+        }
     }
 
     private TestContext createContext() {
