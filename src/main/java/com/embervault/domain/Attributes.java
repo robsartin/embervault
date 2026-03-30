@@ -48,6 +48,9 @@ public final class Attributes {
     // Web
     public static final String URL = "$URL";
 
+    // Project metadata
+    public static final String STAMPS = "$Stamps";
+
     private Attributes() {
         // utility class
     }

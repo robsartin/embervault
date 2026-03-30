@@ -11,6 +11,8 @@ import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.AttributeSchemaRegistry;
+import com.embervault.domain.AttributeValue;
+import com.embervault.domain.Attributes;
 import com.embervault.domain.Note;
 import com.embervault.domain.Project;
 import org.slf4j.Logger;
@@ -46,6 +48,11 @@ public final class ProjectFileManager {
         try {
             Files.createDirectories(dir);
 
+            // Set root note name to directory name
+            String dirName = dir.getFileName().toString();
+            project.getRootNote().update(dirName,
+                    project.getRootNote().getContent());
+
             // project.yaml
             String projectYaml = "id: \""
                     + project.getId() + "\"\n"
@@ -74,11 +81,19 @@ public final class ProjectFileManager {
                 }
             }
 
-            // Stamps
-            FileStampRepository stampRepo =
-                    new FileStampRepository(dir);
-            for (var stamp : stampService.getAllStamps()) {
-                stampRepo.save(stamp);
+            // Stamps stored as $Stamps attribute on root note
+            java.util.List<String> stampEntries =
+                    stampService.getAllStamps().stream()
+                            .map(s -> s.id() + "|"
+                                    + s.name() + "|"
+                                    + s.action())
+                            .toList();
+            if (!stampEntries.isEmpty()) {
+                project.getRootNote().setAttribute(
+                        Attributes.STAMPS,
+                        new AttributeValue.ListValue(
+                                stampEntries));
+                noteRepo.save(project.getRootNote());
             }
 
             LOG.info("Project saved to {}", dir);
