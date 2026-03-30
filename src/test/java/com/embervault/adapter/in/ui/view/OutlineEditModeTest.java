@@ -145,10 +145,29 @@ class OutlineEditModeTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        robot.clickOn("Nested");
+        // Select "Nested" programmatically and click it
+        robot.interact(() -> {
+            var root = outlineTreeView.getRoot();
+            var firstItem = root.getChildren().get(0);
+            firstItem.setExpanded(true);
+            if (!firstItem.getChildren().isEmpty()) {
+                outlineTreeView.getSelectionModel()
+                        .select(firstItem.getChildren()
+                                .get(0));
+                outlineTreeView.scrollTo(
+                        outlineTreeView.getRow(
+                                firstItem.getChildren()
+                                        .get(0)));
+            }
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        // Click the selected cell
+        robot.clickOn(".tree-cell:selected");
         WaitForAsyncUtils.waitForFxEvents();
         assertNotNull(findEditingTextField(),
-                "Precondition: should be editing after click");
+                "Precondition: should be editing "
+                        + "after click");
 
         robot.press(javafx.scene.input.KeyCode.SHIFT);
         robot.type(javafx.scene.input.KeyCode.TAB);

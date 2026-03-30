@@ -28,6 +28,7 @@ import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeMap;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
+import com.embervault.domain.UuidGenerator;
 
 /**
  * Application service implementing note use cases.
@@ -474,6 +475,6 @@ public final class NoteServiceImpl implements NoteService {
         attrs.set(TEXT, new AttributeValue.StringValue(""));
         attrs.set(CREATED, new AttributeValue.DateValue(now));
         attrs.set(MODIFIED, new AttributeValue.DateValue(now));
-        return new Note(UUID.randomUUID(), attrs);
+        return new Note(UuidGenerator.generate(), attrs);
     }
 }
