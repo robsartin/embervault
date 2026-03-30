@@ -46,6 +46,11 @@ public final class ProjectFileManager {
         try {
             Files.createDirectories(dir);
 
+            // Set root note name to directory name
+            String dirName = dir.getFileName().toString();
+            project.getRootNote().update(dirName,
+                    project.getRootNote().getContent());
+
             // project.yaml
             String projectYaml = "id: \""
                     + project.getId() + "\"\n"
