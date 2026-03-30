@@ -58,8 +58,11 @@ public final class WindowFactory {
         MapViewModel mapVm = new MapViewModel(
                 rootNoteTitle, noteService);
         mapVm.setBaseNoteId(project.getRootNote().getId());
-        Parent mapView = loadView("MapView.fxml",
-                c -> ((MapViewController) c).initViewModel(mapVm));
+        var mapCtrl = new MapViewController[1];
+        Parent mapView = loadView("MapView.fxml", c -> {
+            mapCtrl[0] = (MapViewController) c;
+            mapCtrl[0].initViewModel(mapVm);
+        });
         SelectedNoteViewModel selectedNoteVm =
                 new SelectedNoteViewModel(noteService);
         FXMLLoader textPaneLoader = new FXMLLoader(
@@ -75,6 +78,8 @@ public final class WindowFactory {
                 mapVm.tabTitleProperty(), mapView,
                 project.getRootNote().getId(),
                 mapVm::loadNotes);
+        mapCtrl[0].setOnViewSwitch(name ->
+                mapPane.switchView(ViewType.valueOf(name)));
         Runnable localRefresh = () -> {
             mapPane.refreshCurrentView();
             UUID selId = selectedNoteVm.selectedNoteIdProperty().get();
