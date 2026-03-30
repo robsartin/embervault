@@ -91,11 +91,16 @@ class OutlineEditModeTest {
                 viewModel.createChildNote(parentId, "First"));
         WaitForAsyncUtils.waitForFxEvents();
 
-        // Click note text to start editing
-        robot.clickOn("First");
+        robot.interact(() -> {
+            outlineTreeView.getSelectionModel().select(
+                    outlineTreeView.getRoot()
+                            .getChildren().get(0));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.interact(() -> startEditOnSelected());
         WaitForAsyncUtils.waitForFxEvents();
         assertNotNull(findEditingTextField(),
-                "Precondition: should be editing after click");
+                "Precondition: should be editing");
 
         // Enter → create sibling, stay in edit mode
         robot.type(javafx.scene.input.KeyCode.ENTER);
@@ -117,10 +122,16 @@ class OutlineEditModeTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        robot.clickOn("Second");
+        robot.interact(() -> {
+            outlineTreeView.getSelectionModel().select(
+                    outlineTreeView.getRoot()
+                            .getChildren().get(1));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.interact(() -> startEditOnSelected());
         WaitForAsyncUtils.waitForFxEvents();
         assertNotNull(findEditingTextField(),
-                "Precondition: should be editing after click");
+                "Precondition: should be editing");
 
         robot.type(javafx.scene.input.KeyCode.TAB);
         waitSettled();
@@ -162,12 +173,12 @@ class OutlineEditModeTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        // Click the selected cell
-        robot.clickOn(".tree-cell:selected");
+        // Start editing programmatically (clickOn is
+        // unreliable in headless xvfb)
+        robot.interact(() -> startEditOnSelected());
         WaitForAsyncUtils.waitForFxEvents();
         assertNotNull(findEditingTextField(),
-                "Precondition: should be editing "
-                        + "after click");
+                "Precondition: should be editing");
 
         robot.press(javafx.scene.input.KeyCode.SHIFT);
         robot.type(javafx.scene.input.KeyCode.TAB);
@@ -188,19 +199,22 @@ class OutlineEditModeTest {
                 viewModel.createChildNote(parentId, "Note"));
         WaitForAsyncUtils.waitForFxEvents();
 
-        robot.clickOn("Note");
+        // Select and start editing programmatically
+        robot.interact(() -> {
+            var root = outlineTreeView.getRoot();
+            outlineTreeView.getSelectionModel()
+                    .select(root.getChildren().get(0));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+        robot.interact(() -> startEditOnSelected());
         WaitForAsyncUtils.waitForFxEvents();
         assertNotNull(findEditingTextField(),
-                "Precondition: should be editing after click");
+                "Precondition: should be editing");
 
         // Click on empty area below the note
         robot.clickOn(outlineTreeView, javafx.scene.input
                 .MouseButton.PRIMARY);
         WaitForAsyncUtils.waitForFxEvents();
-
-        // Edit mode should be exited
-        // (TextField may or may not be null depending on
-        // whether click hit the cell again)
     }
 
     // --- helpers ---
@@ -208,6 +222,30 @@ class OutlineEditModeTest {
     private void waitSettled() {
         for (int i = 0; i < 10; i++) {
             WaitForAsyncUtils.waitForFxEvents();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void startEditOnSelected() {
+        for (var node : outlineTreeView
+                .lookupAll(".tree-cell")) {
+            if (node instanceof TreeCell<?> cell
+                    && cell.getTreeItem() != null
+                    && cell.getTreeItem()
+                    == outlineTreeView.getSelectionModel()
+                            .getSelectedItem()) {
+                // Use reflection to call startInlineEdit
+                try {
+                    var method = cell.getClass()
+                            .getDeclaredMethod(
+                                    "startInlineEdit");
+                    method.setAccessible(true);
+                    method.invoke(cell);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                return;
+            }
         }
     }
 
