@@ -1,8 +1,9 @@
 package com.embervault.adapter.in.ui.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.lang.reflect.Field;
 
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
@@ -24,6 +25,8 @@ import org.testfx.framework.junit5.Start;
 
 /**
  * Tests for {@link StampEditorViewController}.
+ *
+ * <p>Covers create, delete, save, and selection paths.</p>
  */
 @Tag("ui")
 @ExtendWith(ApplicationExtension.class)
@@ -31,9 +34,10 @@ class StampEditorViewControllerTest {
 
     private StampEditorViewController controller;
     private StampEditorViewModel viewModel;
+    private StampService stampService;
+    private ListView<String> stampListView;
     private TextField nameField;
     private TextField actionField;
-    private ListView<String> stampListView;
 
     @Start
     private void start(Stage stage) {
@@ -41,116 +45,185 @@ class StampEditorViewControllerTest {
     }
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         InMemoryStampRepository stampRepo = new InMemoryStampRepository();
         InMemoryNoteRepository noteRepo = new InMemoryNoteRepository();
-        StampService stampService = new StampServiceImpl(stampRepo, noteRepo);
+        stampService = new StampServiceImpl(stampRepo, noteRepo);
         viewModel = new StampEditorViewModel(stampService);
 
         controller = new StampEditorViewController();
+        stampListView = new ListView<>();
         nameField = new TextField();
         actionField = new TextField();
-        stampListView = new ListView<>();
-        SplitPane editorRoot = new SplitPane();
         Button addButton = new Button("Add");
         Button removeButton = new Button("Remove");
         Button saveButton = new Button("Save");
+        SplitPane editorRoot = new SplitPane();
 
-        injectField("nameField", nameField);
-        injectField("actionField", actionField);
-        injectField("stampListView", stampListView);
-        injectField("editorRoot", editorRoot);
-        injectField("addButton", addButton);
-        injectField("removeButton", removeButton);
-        injectField("saveButton", saveButton);
+        inject(controller, "stampListView", stampListView);
+        inject(controller, "nameField", nameField);
+        inject(controller, "actionField", actionField);
+        inject(controller, "addButton", addButton);
+        inject(controller, "removeButton", removeButton);
+        inject(controller, "saveButton", saveButton);
+        inject(controller, "editorRoot", editorRoot);
 
         controller.initViewModel(viewModel);
     }
 
-    @Test
-    @DisplayName("stamp list is initially empty")
-    void initViewModel_stampListEmpty() {
-        assertTrue(stampListView.getItems().isEmpty(),
-                "Stamp list should start empty");
+    private static void inject(Object target, String fieldName, Object value)
+            throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
     }
 
-    @Test
-    @DisplayName("onAddStamp creates stamp and clears fields")
-    void onAddStamp_createsAndClears() {
-        nameField.setText("Priority");
-        actionField.setText("$Priority=high");
-        controller.onAddStamp();
+    // --- create stamp -------------------------------------------------------
 
-        assertFalse(stampListView.getItems().isEmpty(),
-                "Stamp list should contain the new stamp");
-        assertEquals("", nameField.getText(),
-                "Name field should be cleared");
+    @Test
+    @DisplayName("onAddStamp creates a stamp and clears fields")
+    void onAddStamp_shouldCreateStamp() {
+        nameField.setText("MyStamp");
+        actionField.setText("$Color=red");
+        controller.onAddStamp();
+        TestFxHelper.waitForFx();
+
+        assertEquals(1, stampListView.getItems().size());
+        assertEquals("MyStamp", stampListView.getItems().get(0));
+        assertEquals("", nameField.getText(), "Name field should be cleared");
         assertEquals("", actionField.getText(),
                 "Action field should be cleared");
     }
 
     @Test
-    @DisplayName("onRemoveStamp removes selected stamp")
-    void onRemoveStamp_removesSelected() {
-        nameField.setText("ToRemove");
+    @DisplayName("onAddStamp with blank name does not create stamp")
+    void onAddStamp_blankName_shouldNotCreate() {
+        nameField.setText("   ");
         actionField.setText("$Color=red");
         controller.onAddStamp();
-        int countAfterAdd = stampListView.getItems().size();
+        TestFxHelper.waitForFx();
 
-        // Select the stamp in the list
-        stampListView.getSelectionModel().select(0);
-
-        controller.onRemoveStamp();
-        assertEquals(countAfterAdd - 1, stampListView.getItems().size(),
-                "Stamp should be removed");
+        assertEquals(0, stampListView.getItems().size());
     }
 
     @Test
-    @DisplayName("onRemoveStamp does nothing when nothing selected")
-    void onRemoveStamp_nothingSelectedDoesNothing() {
-        nameField.setText("Keep");
+    @DisplayName("onAddStamp with blank action does not create stamp")
+    void onAddStamp_blankAction_shouldNotCreate() {
+        nameField.setText("MyStamp");
+        actionField.setText("");
+        controller.onAddStamp();
+        TestFxHelper.waitForFx();
+
+        assertEquals(0, stampListView.getItems().size());
+    }
+
+    // --- delete stamp -------------------------------------------------------
+
+    @Test
+    @DisplayName("onRemoveStamp deletes the selected stamp")
+    void onRemoveStamp_shouldDeleteStamp() {
+        nameField.setText("ToDelete");
         actionField.setText("$Color=blue");
         controller.onAddStamp();
-        int count = stampListView.getItems().size();
+        TestFxHelper.waitForFx();
+        assertEquals(1, stampListView.getItems().size());
 
-        // No selection — selectedStampId is null
+        // Select the stamp to populate selectedStampId
+        stampListView.getSelectionModel().select(0);
+        TestFxHelper.waitForFx();
+
         controller.onRemoveStamp();
-        assertEquals(count, stampListView.getItems().size(),
-                "Nothing should be removed");
+        TestFxHelper.waitForFx();
+
+        assertEquals(0, stampListView.getItems().size());
     }
 
     @Test
-    @DisplayName("onSaveStamp delegates to onAddStamp when no selection")
-    void onSaveStamp_delegatesToAddWhenNoSelection() {
+    @DisplayName("onRemoveStamp with no selection does nothing")
+    void onRemoveStamp_noSelection_shouldDoNothing() {
+        nameField.setText("Keep");
+        actionField.setText("$Color=green");
+        controller.onAddStamp();
+        TestFxHelper.waitForFx();
+
+        // Do not select — selectedStampId remains null
+        controller.onRemoveStamp();
+        TestFxHelper.waitForFx();
+
+        assertEquals(1, stampListView.getItems().size(),
+                "Stamp should not be removed without selection");
+    }
+
+    // --- save stamp (update) ------------------------------------------------
+
+    @Test
+    @DisplayName("onSaveStamp with selection updates existing stamp")
+    void onSaveStamp_withSelection_shouldUpdate() {
+        nameField.setText("Original");
+        actionField.setText("$Color=red");
+        controller.onAddStamp();
+        TestFxHelper.waitForFx();
+
+        stampListView.getSelectionModel().select(0);
+        TestFxHelper.waitForFx();
+
+        nameField.setText("Updated");
+        actionField.setText("$Color=blue");
+        controller.onSaveStamp();
+        TestFxHelper.waitForFx();
+
+        assertTrue(stampListView.getItems().contains("Updated"),
+                "Updated stamp name should appear in list");
+    }
+
+    @Test
+    @DisplayName("onSaveStamp without selection delegates to onAddStamp")
+    void onSaveStamp_noSelection_shouldAdd() {
         nameField.setText("NewStamp");
         actionField.setText("$Checked=true");
         controller.onSaveStamp();
+        TestFxHelper.waitForFx();
 
-        assertFalse(stampListView.getItems().isEmpty(),
-                "Stamp should be created via save");
+        assertEquals(1, stampListView.getItems().size());
+        assertEquals("NewStamp", stampListView.getItems().get(0));
+    }
+
+    // --- selection -----------------------------------------------------------
+
+    @Test
+    @DisplayName("selecting a stamp populates name and action fields")
+    void selectStamp_shouldPopulateFields() {
+        nameField.setText("Stamp1");
+        actionField.setText("$Color=red");
+        controller.onAddStamp();
+        TestFxHelper.waitForFx();
+
+        stampListView.getSelectionModel().select(0);
+        TestFxHelper.waitForFx();
+
+        assertEquals("Stamp1", nameField.getText());
+        assertEquals("$Color=red", actionField.getText());
     }
 
     @Test
-    @DisplayName("selecting stamp populates name and action fields")
-    void selectStamp_populatesFields() {
-        nameField.setText("MyStamp");
-        actionField.setText("$Color=green");
+    @DisplayName("deselecting clears selectedStampId gracefully")
+    void deselectStamp_shouldHandleNull() throws Exception {
+        nameField.setText("Stamp1");
+        actionField.setText("$Color=red");
         controller.onAddStamp();
+        TestFxHelper.waitForFx();
 
         stampListView.getSelectionModel().select(0);
+        TestFxHelper.waitForFx();
 
-        assertEquals("MyStamp", nameField.getText());
-        assertEquals("$Color=green", actionField.getText());
-    }
+        stampListView.getSelectionModel().clearSelection();
+        TestFxHelper.waitForFx();
 
-    private void injectField(String fieldName, Object value) {
-        try {
-            var field = StampEditorViewController.class
-                    .getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(controller, value);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // selectedStampId should be null — onRemoveStamp should be a no-op
+        controller.onRemoveStamp();
+        TestFxHelper.waitForFx();
+
+        assertEquals(1, stampListView.getItems().size(),
+                "Stamp should not be removed after deselection");
     }
 }

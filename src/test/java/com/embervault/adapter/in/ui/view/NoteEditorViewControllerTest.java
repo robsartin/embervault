@@ -2,16 +2,22 @@ package com.embervault.adapter.in.ui.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.UUID;
+import java.lang.reflect.Field;
 
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
+import com.embervault.domain.AttributeValue;
+import com.embervault.domain.Note;
+import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +30,9 @@ import org.testfx.framework.junit5.Start;
 
 /**
  * Tests for {@link NoteEditorViewController}.
+ *
+ * <p>Covers attribute display, title/text save on focus-lost,
+ * and ViewModel binding.</p>
  */
 @Tag("ui")
 @ExtendWith(ApplicationExtension.class)
@@ -35,7 +44,6 @@ class NoteEditorViewControllerTest {
     private TextField titleField;
     private TextArea textArea;
     private VBox attributesBox;
-    private UUID noteId;
 
     @Start
     private void start(Stage stage) {
@@ -43,15 +51,11 @@ class NoteEditorViewControllerTest {
     }
 
     @BeforeEach
-    void setUp() {
-        InMemoryNoteRepository repository = new InMemoryNoteRepository();
-        noteService = new NoteServiceImpl(repository);
+    void setUp() throws Exception {
+        InMemoryNoteRepository repo = new InMemoryNoteRepository();
+        noteService = new NoteServiceImpl(repo);
         AttributeSchemaRegistry registry = new AttributeSchemaRegistry();
-
-        noteId = noteService.createNote("Test Note", "Test content").getId();
-
         viewModel = new NoteEditorViewModel(noteService, registry);
-        viewModel.setNote(noteId);
 
         controller = new NoteEditorViewController();
         titleField = new TextField();
@@ -59,70 +63,139 @@ class NoteEditorViewControllerTest {
         attributesBox = new VBox();
         VBox editorRoot = new VBox();
 
-        injectField("titleField", titleField);
-        injectField("textArea", textArea);
-        injectField("attributesBox", attributesBox);
-        injectField("editorRoot", editorRoot);
+        inject(controller, "titleField", titleField);
+        inject(controller, "textArea", textArea);
+        inject(controller, "attributesBox", attributesBox);
+        inject(controller, "editorRoot", editorRoot);
+    }
 
+    private static void inject(Object target, String fieldName, Object value)
+            throws Exception {
+        Field field = target.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
+        field.set(target, value);
+    }
+
+    // --- initViewModel / binding -------------------------------------------
+
+    @Test
+    @DisplayName("initViewModel populates title and text fields from note")
+    void initViewModel_shouldPopulateFields() {
+        Note note = noteService.createNote("Hello", "World");
+        viewModel.setNote(note.getId());
         controller.initViewModel(viewModel);
+
+        assertEquals("Hello", titleField.getText());
+        assertEquals("World", textArea.getText());
     }
 
     @Test
-    @DisplayName("title field shows note title after init")
-    void initViewModel_titleFieldPopulated() {
-        assertEquals("Test Note", titleField.getText());
+    @DisplayName("getViewModel returns the injected ViewModel")
+    void getViewModel_shouldReturnViewModel() {
+        controller.initViewModel(viewModel);
+        assertSame(viewModel, controller.getViewModel());
     }
 
     @Test
-    @DisplayName("text area shows note content after init")
-    void initViewModel_textAreaPopulated() {
-        assertEquals("Test content", textArea.getText());
+    @DisplayName("title property change updates the title field")
+    void titlePropertyChange_shouldUpdateField() {
+        Note note = noteService.createNote("Before", "");
+        viewModel.setNote(note.getId());
+        controller.initViewModel(viewModel);
+
+        viewModel.titleProperty().set("After");
+        TestFxHelper.waitForFx();
+        assertEquals("After", titleField.getText());
     }
 
     @Test
-    @DisplayName("getViewModel returns injected viewModel")
-    void getViewModel_returnsInjected() {
-        assertEquals(viewModel, controller.getViewModel());
+    @DisplayName("text property change updates the text area")
+    void textPropertyChange_shouldUpdateField() {
+        Note note = noteService.createNote("Title", "Before");
+        viewModel.setNote(note.getId());
+        controller.initViewModel(viewModel);
+
+        viewModel.textProperty().set("After");
+        TestFxHelper.waitForFx();
+        assertEquals("After", textArea.getText());
+    }
+
+    // --- attribute display --------------------------------------------------
+
+    @Test
+    @DisplayName("attributes are rendered as label + text field rows")
+    void initViewModel_shouldRenderAttributes() {
+        Note note = noteService.createNote("Note", "");
+        note.setAttribute("$Color",
+                new AttributeValue.StringValue("#FF0000"));
+        viewModel.setNote(note.getId());
+        controller.initViewModel(viewModel);
+
+        assertTrue(attributesBox.getChildren().size() > 0,
+                "Attributes box should have at least one row");
+
+        HBox row = (HBox) attributesBox.getChildren().get(0);
+        assertEquals(2, row.getChildren().size(),
+                "Each row should have a label and text field");
+        assertNotNull(((Label) row.getChildren().get(0)).getText(),
+                "Label should have a name");
+        assertNotNull(((TextField) row.getChildren().get(1)).getText(),
+                "TextField should have a value");
     }
 
     @Test
-    @DisplayName("title field updates when viewModel title changes")
-    void titlePropertyChange_updatesTitleField() {
-        viewModel.titleProperty().set("Updated Title");
-        assertEquals("Updated Title", titleField.getText());
+    @DisplayName("multiple attributes produce multiple rows")
+    void multipleAttributes_shouldProduceMultipleRows() {
+        Note note = noteService.createNote("Note", "");
+        note.setAttribute("$Color",
+                new AttributeValue.StringValue("#FF0000"));
+        note.setAttribute("$Subtitle",
+                new AttributeValue.StringValue("sub"));
+        viewModel.setNote(note.getId());
+        controller.initViewModel(viewModel);
+
+        assertTrue(attributesBox.getChildren().size() >= 2,
+                "Should have at least two attribute rows");
+    }
+
+    // --- save behavior ------------------------------------------------------
+
+    @Test
+    @DisplayName("title save on Enter persists the new title")
+    void titleOnAction_shouldSaveTitle() {
+        Note note = noteService.createNote("Old", "");
+        viewModel.setNote(note.getId());
+        controller.initViewModel(viewModel);
+
+        titleField.setText("New");
+        titleField.getOnAction().handle(
+                new javafx.event.ActionEvent());
+        TestFxHelper.waitForFx();
+
+        assertEquals("New", viewModel.titleProperty().get());
     }
 
     @Test
-    @DisplayName("text area updates when viewModel text changes")
-    void textPropertyChange_updatesTextArea() {
-        viewModel.textProperty().set("Updated content");
-        assertEquals("Updated content", textArea.getText());
-    }
+    @DisplayName("attribute save on Enter persists the new value")
+    void attributeOnAction_shouldSaveAttribute() {
+        Note note = noteService.createNote("Note", "");
+        note.setAttribute("$Color",
+                new AttributeValue.StringValue("#FF0000"));
+        viewModel.setNote(note.getId());
+        controller.initViewModel(viewModel);
 
-    @Test
-    @DisplayName("attributes box is populated after init")
-    void initViewModel_attributesRendered() {
-        // Attributes box should be populated (may be empty if no editable attrs)
-        assertNotNull(attributesBox);
-    }
+        HBox row = (HBox) attributesBox.getChildren().get(0);
+        TextField valueField = (TextField) row.getChildren().get(1);
+        valueField.setText("#00FF00");
+        valueField.getOnAction().handle(
+                new javafx.event.ActionEvent());
+        TestFxHelper.waitForFx();
 
-    @Test
-    @DisplayName("title save on action event")
-    void titleField_onAction_savesTitle() {
-        titleField.setText("New Title");
-        titleField.fireEvent(
-                new javafx.event.ActionEvent(titleField, titleField));
-        assertEquals("New Title", viewModel.titleProperty().get());
-    }
-
-    private void injectField(String fieldName, Object value) {
-        try {
-            var field = NoteEditorViewController.class
-                    .getDeclaredField(fieldName);
-            field.setAccessible(true);
-            field.set(controller, value);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Verify the attribute was saved by reloading
+        Note updated = noteService.getNote(note.getId()).orElseThrow();
+        String color = updated.getAttribute("$Color")
+                .map(v -> ((AttributeValue.StringValue) v).value())
+                .orElse("");
+        assertEquals("#00FF00", color);
     }
 }

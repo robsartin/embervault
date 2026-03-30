@@ -17,13 +17,11 @@ import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.effect.DropShadow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -34,7 +32,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
-import javafx.scene.text.Font;
 import javafx.scene.transform.Scale;
 import javafx.util.Duration;
 import org.slf4j.Logger;
@@ -46,7 +43,6 @@ public class MapViewController {
     private static final Logger LOG = LoggerFactory.getLogger(MapViewController.class);
     private static final double SELECTED_BORDER_WIDTH = 3.0;
     private static final double NORMAL_BORDER_WIDTH = 1.0;
-    private static final double BADGE_FONT_SIZE = 16.0;
 
     private static final double BACK_BUTTON_PADDING = 5.0;
     private static final double SCROLL_ZOOM_FACTOR = 1.1;
@@ -270,42 +266,8 @@ public class MapViewController {
     }
 
     private void updateNoteNode(StackPane notePane, NoteDisplayItem item) {
-        notePane.setLayoutX(item.getXpos());
-        notePane.setLayoutY(item.getYpos());
-        if (notePane.getChildren().get(0) instanceof Rectangle rect) {
-            rect.setWidth(item.getWidth());
-            rect.setHeight(item.getHeight());
-            rect.setFill(Color.web(item.getColorHex()));
-        }
-        if (notePane.getChildren().size() > 1
-                && notePane.getChildren().get(1) instanceof VBox textBox) {
-            textBox.setMaxWidth(item.getWidth());
-            textBox.setMaxHeight(item.getHeight());
-            if (textBox.getClip() instanceof Rectangle clip) {
-                clip.setWidth(item.getWidth());
-                clip.setHeight(item.getHeight());
-            }
-            if (!textBox.getChildren().isEmpty()
-                    && textBox.getChildren().get(0) instanceof Label titleLabel) {
-                titleLabel.setText(item.getTitle());
-                titleLabel.setMaxWidth(item.getWidth() - 8);
-            }
-            if (textBox.getChildren().size() > 1
-                    && textBox.getChildren().get(1)
-                            instanceof Label contentLabel) {
-                contentLabel.setText(
-                        item.getContent() != null ? item.getContent() : "");
-                contentLabel.setMaxWidth(item.getWidth() - 8);
-            }
-        }
-        String badge = item.getBadge();
-        ZoomTier tier = viewModel.getCurrentTier();
-        if (notePane.getChildren().size() > 2
-                && notePane.getChildren().get(2) instanceof Label badgeLabel) {
-            badgeLabel.setText(badge != null ? badge : "");
-        } else if (tier.isShowBadge() && badge != null && !badge.isEmpty()) {
-            notePane.getChildren().add(createBadgeLabel(badge, item));
-        }
+        NoteNodeFactory.updateNoteNode(
+                notePane, item, viewModel.getCurrentTier());
         if (item.getId().equals(viewModel.selectedNoteIdProperty().get())) {
             if (notePane.getChildren().get(0) instanceof Rectangle rect) {
                 rect.setStrokeWidth(SELECTED_BORDER_WIDTH);
@@ -318,13 +280,8 @@ public class MapViewController {
         ZoomTier tier = viewModel.getCurrentTier();
         String borderColor = currentColors != null
                 ? currentColors.borderColor() : "#000000";
-        ZoomTierRenderer renderer = tier.createRenderer();
-        StackPane notePane = renderer.render(item, borderColor);
-
-        notePane.setUserData(item.getId());
-        notePane.setLayoutX(item.getXpos());
-        notePane.setLayoutY(item.getYpos());
-        notePane.setCursor(Cursor.HAND);
+        StackPane notePane = NoteNodeFactory.createRenderedNotePane(
+                item, tier, borderColor);
         final boolean[] dragging = enableDrag(notePane, item);
         notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
@@ -393,16 +350,6 @@ public class MapViewController {
         return dragging;
     }
 
-    private Label createBadgeLabel(String badge, NoteDisplayItem item) {
-        Label l = new Label(badge);
-        l.setFont(Font.font(BADGE_FONT_SIZE));
-        l.setTextFill(Color.web(ViewColorConfig.contrastTextColor(item.getColorHex())));
-        l.setEffect(new DropShadow(2, Color.gray(0.3, 0.6)));
-        l.setMouseTransparent(true);
-        StackPane.setAlignment(l, Pos.TOP_RIGHT);
-        StackPane.setMargin(l, new Insets(2, 4, 0, 0));
-        return l;
-    }
 
     /** Checks if target is a descendant of ancestor. */
     private static boolean isDescendantOf(Object target, Node ancestor) {
