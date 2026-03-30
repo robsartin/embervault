@@ -39,6 +39,7 @@ public class OutlineViewController {
     private OutlineViewModel viewModel;
     private Button backButton;
     private Consumer<String> onViewSwitch;
+    private UUID pendingEditNoteId;
 
     /** Sets the view-switch callback. */
     public void setOnViewSwitch(Consumer<String> callback) {
@@ -113,11 +114,17 @@ public class OutlineViewController {
             TreeItem<NoteDisplayItem> selected =
                     outlineTreeView.getSelectionModel()
                             .getSelectedItem();
-            if (selected != null && selected.getValue() != null) {
+            if (selected != null
+                    && selected.getValue() != null) {
                 NoteDisplayItem newItem =
                         viewModel.createSiblingNote(
-                                selected.getValue().getId(), "");
-                refreshAndEdit(newItem.getId());
+                                selected.getValue().getId(),
+                                "");
+                UUID newId = newItem.getId();
+                Platform.runLater(() -> {
+                    pendingEditNoteId = newId;
+                    outlineTreeView.refresh();
+                });
                 event.consume();
             }
         } else if (event.getCode() == KeyCode.TAB) {
@@ -188,24 +195,6 @@ public class OutlineViewController {
         }
     }
 
-    private void refreshAndEdit(UUID noteIdToSelect) {
-        TreeItem<NoteDisplayItem> target = findTreeItem(
-                outlineTreeView.getRoot(), noteIdToSelect);
-        if (target != null) {
-            outlineTreeView.getSelectionModel().select(target);
-            // Use Platform.runLater so the tree has settled before we trigger edit
-            Platform.runLater(() -> {
-                int row = outlineTreeView.getRow(target);
-                if (row >= 0) {
-                    OutlineNoteTreeCell cell = findCellForItem(target);
-                    if (cell != null) {
-                        cell.startInlineEdit();
-                    }
-                }
-            });
-        }
-    }
-
     private TreeItem<NoteDisplayItem> findTreeItem(TreeItem<NoteDisplayItem> root,
             UUID noteId) {
         if (root == null || noteId == null) {
@@ -231,22 +220,6 @@ public class OutlineViewController {
             }
         }
         return false;
-    }
-
-    @SuppressWarnings("unchecked")
-    private OutlineNoteTreeCell findCellForItem(TreeItem<NoteDisplayItem> target) {
-        int row = outlineTreeView.getRow(target);
-        if (row < 0) {
-            return null;
-        }
-        // Look up the cell via the TreeView's lookup mechanism
-        for (var node : outlineTreeView.lookupAll(".tree-cell")) {
-            if (node instanceof OutlineNoteTreeCell cell
-                    && cell.getTreeItem() == target) {
-                return cell;
-            }
-        }
-        return null;
     }
 
     private final class OutlineNoteTreeCell
@@ -340,21 +313,41 @@ public class OutlineViewController {
                 NoteDisplayItem currentItem = getItem();
                 commitInlineEdit();
                 if (currentItem != null) {
-                    NoteDisplayItem newItem = viewModel.createSiblingNote(
-                            currentItem.getId(), "");
-                    refreshAndEdit(newItem.getId());
+                    NoteDisplayItem newItem =
+                            viewModel.createSiblingNote(
+                                    currentItem.getId(), "");
+                    UUID newId = newItem.getId();
+                    Platform.runLater(() -> {
+                        pendingEditNoteId = newId;
+                        TreeItem<NoteDisplayItem> t =
+                                findTreeItem(
+                                        outlineTreeView
+                                                .getRoot(),
+                                        newId);
+                        if (t != null) {
+                            outlineTreeView
+                                    .getSelectionModel()
+                                    .select(t);
+                            // Force cell update
+                            outlineTreeView.refresh();
+                        }
+                    });
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.TAB) {
                 NoteDisplayItem currentItem = getItem();
                 commitInlineEdit();
                 if (currentItem != null) {
+                    // Set pending BEFORE indent (which
+                    // triggers rebuild)
+                    pendingEditNoteId = currentItem.getId();
                     if (event.isShiftDown()) {
-                        viewModel.outdentNote(currentItem.getId());
+                        viewModel.outdentNote(
+                                currentItem.getId());
                     } else {
-                        viewModel.indentNote(currentItem.getId());
+                        viewModel.indentNote(
+                                currentItem.getId());
                     }
-                    refreshAndEdit(currentItem.getId());
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.BACK_SPACE
@@ -368,7 +361,10 @@ public class OutlineViewController {
                     textField = null;
                     viewModel.deleteNote(noteId);
                     if (previousId != null) {
-                        refreshAndEdit(previousId);
+                        Platform.runLater(() -> {
+                            pendingEditNoteId = previousId;
+                            outlineTreeView.refresh();
+                        });
                     }
                 }
                 event.consume();
@@ -476,6 +472,12 @@ public class OutlineViewController {
             } else if (editing && textField != null) {
                 setText(null);
                 setGraphic(textField);
+            } else if (pendingEditNoteId != null
+                    && pendingEditNoteId.equals(item.getId())) {
+                pendingEditNoteId = null;
+                Platform.runLater(this::startInlineEdit);
+                setText(badgedTitle(item));
+                setGraphic(null);
             } else {
                 setText(badgedTitle(item));
                 setGraphic(null);
