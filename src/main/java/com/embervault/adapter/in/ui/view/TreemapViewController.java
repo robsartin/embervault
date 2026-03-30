@@ -47,7 +47,6 @@ public class TreemapViewController {
     private static final double TITLE_FONT_SIZE = 13.0;
     private static final double RECT_PADDING = 2.0;
     private static final double BACK_BUTTON_PADDING = 5.0;
-    private static final int MAX_LABEL_LENGTH = 30;
 
     @FXML private Pane treemapCanvas;
 
@@ -174,7 +173,8 @@ public class TreemapViewController {
         rect.setArcWidth(4);
         rect.setArcHeight(4);
 
-        String labelText = truncateLabel(item.getTitle(), rectWidth);
+        String labelText = TreemapNodeFactory.truncateLabel(
+                item.getTitle(), rectWidth);
         Label titleLabel = new Label(labelText);
         titleLabel.setFont(Font.font("System", FontWeight.BOLD,
                 TITLE_FONT_SIZE));
@@ -234,18 +234,6 @@ public class TreemapViewController {
         return notePane;
     }
 
-    private String truncateLabel(String title, double availableWidth) {
-        double charsPerWidth = availableWidth / (TITLE_FONT_SIZE * 0.6);
-        int maxChars = Math.min(MAX_LABEL_LENGTH,
-                (int) charsPerWidth);
-        if (maxChars <= 0) {
-            return "";
-        }
-        if (title.length() <= maxChars) {
-            return title;
-        }
-        return title.substring(0, maxChars) + "\u2026";
-    }
 
     private void highlightSelected(StackPane selected) {
         Color borderCol = currentColors != null
