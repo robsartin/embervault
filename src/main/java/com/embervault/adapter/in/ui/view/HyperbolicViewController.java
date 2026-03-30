@@ -40,7 +40,6 @@ public class HyperbolicViewController {
     private static final Logger LOG = LoggerFactory.getLogger(HyperbolicViewController.class);
     private static final double SMALL_NODE_THRESHOLD = 12.0;
     private static final double BACK_BUTTON_PADDING = 5.0;
-    private static final double EDGE_OPACITY = 0.3;
     private static final double LABEL_FONT_SIZE = 12.0;
     private static final double SELECTED_STROKE_WIDTH = 3.0;
     private static final double NORMAL_STROKE_WIDTH = 1.5;
@@ -187,10 +186,8 @@ public class HyperbolicViewController {
             double[] src = positionMap.get(edge.sourceId());
             double[] dst = positionMap.get(edge.destinationId());
             if (src != null && dst != null) {
-                Line line = new Line(src[0], src[1], dst[0], dst[1]);
-                line.setStroke(Color.gray(0.6, EDGE_OPACITY));
-                line.setStrokeWidth(1.0);
-                line.setMouseTransparent(true);
+                Line line = HyperbolicNodeFactory.createEdgeLine(
+                        src[0], src[1], dst[0], dst[1]);
                 hyperbolicCanvas.getChildren().add(line);
             }
         }
