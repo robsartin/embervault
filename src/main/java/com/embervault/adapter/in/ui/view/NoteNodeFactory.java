@@ -5,6 +5,7 @@ import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import com.embervault.adapter.in.ui.viewmodel.ZoomTier;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.StackPane;
@@ -80,5 +81,17 @@ final class NoteNodeFactory {
             notePane.getChildren().add(
                     createBadgeLabel(badge, item.getColorHex()));
         }
+    }
+
+    static StackPane createRenderedNotePane(
+            NoteDisplayItem item, ZoomTier tier,
+            String borderColor) {
+        ZoomTierRenderer renderer = tier.createRenderer();
+        StackPane notePane = renderer.render(item, borderColor);
+        notePane.setUserData(item.getId());
+        notePane.setLayoutX(item.getXpos());
+        notePane.setLayoutY(item.getYpos());
+        notePane.setCursor(Cursor.HAND);
+        return notePane;
     }
 }

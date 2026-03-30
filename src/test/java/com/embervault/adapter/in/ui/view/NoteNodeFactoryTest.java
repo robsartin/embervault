@@ -2,6 +2,7 @@ package com.embervault.adapter.in.ui.view;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
@@ -10,6 +11,7 @@ import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.ZoomTier;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.StackPane;
@@ -171,6 +173,71 @@ class NoteNodeFactoryTest {
             Label badge =
                     (Label) notePane.getChildren().get(2);
             assertEquals("\u2713", badge.getText());
+        }
+    }
+
+    @Nested
+    @DisplayName("createRenderedNotePane")
+    class CreateRenderedNotePaneTests {
+
+        @Test
+        @DisplayName("delegates rendering to ZoomTierRenderer")
+        void createRenderedNotePane_shouldDelegateToRenderer() {
+            NoteDisplayItem item = new NoteDisplayItem(
+                    UUID.randomUUID(), "Test", "Content",
+                    10, 20, 200, 150, "#AABBCC", false, "");
+            StackPane pane = NoteNodeFactory.createRenderedNotePane(
+                    item, ZoomTier.NORMAL, "#000000");
+            assertNotNull(pane);
+            assertInstanceOf(Rectangle.class,
+                    pane.getChildren().get(0));
+        }
+
+        @Test
+        @DisplayName("sets layoutX and layoutY from item position")
+        void createRenderedNotePane_shouldSetPosition() {
+            NoteDisplayItem item = new NoteDisplayItem(
+                    UUID.randomUUID(), "Test", "",
+                    50, 75, 200, 150, "#AABBCC", false, "");
+            StackPane pane = NoteNodeFactory.createRenderedNotePane(
+                    item, ZoomTier.NORMAL, "#000000");
+            assertEquals(50, pane.getLayoutX());
+            assertEquals(75, pane.getLayoutY());
+        }
+
+        @Test
+        @DisplayName("sets userData to item id")
+        void createRenderedNotePane_shouldSetUserData() {
+            UUID id = UUID.randomUUID();
+            NoteDisplayItem item = new NoteDisplayItem(
+                    id, "Test", "",
+                    0, 0, 200, 150, "#AABBCC", false, "");
+            StackPane pane = NoteNodeFactory.createRenderedNotePane(
+                    item, ZoomTier.NORMAL, "#000000");
+            assertEquals(id, pane.getUserData());
+        }
+
+        @Test
+        @DisplayName("sets cursor to HAND")
+        void createRenderedNotePane_shouldSetCursor() {
+            NoteDisplayItem item = new NoteDisplayItem(
+                    UUID.randomUUID(), "Test", "",
+                    0, 0, 200, 150, "#AABBCC", false, "");
+            StackPane pane = NoteNodeFactory.createRenderedNotePane(
+                    item, ZoomTier.NORMAL, "#000000");
+            assertEquals(Cursor.HAND, pane.getCursor());
+        }
+
+        @Test
+        @DisplayName("OVERVIEW tier renders rectangle only")
+        void createRenderedNotePane_overviewShouldBeMinimal() {
+            NoteDisplayItem item = new NoteDisplayItem(
+                    UUID.randomUUID(), "Test", "",
+                    0, 0, 200, 150, "#AABBCC", false, "");
+            StackPane pane = NoteNodeFactory.createRenderedNotePane(
+                    item, ZoomTier.OVERVIEW, "#000000");
+            assertEquals(1, pane.getChildren().size(),
+                    "OVERVIEW should only have Rectangle");
         }
     }
 }
