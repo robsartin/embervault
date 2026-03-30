@@ -27,20 +27,9 @@ import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
-import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
-import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
-import com.embervault.adapter.out.persistence.InMemoryStampRepository;
-import com.embervault.application.LinkServiceImpl;
-import com.embervault.application.NoteServiceImpl;
-import com.embervault.application.ProjectServiceImpl;
-import com.embervault.application.StampServiceImpl;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
-import com.embervault.application.port.in.ProjectService;
 import com.embervault.application.port.in.StampService;
-import com.embervault.application.port.out.LinkRepository;
-import com.embervault.application.port.out.NoteRepository;
-import com.embervault.application.port.out.StampRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.ColorScheme;
@@ -77,20 +66,19 @@ import org.slf4j.LoggerFactory;
 public class App extends Application {
 
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
+    private final WindowManager windowManager = new WindowManager();
+    private SharedServices sharedServices;
 
     @Override
     public void start(Stage stage) throws IOException {
-        ProjectService projectService = new ProjectServiceImpl();
-        Project project = projectService.createEmptyProject();
-        NoteRepository noteRepository = new InMemoryNoteRepository();
-        NoteService noteService = new NoteServiceImpl(noteRepository);
-        LinkRepository linkRepository = new InMemoryLinkRepository();
-        LinkService linkService = new LinkServiceImpl(linkRepository);
-        StampRepository stampRepository = new InMemoryStampRepository();
-        StampService stampService = new StampServiceImpl(
-                stampRepository, noteRepository);
+        sharedServices = SharedServices.create();
+        Project project = sharedServices.project();
+        NoteService noteService = sharedServices.noteService();
+        LinkService linkService = sharedServices.linkService();
+        StampService stampService = sharedServices.stampService();
+        AttributeSchemaRegistry schemaRegistry =
+                sharedServices.schemaRegistry();
         populateBuiltInStamps(stampService);
-        noteRepository.save(project.getRootNote());
         noteService.createChildNote(project.getRootNote().getId(),
                 "Welcome to EmberVault");
         StringProperty rootNoteTitle = new SimpleStringProperty(
@@ -104,7 +92,6 @@ public class App extends Application {
         TreemapViewModel treemapViewModel = new TreemapViewModel(
                 rootNoteTitle, noteService);
         treemapViewModel.setBaseNoteId(project.getRootNote().getId());
-        AttributeSchemaRegistry schemaRegistry = new AttributeSchemaRegistry();
         AttributeBrowserViewModel browserViewModel =
                 new AttributeBrowserViewModel(noteService, schemaRegistry);
         NoteEditorViewModel editorViewModel =
@@ -172,7 +159,7 @@ public class App extends Application {
                 treemapViewModel.tabTitleProperty(), treemapView,
                 project.getRootNote().getId(),
                 treemapViewModel::loadNotes);
-        Runnable refreshAll = () -> {
+        Runnable localRefresh = () -> {
             mapPane.refreshCurrentView();
             outlinePane.refreshCurrentView();
             treemapPane.refreshCurrentView();
@@ -187,6 +174,9 @@ public class App extends Application {
             }
             searchViewModel.refreshResults();
         };
+        windowManager.register(stage);
+        windowManager.addRefreshListener(localRefresh);
+        Runnable refreshAll = windowManager::notifyAllWindows;
         mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
         treemapViewModel.setOnDataChanged(refreshAll);
@@ -194,6 +184,13 @@ public class App extends Application {
         hyperbolicViewModel.setOnDataChanged(refreshAll);
         selectedNoteVm.setOnDataChanged(refreshAll);
         searchViewModel.setOnDataChanged(refreshAll);
+        stage.setOnCloseRequest(event -> {
+            windowManager.removeRefreshListener(localRefresh);
+            windowManager.unregister(stage);
+            if (windowManager.getWindows().isEmpty()) {
+                javafx.application.Platform.exit();
+            }
+        });
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 refreshAll, selectedNoteVm, rootNoteTitle);
@@ -233,7 +230,6 @@ public class App extends Application {
             hyperbolicCtrl[0].applyColorScheme(cfg);
         };
 
-        // Build shared context for menu construction
         AppContext ctx = new AppContext(
                 mapViewModel, hyperbolicViewModel, searchViewModel,
                 mainSplitPane, browserEditorPane, hyperbolicContainer,
@@ -241,13 +237,8 @@ public class App extends Application {
                 mapViewModel.selectedNoteIdProperty(),
                 refreshAll, stage, colorSchemeApplier);
 
-        // Menu bar
         MenuBar menuBar = createMenuBar(ctx);
-
-        // Top area: menu bar + search bar
         VBox topArea = new VBox(menuBar, searchView);
-
-        // BorderPane: top area on top, split pane in center
         BorderPane root = new BorderPane();
         root.setTop(topArea);
         root.setCenter(mainSplitPane);
@@ -259,21 +250,14 @@ public class App extends Application {
     }
 
     private MenuBar createMenuBar(AppContext ctx) {
-        // Note menu
         MenuItem createNote = new MenuItem("Create Note");
         createNote.setAccelerator(
                 new KeyCodeCombination(KeyCode.N,
                         KeyCombination.SHORTCUT_DOWN));
-        createNote.setOnAction(e -> {
-            // Create a child under the selected note in the map,
-            // or under root
-            ctx.mapViewModel().createChildNote("Untitled");
-        });
-
+        createNote.setOnAction(e ->
+                ctx.mapViewModel().createChildNote("Untitled"));
         Menu noteMenu = new Menu("Note");
         noteMenu.getItems().add(createNote);
-
-        // Stamps menu
         Menu stampsMenu = new Menu("Stamps");
         buildStampsMenu(stampsMenu, ctx);
 
@@ -350,8 +334,26 @@ public class App extends Application {
         Menu editMenu = new Menu("Edit");
         editMenu.getItems().add(findItem);
 
+        // Window menu
+        MenuItem newWindowItem = new MenuItem("New Window");
+        newWindowItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.N,
+                        KeyCombination.SHORTCUT_DOWN,
+                        KeyCombination.SHIFT_DOWN));
+        newWindowItem.setOnAction(e -> {
+            try {
+                WindowFactory.openNewWindow(
+                        sharedServices, windowManager);
+            } catch (IOException ex) {
+                LOG.error("Failed to open new window", ex);
+            }
+        });
+        Menu windowMenu = new Menu("Window");
+        windowMenu.getItems().add(newWindowItem);
+
         MenuBar menuBar = new MenuBar(
-                noteMenu, editMenu, stampsMenu, viewMenu);
+                noteMenu, editMenu, stampsMenu, viewMenu,
+                windowMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
     }
