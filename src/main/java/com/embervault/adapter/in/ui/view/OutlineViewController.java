@@ -127,11 +127,13 @@ public class OutlineViewController {
                 });
                 event.consume();
             }
-        } else if (event.getCode() == KeyCode.TAB) {
+        } else if (event.getCode() == KeyCode.TAB
+                && !isAnyoneEditing()) {
             TreeItem<NoteDisplayItem> selected =
                     outlineTreeView.getSelectionModel()
                             .getSelectedItem();
-            if (selected != null && selected.getValue() != null) {
+            if (selected != null
+                    && selected.getValue() != null) {
                 UUID noteId = selected.getValue().getId();
                 if (event.isShiftDown()) {
                     viewModel.outdentNote(noteId);
@@ -338,16 +340,16 @@ public class OutlineViewController {
                 NoteDisplayItem currentItem = getItem();
                 commitInlineEdit();
                 if (currentItem != null) {
-                    // Set pending BEFORE indent (which
-                    // triggers rebuild)
-                    pendingEditNoteId = currentItem.getId();
+                    UUID noteId = currentItem.getId();
                     if (event.isShiftDown()) {
-                        viewModel.outdentNote(
-                                currentItem.getId());
+                        viewModel.outdentNote(noteId);
                     } else {
-                        viewModel.indentNote(
-                                currentItem.getId());
+                        viewModel.indentNote(noteId);
                     }
+                    Platform.runLater(() -> {
+                        pendingEditNoteId = noteId;
+                        outlineTreeView.refresh();
+                    });
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.BACK_SPACE
