@@ -43,6 +43,6 @@ public record Stamp(UUID id, String name, String action) {
      * @return the new stamp
      */
     public static Stamp create(String name, String action) {
-        return new Stamp(UUID.randomUUID(), name, action);
+        return new Stamp(UuidGenerator.generate(), name, action);
     }
 }

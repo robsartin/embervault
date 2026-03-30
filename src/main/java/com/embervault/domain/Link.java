@@ -35,7 +35,7 @@ public record Link(UUID id, UUID sourceId, UUID destinationId, String type) {
      * @return a new Link
      */
     public static Link create(UUID source, UUID dest) {
-        return new Link(UUID.randomUUID(), source, dest, "untitled");
+        return new Link(UuidGenerator.generate(), source, dest, "untitled");
     }
 
     /**
@@ -47,6 +47,6 @@ public record Link(UUID id, UUID sourceId, UUID destinationId, String type) {
      * @return a new Link
      */
     public static Link create(UUID source, UUID dest, String type) {
-        return new Link(UUID.randomUUID(), source, dest, type);
+        return new Link(UuidGenerator.generate(), source, dest, type);
     }
 }

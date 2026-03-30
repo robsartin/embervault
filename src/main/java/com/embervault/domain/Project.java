@@ -34,7 +34,7 @@ public final class Project {
      */
     public static Project createEmpty() {
         Note rootNote = Note.create("Untitled", "");
-        return new Project(UUID.randomUUID(), "Untitled", rootNote);
+        return new Project(UuidGenerator.generate(), "Untitled", rootNote);
     }
 
     /** Returns the unique identifier. */

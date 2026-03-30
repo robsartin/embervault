@@ -68,7 +68,7 @@ public final class Note {
      */
     public static Note create(String title, String content) {
         Instant now = Instant.now();
-        return new Note(UUID.randomUUID(), title, content, now, now);
+        return new Note(UuidGenerator.generate(), title, content, now, now);
     }
 
     /** Returns the unique identifier. */
