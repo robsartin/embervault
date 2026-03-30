@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.UUID;
 
 import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
@@ -131,6 +132,70 @@ class ProjectFileManagerTest {
         assertFalse(Files.exists(
                 projectDir.resolve("project.yaml")),
                 "project.yaml should not exist");
+    }
+
+    @Test
+    @DisplayName("round-trip save then load preserves data")
+    void roundTrip_saveThenLoad(@TempDir Path tmp) {
+        Path projectDir = tmp.resolve("RoundTrip");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+        ctx.noteService.createChildNote(
+                ctx.project.getRootNote().getId(), "Child A");
+        ctx.noteService.createChildNote(
+                ctx.project.getRootNote().getId(), "Child B");
+        ctx.stampService.createStamp("Color:red",
+                "$Color=red");
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        // Load into fresh services
+        var ctx2 = createContext();
+        ctx2.noteRepo.save(ctx2.project.getRootNote());
+        UUID rootId = ProjectFileManager.load(projectDir,
+                ctx2.noteService, ctx2.linkService,
+                ctx2.stampService, ctx2.registry);
+
+        // Root note loaded
+        assertTrue(ctx2.noteService.getNote(rootId)
+                        .isPresent(),
+                "Root note should be loaded");
+        assertEquals("RoundTrip",
+                ctx2.noteService.getNote(rootId).get()
+                        .getTitle());
+
+        // Children loaded
+        assertEquals(2,
+                ctx2.noteService.getChildren(rootId).size(),
+                "Should have 2 children");
+
+        // Stamps loaded
+        assertFalse(ctx2.stampService.getAllStamps().isEmpty(),
+                "Stamps should be loaded");
+    }
+
+    @Test
+    @DisplayName("load reads root note from base dir .md file")
+    void load_readsRootFromBaseDir(@TempDir Path tmp) {
+        Path projectDir = tmp.resolve("LoadTest");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        var ctx2 = createContext();
+        ctx2.noteRepo.save(ctx2.project.getRootNote());
+        UUID rootId = ProjectFileManager.load(projectDir,
+                ctx2.noteService, ctx2.linkService,
+                ctx2.stampService, ctx2.registry);
+
+        assertTrue(ctx2.noteService.getNote(rootId)
+                        .isPresent(),
+                "Should load root note from base dir");
     }
 
     private TestContext createContext() {
