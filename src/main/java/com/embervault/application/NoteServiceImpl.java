@@ -171,22 +171,31 @@ public final class NoteServiceImpl implements NoteService {
                 .orElseThrow(() -> new NoSuchElementException(
                         "Parent not found: " + newParentId));
 
+        // Get target parent's children BEFORE changing container
+        // so the dragged note doesn't appear in the wrong list
+        List<Note> targetSiblings =
+                new java.util.ArrayList<>(
+                        repository.findChildren(newParentId)
+                                .stream()
+                                .filter(s -> !s.getId()
+                                        .equals(noteId))
+                                .toList());
+
+        // Set the note's container to the new parent
         note.setAttribute(CONTAINER,
                 new AttributeValue.StringValue(
                         newParentId.toString()));
 
-        // Recalculate outline orders for all children
-        List<Note> siblings = repository.findChildren(newParentId)
-                .stream()
-                .filter(s -> !s.getId().equals(noteId))
-                .collect(java.util.stream.Collectors
-                        .toCollection(java.util.ArrayList::new));
-        int insertAt = Math.min(position, siblings.size());
-        siblings.add(insertAt, note);
-        for (int i = 0; i < siblings.size(); i++) {
-            siblings.get(i).setAttribute(OUTLINE_ORDER,
+        // Insert at the requested position
+        int insertAt = Math.min(position,
+                targetSiblings.size());
+        targetSiblings.add(insertAt, note);
+
+        // Recalculate outline order for all siblings
+        for (int i = 0; i < targetSiblings.size(); i++) {
+            targetSiblings.get(i).setAttribute(OUTLINE_ORDER,
                     new AttributeValue.NumberValue(i));
-            repository.save(siblings.get(i));
+            repository.save(targetSiblings.get(i));
         }
 
         return note;

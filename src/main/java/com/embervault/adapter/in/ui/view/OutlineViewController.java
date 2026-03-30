@@ -28,14 +28,7 @@ import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * FXML controller for the Outline view.
- *
- * <p>Renders notes as a hierarchical tree. Single-clicking any note
- * immediately starts inline editing. Double-clicking drills down into a note.
- * Enter creates a new sibling, Tab indents, Shift+Tab outdents.
- * Focus lost on the edit field commits the change; Escape cancels.</p>
- */
+/** FXML controller for the Outline view. */
 public class OutlineViewController {
 
     private static final Logger LOG = LoggerFactory.getLogger(OutlineViewController.class);
@@ -47,19 +40,12 @@ public class OutlineViewController {
     private Button backButton;
     private Consumer<String> onViewSwitch;
 
-    /**
-     * Sets the callback invoked when the user selects a view-switch
-     * menu item. The callback receives the {@link ViewType} name.
-     *
-     * @param callback the view-switch callback
-     */
+    /** Sets the view-switch callback. */
     public void setOnViewSwitch(Consumer<String> callback) {
         this.onViewSwitch = callback;
     }
 
-    /**
-     * Injects the ViewModel and binds UI controls to its properties.
-     */
+    /** Injects the ViewModel and binds UI controls. */
     public void initViewModel(OutlineViewModel viewModel) {
         this.viewModel = viewModel;
 
@@ -100,12 +86,11 @@ public class OutlineViewController {
         outlineTreeView.setContextMenu(createContextMenu());
     }
 
-    /** Returns the associated ViewModel. */
+    /** Returns the ViewModel. */
     public OutlineViewModel getViewModel() {
         return viewModel;
     }
 
-    /** Handles key presses on the tree view: Escape navigates back. */
     void handleTreeKeyPress(KeyEvent event) {
         if (event.getCode() == KeyCode.ESCAPE
                 && viewModel.canNavigateBackProperty().get()) {
@@ -114,7 +99,6 @@ public class OutlineViewController {
         }
     }
 
-    /** Handles tree selection changes, updating the ViewModel selection. */
     void handleTreeSelection(TreeItem<NoteDisplayItem> newVal) {
         if (newVal != null && newVal.getValue() != null) {
             viewModel.selectNote(newVal.getValue().getId());
@@ -204,9 +188,6 @@ public class OutlineViewController {
         }
     }
 
-    /**
-     * Rebuilds the tree, selects the given note, and starts editing it.
-     */
     private void refreshAndEdit(UUID noteIdToSelect) {
         TreeItem<NoteDisplayItem> target = findTreeItem(
                 outlineTreeView.getRoot(), noteIdToSelect);
@@ -268,12 +249,8 @@ public class OutlineViewController {
         return null;
     }
 
-    /**
-     * Custom TreeCell that starts editing on single click.
-     * Enter creates a sibling, Tab/Shift+Tab indent/outdent,
-     * Escape cancels, focus lost commits.
-     */
-    private final class OutlineNoteTreeCell extends TreeCell<NoteDisplayItem> {
+    private final class OutlineNoteTreeCell
+            extends TreeCell<NoteDisplayItem> {
 
         private TextField textField;
         private boolean editing;
@@ -409,23 +386,54 @@ public class OutlineViewController {
                 return;
             }
             UUID draggedId = UUID.fromString(db.getString());
-            TreeItem<NoteDisplayItem> target = getTreeItem();
-            if (target == null || target.getParent() == null) {
+            UUID targetId = getItem().getId();
+
+            // Don't drop on self
+            if (draggedId.equals(targetId)) {
                 event.setDropCompleted(false);
                 return;
             }
+
+            // Don't drop on own descendant
+            TreeItem<NoteDisplayItem> target = getTreeItem();
+            if (isDescendant(target, draggedId)) {
+                event.setDropCompleted(false);
+                return;
+            }
+
+            // Determine drop position: place before target
             TreeItem<NoteDisplayItem> parent =
                     target.getParent();
+            if (parent == null) {
+                event.setDropCompleted(false);
+                return;
+            }
             UUID parentId;
             if (parent.getValue() != null) {
                 parentId = parent.getValue().getId();
             } else {
                 parentId = viewModel.getBaseNoteId();
             }
-            int position = parent.getChildren().indexOf(target);
+            int position = parent.getChildren()
+                    .indexOf(target);
             viewModel.moveNoteToPosition(
                     draggedId, parentId, position);
             event.setDropCompleted(true);
+        }
+
+        private boolean isDescendant(
+                TreeItem<NoteDisplayItem> item,
+                UUID ancestorId) {
+            TreeItem<NoteDisplayItem> cur = item;
+            while (cur != null) {
+                if (cur.getValue() != null
+                        && ancestorId.equals(
+                                cur.getValue().getId())) {
+                    return true;
+                }
+                cur = cur.getParent();
+            }
+            return false;
         }
 
         private void commitInlineEdit() {
@@ -475,11 +483,7 @@ public class OutlineViewController {
         }
     }
 
-    /**
-     * Applies a color scheme to the outline view.
-     *
-     * @param colors the view color config to apply
-     */
+    /** Applies a color scheme to the outline view. */
     public void applyColorScheme(ViewColorConfig colors) {
         outlineRoot.setStyle("-fx-background-color: "
                 + colors.panelBackground() + ";");
