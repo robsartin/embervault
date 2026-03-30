@@ -84,13 +84,77 @@ class ProjectFileManagerTest {
                 projectDir.resolve("stamps.yaml")),
                 "stamps.yaml should not exist");
 
-        // Root note should contain stamps in its file
-        Path rootFile = projectDir.resolve("notes")
-                .resolve(project.getRootNote().getId()
-                        .toString().substring(0, 8))
-                .resolve(project.getRootNote().getId()
-                        + ".md");
-        assertTrue(Files.exists(rootFile),
-                "Root note file should exist");
+        // Root note file should exist (in base dir)
+        assertTrue(Files.exists(
+                projectDir.resolve("TestProject.md")),
+                "Root note file should exist in base dir");
     }
+
+    @Test
+    @DisplayName("save creates root note in base dir, "
+            + "not notes/")
+    void save_rootNoteInBaseDir(@TempDir Path tmp) {
+        Path projectDir = tmp.resolve("MyProject");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        // Root note in base directory
+        assertTrue(Files.exists(
+                projectDir.resolve("MyProject.md")),
+                "Root note should be in base directory");
+
+        // Root note should NOT be under notes/
+        String shard = ctx.project.getRootNote().getId()
+                .toString().substring(0, 8);
+        assertFalse(Files.exists(
+                projectDir.resolve("notes").resolve(shard)
+                        .resolve(ctx.project.getRootNote()
+                                .getId() + ".md")),
+                "Root note should NOT be under notes/");
+    }
+
+    @Test
+    @DisplayName("save does not create project.yaml")
+    void save_noProjectYaml(@TempDir Path tmp) {
+        Path projectDir = tmp.resolve("NoYaml");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        assertFalse(Files.exists(
+                projectDir.resolve("project.yaml")),
+                "project.yaml should not exist");
+    }
+
+    private TestContext createContext() {
+        InMemoryNoteRepository noteRepo =
+                new InMemoryNoteRepository();
+        NoteService noteService =
+                new NoteServiceImpl(noteRepo);
+        LinkService linkService = new LinkServiceImpl(
+                new InMemoryLinkRepository());
+        StampService stampService = new StampServiceImpl(
+                new InMemoryStampRepository(), noteRepo);
+        Project project =
+                new ProjectServiceImpl().createEmptyProject();
+        AttributeSchemaRegistry registry =
+                new AttributeSchemaRegistry();
+        return new TestContext(noteRepo, noteService,
+                linkService, stampService, project, registry);
+    }
+
+    private record TestContext(
+            InMemoryNoteRepository noteRepo,
+            NoteService noteService,
+            LinkService linkService,
+            StampService stampService,
+            Project project,
+            AttributeSchemaRegistry registry) { }
 }
