@@ -127,11 +127,13 @@ public class OutlineViewController {
                 });
                 event.consume();
             }
-        } else if (event.getCode() == KeyCode.TAB) {
+        } else if (event.getCode() == KeyCode.TAB
+                && !isAnyoneEditing()) {
             TreeItem<NoteDisplayItem> selected =
                     outlineTreeView.getSelectionModel()
                             .getSelectedItem();
-            if (selected != null && selected.getValue() != null) {
+            if (selected != null
+                    && selected.getValue() != null) {
                 UUID noteId = selected.getValue().getId();
                 if (event.isShiftDown()) {
                     viewModel.outdentNote(noteId);
@@ -220,6 +222,24 @@ public class OutlineViewController {
             }
         }
         return false;
+    }
+
+    private void startEditOnNote(UUID noteId) {
+        var target = findTreeItem(
+                outlineTreeView.getRoot(), noteId);
+        if (target != null) {
+            outlineTreeView.getSelectionModel().select(target);
+            outlineTreeView.scrollTo(
+                    outlineTreeView.getRow(target));
+        }
+        for (var n : outlineTreeView.lookupAll(".tree-cell")) {
+            if (n instanceof OutlineNoteTreeCell c
+                    && c.getItem() != null
+                    && noteId.equals(c.getItem().getId())) {
+                c.startInlineEdit();
+                return;
+            }
+        }
     }
 
     private final class OutlineNoteTreeCell
@@ -338,16 +358,14 @@ public class OutlineViewController {
                 NoteDisplayItem currentItem = getItem();
                 commitInlineEdit();
                 if (currentItem != null) {
-                    // Set pending BEFORE indent (which
-                    // triggers rebuild)
-                    pendingEditNoteId = currentItem.getId();
+                    UUID noteId = currentItem.getId();
                     if (event.isShiftDown()) {
-                        viewModel.outdentNote(
-                                currentItem.getId());
+                        viewModel.outdentNote(noteId);
                     } else {
-                        viewModel.indentNote(
-                                currentItem.getId());
+                        viewModel.indentNote(noteId);
                     }
+                    Platform.runLater(() ->
+                            startEditOnNote(noteId));
                 }
                 event.consume();
             } else if (event.getCode() == KeyCode.BACK_SPACE
@@ -382,34 +400,17 @@ public class OutlineViewController {
                 return;
             }
             UUID draggedId = UUID.fromString(db.getString());
-            UUID targetId = getItem().getId();
-
-            // Don't drop on self
-            if (draggedId.equals(targetId)) {
-                event.setDropCompleted(false);
-                return;
-            }
-
-            // Don't drop on own descendant
             TreeItem<NoteDisplayItem> target = getTreeItem();
-            if (isDescendant(target, draggedId)) {
+            if (draggedId.equals(getItem().getId())
+                    || isDescendant(target, draggedId)
+                    || target.getParent() == null) {
                 event.setDropCompleted(false);
                 return;
             }
-
-            // Determine drop position: place before target
-            TreeItem<NoteDisplayItem> parent =
-                    target.getParent();
-            if (parent == null) {
-                event.setDropCompleted(false);
-                return;
-            }
-            UUID parentId;
-            if (parent.getValue() != null) {
-                parentId = parent.getValue().getId();
-            } else {
-                parentId = viewModel.getBaseNoteId();
-            }
+            var parent = target.getParent();
+            UUID parentId = parent.getValue() != null
+                    ? parent.getValue().getId()
+                    : viewModel.getBaseNoteId();
             int position = parent.getChildren()
                     .indexOf(target);
             viewModel.moveNoteToPosition(
