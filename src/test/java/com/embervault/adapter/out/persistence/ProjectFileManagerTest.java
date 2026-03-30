@@ -151,28 +151,38 @@ class ProjectFileManagerTest {
                 ctx.noteService, ctx.linkService,
                 ctx.stampService, ctx.registry);
 
-        // Load into fresh services
-        var ctx2 = createContext();
-        ctx2.noteRepo.save(ctx2.project.getRootNote());
+        // Load into fresh services with fresh repo
+        InMemoryNoteRepository loadRepo =
+                new InMemoryNoteRepository();
+        NoteService loadNoteService =
+                new NoteServiceImpl(loadRepo);
+        StampService loadStampService =
+                new StampServiceImpl(
+                        new InMemoryStampRepository(),
+                        loadRepo);
+        LinkService loadLinkService = new LinkServiceImpl(
+                new InMemoryLinkRepository());
+
         UUID rootId = ProjectFileManager.load(projectDir,
-                ctx2.noteService, ctx2.linkService,
-                ctx2.stampService, ctx2.registry);
+                loadRepo, loadNoteService, loadLinkService,
+                loadStampService, ctx.registry);
 
         // Root note loaded
-        assertTrue(ctx2.noteService.getNote(rootId)
+        assertTrue(loadNoteService.getNote(rootId)
                         .isPresent(),
                 "Root note should be loaded");
         assertEquals("RoundTrip",
-                ctx2.noteService.getNote(rootId).get()
+                loadNoteService.getNote(rootId).get()
                         .getTitle());
 
         // Children loaded
         assertEquals(2,
-                ctx2.noteService.getChildren(rootId).size(),
+                loadNoteService.getChildren(rootId).size(),
                 "Should have 2 children");
 
         // Stamps loaded
-        assertFalse(ctx2.stampService.getAllStamps().isEmpty(),
+        assertFalse(
+                loadStampService.getAllStamps().isEmpty(),
                 "Stamps should be loaded");
     }
 
@@ -187,13 +197,15 @@ class ProjectFileManagerTest {
                 ctx.noteService, ctx.linkService,
                 ctx.stampService, ctx.registry);
 
-        var ctx2 = createContext();
-        ctx2.noteRepo.save(ctx2.project.getRootNote());
+        InMemoryNoteRepository loadRepo =
+                new InMemoryNoteRepository();
+        NoteService loadNoteService =
+                new NoteServiceImpl(loadRepo);
         UUID rootId = ProjectFileManager.load(projectDir,
-                ctx2.noteService, ctx2.linkService,
-                ctx2.stampService, ctx2.registry);
+                loadRepo, loadNoteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
 
-        assertTrue(ctx2.noteService.getNote(rootId)
+        assertTrue(loadNoteService.getNote(rootId)
                         .isPresent(),
                 "Should load root note from base dir");
     }

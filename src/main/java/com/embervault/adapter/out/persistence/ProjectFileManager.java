@@ -10,6 +10,7 @@ import java.util.UUID;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
+import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Attributes;
@@ -111,54 +112,87 @@ public final class ProjectFileManager {
      * @param registry     the attribute schema registry
      * @return the loaded project root note ID
      */
-    public static UUID load(Path dir, NoteService noteService,
-            LinkService linkService, StampService stampService,
+    public static UUID load(Path dir,
+            NoteRepository noteRepository,
+            NoteService noteService,
+            LinkService linkService,
+            StampService stampService,
             AttributeSchemaRegistry registry) {
         try {
-            // Read project.yaml for root note ID
-            String projectYaml = Files.readString(
-                    dir.resolve("project.yaml"),
-                    StandardCharsets.UTF_8);
-            UUID rootNoteId = parseRootNoteId(projectYaml);
+            NoteFileDeserializer deserializer =
+                    new NoteFileDeserializer(registry);
 
-            // Load notes
+            // Find root note: .md file in base directory
+            Note rootNote = null;
+            try (var files = Files.list(dir)) {
+                for (Path f : files
+                        .filter(p -> p.toString()
+                                .endsWith(".md"))
+                        .toList()) {
+                    String content = Files.readString(f,
+                            StandardCharsets.UTF_8);
+                    UUID id = parseIdFromFrontMatter(
+                            content);
+                    rootNote = deserializer.deserialize(
+                            content, id);
+                    break;
+                }
+            }
+            if (rootNote == null) {
+                throw new IllegalArgumentException(
+                        "No root note .md in " + dir);
+            }
+            noteRepository.save(rootNote);
+            UUID rootId = rootNote.getId();
+
+            // Stamps from root note $Stamps attribute
+            rootNote.getAttribute(Attributes.STAMPS)
+                    .ifPresent(v -> {
+                        if (v
+                                instanceof
+                                AttributeValue.ListValue lv) {
+                            for (String e : lv.values()) {
+                                String[] parts =
+                                        e.split("\\|", 3);
+                                if (parts.length == 3) {
+                                    stampService.createStamp(
+                                            parts[1],
+                                            parts[2]);
+                                }
+                            }
+                        }
+                    });
+
+            // Child notes from notes/ subdirectory
             FileNoteRepository fileNotes =
                     new FileNoteRepository(dir, registry);
             for (Note note : fileNotes.findAll()) {
-                noteService.updateNote(note.getId(),
-                        note.getTitle(), note.getContent());
+                noteRepository.save(note);
             }
 
-            // Load links
-            FileLinkRepository fileLinks =
-                    new FileLinkRepository(dir);
-            // Links loaded automatically by constructor
-
-            // Load stamps
-            FileStampRepository fileStamps =
-                    new FileStampRepository(dir);
-            for (var stamp : fileStamps.findAll()) {
-                stampService.createStamp(
-                        stamp.name(), stamp.action());
+            // Links
+            if (Files.exists(dir.resolve("links.yaml"))) {
+                new FileLinkRepository(dir);
             }
 
             LOG.info("Project loaded from {}", dir);
-            return rootNoteId;
+            return rootId;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
-    private static UUID parseRootNoteId(String yaml) {
-        for (String line : yaml.split("\n")) {
-            if (line.startsWith("rootNoteId:")) {
-                String value = line.substring(
-                        "rootNoteId:".length()).trim();
-                value = value.replace("\"", "");
+    private static UUID parseIdFromFrontMatter(
+            String content) {
+        for (String line : content.split("\n")) {
+            String trimmed = line.trim();
+            if (trimmed.startsWith("id:")) {
+                String value = trimmed.substring(3).trim()
+                        .replace("\"", "");
                 return UUID.fromString(value);
             }
         }
         throw new IllegalArgumentException(
-                "No rootNoteId in project.yaml");
+                "No id in front matter");
     }
 }

@@ -88,6 +88,7 @@ final class MenuBarFactory {
                 SharedServices svc = ctx.sharedServices();
                 ProjectFileManager.load(
                         dir.toPath(),
+                        svc.noteRepository(),
                         svc.noteService(),
                         svc.linkService(),
                         svc.stampService(),
