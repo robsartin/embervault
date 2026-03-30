@@ -22,8 +22,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +37,6 @@ public class HyperbolicViewController {
     private static final Logger LOG = LoggerFactory.getLogger(HyperbolicViewController.class);
     private static final double SMALL_NODE_THRESHOLD = 12.0;
     private static final double BACK_BUTTON_PADDING = 5.0;
-    private static final double LABEL_FONT_SIZE = 12.0;
     private static final double SELECTED_STROKE_WIDTH = 3.0;
     private static final double NORMAL_STROKE_WIDTH = 1.5;
 
@@ -228,13 +225,8 @@ public class HyperbolicViewController {
                 String title = noteTitle(node.noteId());
                 String badge = noteBadge(node.noteId());
                 String labelText = badge.isEmpty() ? title : badge + " " + title;
-                Label label = new Label(labelText);
-                label.setFont(Font.font("System", FontWeight.BOLD, LABEL_FONT_SIZE));
-                label.setTextFill(Color.WHITE);
-                label.setMouseTransparent(true);
-                label.setLayoutX(nx - node.displayRadius());
-                label.setLayoutY(ny - LABEL_FONT_SIZE / 2);
-                label.setMaxWidth(node.displayRadius() * 2);
+                Label label = HyperbolicNodeFactory.createNodeLabel(
+                        labelText, nx, ny, node.displayRadius());
                 hyperbolicCanvas.getChildren().add(label);
             } else {
                 // Tooltip for small nodes
