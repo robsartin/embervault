@@ -50,38 +50,11 @@ public final class ProjectFileManager {
 
             // Set root note name to directory name
             String dirName = dir.getFileName().toString();
-            project.getRootNote().update(dirName,
-                    project.getRootNote().getContent());
+            Note rootNote = project.getRootNote();
+            rootNote.update(dirName, rootNote.getContent());
+            UUID rootId = rootNote.getId();
 
-            // project.yaml
-            String projectYaml = "id: \""
-                    + project.getId() + "\"\n"
-                    + "name: \"" + project.getName() + "\"\n"
-                    + "rootNoteId: \""
-                    + project.getRootNote().getId() + "\"\n";
-            Files.writeString(dir.resolve("project.yaml"),
-                    projectYaml, StandardCharsets.UTF_8);
-
-            // Notes
-            FileNoteRepository noteRepo =
-                    new FileNoteRepository(dir, registry);
-            for (Note note : noteService.getAllNotes()) {
-                noteRepo.save(note);
-            }
-
-            // Links
-            FileLinkRepository linkRepo =
-                    new FileLinkRepository(dir);
-            // Links are already loaded; save via the repo
-            UUID rootId = project.getRootNote().getId();
-            for (Note note : noteService.getAllNotes()) {
-                for (var link : linkService
-                        .getLinksFrom(note.getId())) {
-                    linkRepo.save(link);
-                }
-            }
-
-            // Stamps stored as $Stamps attribute on root note
+            // Stamps stored as $Stamps on root note
             java.util.List<String> stampEntries =
                     stampService.getAllStamps().stream()
                             .map(s -> s.id() + "|"
@@ -89,11 +62,36 @@ public final class ProjectFileManager {
                                     + s.action())
                             .toList();
             if (!stampEntries.isEmpty()) {
-                project.getRootNote().setAttribute(
-                        Attributes.STAMPS,
+                rootNote.setAttribute(Attributes.STAMPS,
                         new AttributeValue.ListValue(
                                 stampEntries));
-                noteRepo.save(project.getRootNote());
+            }
+
+            // Root note → base directory as <title>.md
+            NoteFileSerializer serializer =
+                    new NoteFileSerializer();
+            Files.writeString(
+                    dir.resolve(dirName + ".md"),
+                    serializer.serialize(rootNote),
+                    StandardCharsets.UTF_8);
+
+            // Other notes → notes/<shard>/<uuid>.md
+            FileNoteRepository noteRepo =
+                    new FileNoteRepository(dir, registry);
+            for (Note note : noteService.getAllNotes()) {
+                if (!note.getId().equals(rootId)) {
+                    noteRepo.save(note);
+                }
+            }
+
+            // Links
+            FileLinkRepository linkRepo =
+                    new FileLinkRepository(dir);
+            for (Note note : noteService.getAllNotes()) {
+                for (var link : linkService
+                        .getLinksFrom(note.getId())) {
+                    linkRepo.save(link);
+                }
             }
 
             LOG.info("Project saved to {}", dir);
