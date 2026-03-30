@@ -5,35 +5,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Consumer;
 
-import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
-import com.embervault.adapter.in.ui.view.ColorSchemeMenuHelper;
-import com.embervault.adapter.in.ui.view.HyperbolicViewController;
-import com.embervault.adapter.in.ui.view.MapViewController;
-import com.embervault.adapter.in.ui.view.NoteEditorViewController;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.StampEditorViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
-import com.embervault.adapter.in.ui.view.TreemapViewController;
-import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
-import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
-import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
-import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
-import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
-import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Attributes;
-import com.embervault.domain.ColorScheme;
-import com.embervault.domain.ColorSchemeRegistry;
 import com.embervault.domain.Project;
 import com.embervault.domain.Stamp;
 import javafx.application.Application;
@@ -83,57 +68,22 @@ public class App extends Application {
                 "Welcome to EmberVault");
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
-        MapViewModel mapViewModel = new MapViewModel(
-                rootNoteTitle, noteService);
-        mapViewModel.setBaseNoteId(project.getRootNote().getId());
+
+        // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
                 rootNoteTitle, noteService);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
-        TreemapViewModel treemapViewModel = new TreemapViewModel(
-                rootNoteTitle, noteService);
-        treemapViewModel.setBaseNoteId(project.getRootNote().getId());
-        AttributeBrowserViewModel browserViewModel =
-                new AttributeBrowserViewModel(noteService, schemaRegistry);
-        NoteEditorViewModel editorViewModel =
-                new NoteEditorViewModel(noteService, schemaRegistry);
-        var mapCtrl = new MapViewController[1];
-        var outlineCtrl = new OutlineViewController[1];
-        var treemapCtrl = new TreemapViewController[1];
-        var hyperbolicCtrl = new HyperbolicViewController[1];
-        Parent mapView = loadView("MapView.fxml", c -> {
-            mapCtrl[0] = (MapViewController) c;
-            mapCtrl[0].initViewModel(mapViewModel);
-        });
-        Parent outlineView = loadView("OutlineView.fxml", c -> {
-            outlineCtrl[0] = (OutlineViewController) c;
-            outlineCtrl[0].initViewModel(outlineViewModel);
-        });
-        Parent treemapView = loadView("TreemapView.fxml", c -> {
-            treemapCtrl[0] = (TreemapViewController) c;
-            treemapCtrl[0].initViewModel(treemapViewModel);
-        });
-        HyperbolicViewModel hyperbolicViewModel =
-                new HyperbolicViewModel(noteService, linkService);
-        Parent hyperbolicView = loadView("HyperbolicView.fxml", c -> {
-            hyperbolicCtrl[0] = (HyperbolicViewController) c;
-            hyperbolicCtrl[0].initViewModel(hyperbolicViewModel);
-        });
-        Parent browserView = loadView("AttributeBrowserView.fxml",
-                c -> ((AttributeBrowserViewController) c).initViewModel(browserViewModel));
-        Parent editorView = loadView("NoteEditorView.fxml",
-                c -> ((NoteEditorViewController) c).initViewModel(editorViewModel));
-        browserViewModel.selectedNoteIdProperty().addListener(
-                (obs, oldVal, newVal) -> editorViewModel.setNote(newVal));
+        Parent outlineView = loadView("OutlineView.fxml", c ->
+                ((OutlineViewController) c)
+                        .initViewModel(outlineViewModel));
+
+        // Search
         SearchViewModel searchViewModel = new SearchViewModel(noteService);
         Parent searchView = loadView("SearchView.fxml",
-                c -> ((SearchViewController) c).initViewModel(searchViewModel));
-        searchViewModel.selectedNoteIdProperty().addListener(
-                (obs, oldVal, newVal) -> {
-                    if (newVal != null) {
-                        mapViewModel.selectNote(newVal);
-                        outlineViewModel.selectNote(newVal);
-                    }
-                });
+                c -> ((SearchViewController) c)
+                        .initViewModel(searchViewModel));
+
+        // Text pane for selected note
         SelectedNoteViewModel selectedNoteVm =
                 new SelectedNoteViewModel(noteService);
         FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
@@ -141,33 +91,23 @@ public class App extends Application {
         Parent textPaneView = textPaneLoader.load();
         ((TextPaneViewController) textPaneLoader.getController())
                 .initViewModel(selectedNoteVm);
-        wireSelection(mapViewModel.selectedNoteIdProperty(), selectedNoteVm);
-        wireSelection(outlineViewModel.selectedNoteIdProperty(), selectedNoteVm);
-        wireSelection(treemapViewModel.selectedNoteIdProperty(), selectedNoteVm);
-        ViewPaneContext mapPane = new ViewPaneContext(
-                ViewType.MAP,
-                mapViewModel.tabTitleProperty(), mapView,
-                project.getRootNote().getId(),
-                mapViewModel::loadNotes);
+        wireSelection(outlineViewModel.selectedNoteIdProperty(),
+                selectedNoteVm);
+        searchViewModel.selectedNoteIdProperty().addListener(
+                (obs, oldVal, newVal) -> {
+                    if (newVal != null) {
+                        outlineViewModel.selectNote(newVal);
+                    }
+                });
+
+        // Single ViewPaneContext
         ViewPaneContext outlinePane = new ViewPaneContext(
                 ViewType.OUTLINE,
                 outlineViewModel.tabTitleProperty(), outlineView,
                 project.getRootNote().getId(),
                 outlineViewModel::loadNotes);
-        ViewPaneContext treemapPane = new ViewPaneContext(
-                ViewType.TREEMAP,
-                treemapViewModel.tabTitleProperty(), treemapView,
-                project.getRootNote().getId(),
-                treemapViewModel::loadNotes);
         Runnable localRefresh = () -> {
-            mapPane.refreshCurrentView();
             outlinePane.refreshCurrentView();
-            treemapPane.refreshCurrentView();
-            browserViewModel.groupNotes();
-            if (hyperbolicViewModel.getFocusNoteId() != null) {
-                hyperbolicViewModel.setFocusNote(
-                        hyperbolicViewModel.getFocusNoteId());
-            }
             UUID selId = selectedNoteVm.selectedNoteIdProperty().get();
             if (selId != null) {
                 selectedNoteVm.setSelectedNoteId(selId);
@@ -177,11 +117,7 @@ public class App extends Application {
         windowManager.register(stage);
         windowManager.addRefreshListener(localRefresh);
         Runnable refreshAll = windowManager::notifyAllWindows;
-        mapViewModel.setOnDataChanged(refreshAll);
         outlineViewModel.setOnDataChanged(refreshAll);
-        treemapViewModel.setOnDataChanged(refreshAll);
-        editorViewModel.setOnDataChanged(refreshAll);
-        hyperbolicViewModel.setOnDataChanged(refreshAll);
         selectedNoteVm.setOnDataChanged(refreshAll);
         searchViewModel.setOnDataChanged(refreshAll);
         stage.setOnCloseRequest(event -> {
@@ -194,48 +130,21 @@ public class App extends Application {
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 refreshAll, selectedNoteVm, rootNoteTitle);
-        mapPane.setDeps(paneDeps);
         outlinePane.setDeps(paneDeps);
-        treemapPane.setDeps(paneDeps);
-        VBox mapContainer = mapPane.getContainer();
-        VBox outlineContainer = outlinePane.getContainer();
-        VBox treemapContainer = treemapPane.getContainer();
-        VBox hyperbolicContainer = wrapWithLabel(
-                hyperbolicViewModel.tabTitleProperty(), hyperbolicView);
-        VBox browserContainer = wrapWithLabel(
-                browserViewModel.tabTitleProperty(), browserView);
-        VBox editorContainer = new VBox(editorView);
-        VBox.setVgrow(editorView, Priority.ALWAYS);
-        SplitPane browserEditorPane = new SplitPane(
-                browserContainer, editorContainer);
-        browserEditorPane.setDividerPositions(0.4);
-        SplitPane viewsSplitPane = new SplitPane(
-                mapContainer, outlineContainer, treemapContainer);
-        viewsSplitPane.setDividerPositions(0.33, 0.66);
+
+        // Layout: outline + text pane
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(
                 javafx.geometry.Orientation.VERTICAL);
-        mainSplitPane.getItems().addAll(viewsSplitPane, textPaneView);
+        mainSplitPane.getItems().addAll(
+                outlinePane.getContainer(), textPaneView);
         mainSplitPane.setDividerPositions(0.6);
 
-        Consumer<ColorScheme> colorSchemeApplier = scheme -> {
-            ViewColorConfig cfg = new ViewColorConfig(
-                    scheme.canvasBackground(), scheme.panelBackground(),
-                    scheme.textColor(), scheme.secondaryTextColor(),
-                    scheme.borderColor(), scheme.selectionColor(),
-                    scheme.toolbarBackground(), scheme.accentColor());
-            mapCtrl[0].applyColorScheme(cfg);
-            outlineCtrl[0].applyColorScheme(cfg);
-            treemapCtrl[0].applyColorScheme(cfg);
-            hyperbolicCtrl[0].applyColorScheme(cfg);
-        };
-
         AppContext ctx = new AppContext(
-                mapViewModel, hyperbolicViewModel, searchViewModel,
-                mainSplitPane, browserEditorPane, hyperbolicContainer,
+                outlineViewModel, searchViewModel,
                 project, stampService,
-                mapViewModel.selectedNoteIdProperty(),
-                refreshAll, stage, colorSchemeApplier);
+                outlineViewModel.selectedNoteIdProperty(),
+                refreshAll, stage);
 
         MenuBar menuBar = createMenuBar(ctx);
         VBox topArea = new VBox(menuBar, searchView);
@@ -255,73 +164,12 @@ public class App extends Application {
                 new KeyCodeCombination(KeyCode.N,
                         KeyCombination.SHORTCUT_DOWN));
         createNote.setOnAction(e ->
-                ctx.mapViewModel().createChildNote("Untitled"));
+                ctx.outlineViewModel().createChildNote(
+                        ctx.selectedNoteId().get(), "Untitled"));
         Menu noteMenu = new Menu("Note");
         noteMenu.getItems().add(createNote);
         Menu stampsMenu = new Menu("Stamps");
         buildStampsMenu(stampsMenu, ctx);
-
-        // View menu
-        MenuItem mapViewItem = new MenuItem("Map");
-        mapViewItem.setOnAction(e ->
-                LOG.debug("Map view placeholder selected"));
-
-        MenuItem outlineViewItem = new MenuItem("Outline");
-        outlineViewItem.setOnAction(e ->
-                LOG.debug("Outline view placeholder selected"));
-
-        MenuItem treemapViewItem = new MenuItem("Treemap");
-        treemapViewItem.setOnAction(e ->
-                LOG.debug("Treemap view placeholder selected"));
-
-        MenuItem hyperbolicViewItem = new MenuItem("Hyperbolic");
-        hyperbolicViewItem.setAccelerator(
-                new KeyCodeCombination(KeyCode.H,
-                        KeyCombination.SHORTCUT_DOWN,
-                        KeyCombination.SHIFT_DOWN));
-        hyperbolicViewItem.setOnAction(e -> {
-            BorderPane root = (BorderPane) ctx.mainSplitPane()
-                    .getScene().getRoot();
-            if (root.getCenter() == ctx.hyperbolicContainer()) {
-                root.setCenter(ctx.mainSplitPane());
-            } else {
-                // Set focus to root note if no focus set yet
-                if (ctx.hyperbolicViewModel().getFocusNoteId()
-                        == null) {
-                    ctx.hyperbolicViewModel().setFocusNote(
-                            ctx.project().getRootNote().getId());
-                }
-                root.setCenter(ctx.hyperbolicContainer());
-            }
-        });
-
-        MenuItem browserViewItem = new MenuItem("Browser");
-        browserViewItem.setAccelerator(
-                new KeyCodeCombination(KeyCode.B,
-                        KeyCombination.SHORTCUT_DOWN,
-                        KeyCombination.SHIFT_DOWN));
-        browserViewItem.setOnAction(e -> {
-            BorderPane root = (BorderPane) ctx.mainSplitPane()
-                    .getScene().getRoot();
-            if (root.getCenter() == ctx.browserEditorPane()) {
-                root.setCenter(ctx.mainSplitPane());
-            } else {
-                root.setCenter(ctx.browserEditorPane());
-            }
-        });
-
-        // Color Scheme submenu
-        List<String> schemeNames = ColorSchemeRegistry.getAllSchemes()
-                .stream().map(ColorScheme::name).toList();
-        Menu colorSchemeMenu = ColorSchemeMenuHelper
-                .createColorSchemeMenu(schemeNames, "Standard",
-                        name -> ColorSchemeRegistry.getScheme(name)
-                                .ifPresent(ctx.colorSchemeApplier()));
-
-        Menu viewMenu = new Menu("View");
-        viewMenu.getItems().addAll(mapViewItem, outlineViewItem,
-                treemapViewItem, hyperbolicViewItem, browserViewItem,
-                new SeparatorMenuItem(), colorSchemeMenu);
 
         // Edit menu
         MenuItem findItem = new MenuItem("Find");
@@ -352,8 +200,7 @@ public class App extends Application {
         windowMenu.getItems().add(newWindowItem);
 
         MenuBar menuBar = new MenuBar(
-                noteMenu, editMenu, stampsMenu, viewMenu,
-                windowMenu);
+                noteMenu, editMenu, stampsMenu, windowMenu);
         menuBar.setUseSystemMenuBar(true);
         return menuBar;
     }
