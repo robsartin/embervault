@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import javafx.scene.Cursor;
+import javafx.scene.control.Label;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -99,6 +100,51 @@ class HyperbolicNodeFactoryTest {
             Circle circle = HyperbolicNodeFactory.createNodeCircle(
                     0, 0, 10, "#4A90D9");
             assertEquals(Cursor.HAND, circle.getCursor());
+        }
+    }
+
+    @Nested
+    @DisplayName("createNodeLabel")
+    class CreateNodeLabelTests {
+
+        @Test
+        @DisplayName("creates label with specified text")
+        void createNodeLabel_shouldSetText() {
+            Label label = HyperbolicNodeFactory.createNodeLabel(
+                    "Test Note", 100, 200, 20);
+            assertEquals("Test Note", label.getText());
+        }
+
+        @Test
+        @DisplayName("label is mouse transparent")
+        void createNodeLabel_shouldBeMouseTransparent() {
+            Label label = HyperbolicNodeFactory.createNodeLabel(
+                    "Test", 100, 200, 20);
+            assertTrue(label.isMouseTransparent());
+        }
+
+        @Test
+        @DisplayName("label has white text fill")
+        void createNodeLabel_shouldHaveWhiteFill() {
+            Label label = HyperbolicNodeFactory.createNodeLabel(
+                    "Test", 100, 200, 20);
+            assertEquals(Color.WHITE, label.getTextFill());
+        }
+
+        @Test
+        @DisplayName("label position is relative to circle center")
+        void createNodeLabel_shouldPositionRelativeToCircle() {
+            Label label = HyperbolicNodeFactory.createNodeLabel(
+                    "Test", 100, 200, 20);
+            assertEquals(80, label.getLayoutX()); // cx - radius
+        }
+
+        @Test
+        @DisplayName("label maxWidth is 2x radius")
+        void createNodeLabel_shouldSetMaxWidth() {
+            Label label = HyperbolicNodeFactory.createNodeLabel(
+                    "Test", 100, 200, 25);
+            assertEquals(50, label.getMaxWidth()); // radius * 2
         }
     }
 }
