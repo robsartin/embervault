@@ -273,6 +273,85 @@ class ProjectFileManagerTest {
         }
     }
 
+    @Test
+    @DisplayName("saved grandchild files contain $Container")
+    void save_grandchildFileContainsContainer(
+            @TempDir Path tmp) throws Exception {
+        Path projectDir = tmp.resolve("ContainerTest");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+        UUID rootId = ctx.project.getRootNote().getId();
+        Note child = ctx.noteService.createChildNote(
+                rootId, "Child");
+        Note gc = ctx.noteService.createChildNote(
+                child.getId(), "GC");
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        // Read the grandchild file and verify $Container
+        String shard = gc.getId().toString().substring(0, 8);
+        Path gcFile = projectDir.resolve("notes")
+                .resolve(shard)
+                .resolve(gc.getId() + ".md");
+        assertTrue(Files.exists(gcFile),
+                "Grandchild file should exist: " + gcFile);
+        String content = Files.readString(gcFile);
+        assertTrue(content.contains("$Container"),
+                "File should contain $Container:\n"
+                        + content);
+        assertTrue(content.contains(
+                child.getId().toString()),
+                "File $Container should reference child ID");
+    }
+
+    @Test
+    @DisplayName("loaded notes have correct $Container chain")
+    void load_notesHaveContainerChain(@TempDir Path tmp) {
+        Path projectDir = tmp.resolve("Chain");
+        var ctx = createContext();
+        ctx.noteRepo.save(ctx.project.getRootNote());
+        UUID rootId = ctx.project.getRootNote().getId();
+        Note child = ctx.noteService.createChildNote(
+                rootId, "Child");
+        Note gc = ctx.noteService.createChildNote(
+                child.getId(), "GC");
+
+        ProjectFileManager.save(projectDir, ctx.project,
+                ctx.noteService, ctx.linkService,
+                ctx.stampService, ctx.registry);
+
+        // Load
+        InMemoryNoteRepository loadRepo =
+                new InMemoryNoteRepository();
+        NoteService loadSvc = new NoteServiceImpl(loadRepo);
+        UUID loadedRoot = ProjectFileManager.load(projectDir,
+                loadRepo, loadSvc,
+                new LinkServiceImpl(
+                        new InMemoryLinkRepository()),
+                new StampServiceImpl(
+                        new InMemoryStampRepository(),
+                        loadRepo),
+                ctx.registry);
+
+        // Verify all notes exist
+        assertEquals(3, loadRepo.findAll().size(),
+                "Should have root + child + grandchild");
+
+        // Verify chain: root → child → gc
+        var children = loadSvc.getChildren(loadedRoot);
+        assertEquals(1, children.size(),
+                "Root should have 1 child");
+        assertEquals("Child", children.get(0).getTitle());
+
+        var gcs = loadSvc.getChildren(
+                children.get(0).getId());
+        assertEquals(1, gcs.size(),
+                "Child should have 1 grandchild");
+        assertEquals("GC", gcs.get(0).getTitle());
+    }
+
     private TestContext createContext() {
         InMemoryNoteRepository noteRepo =
                 new InMemoryNoteRepository();
