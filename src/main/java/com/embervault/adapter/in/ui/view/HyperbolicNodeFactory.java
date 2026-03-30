@@ -1,6 +1,8 @@
 package com.embervault.adapter.in.ui.view;
 
+import javafx.scene.Cursor;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
 /**
@@ -23,5 +25,15 @@ final class HyperbolicNodeFactory {
         line.setStrokeWidth(1.0);
         line.setMouseTransparent(true);
         return line;
+    }
+
+    static Circle createNodeCircle(
+            double cx, double cy, double radius, String colorHex) {
+        Circle circle = new Circle(cx, cy, radius);
+        circle.setFill(Color.web(colorHex));
+        circle.setStroke(Color.WHITE);
+        circle.setStrokeWidth(NORMAL_STROKE_WIDTH);
+        circle.setCursor(Cursor.HAND);
+        return circle;
     }
 }
