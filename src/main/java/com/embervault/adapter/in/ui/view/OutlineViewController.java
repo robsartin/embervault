@@ -108,7 +108,7 @@ public class OutlineViewController {
         }
     }
 
-    private void handleTreeKeyFilter(KeyEvent event) {
+    void handleTreeKeyFilter(KeyEvent event) {
         if (event.getCode() == KeyCode.ENTER
                 && !isAnyoneEditing()) {
             TreeItem<NoteDisplayItem> selected =
