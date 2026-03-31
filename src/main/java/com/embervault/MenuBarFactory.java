@@ -133,8 +133,33 @@ final class MenuBarFactory {
                 ctx.onFind().run();
             }
         });
+
+        Menu formatMenu = buildFormatMenu();
+
         Menu menu = new Menu("Edit");
-        menu.getItems().add(findItem);
+        menu.getItems().addAll(findItem,
+                new SeparatorMenuItem(), formatMenu);
+        return menu;
+    }
+
+    private static Menu buildFormatMenu() {
+        MenuItem boldItem = new MenuItem("Bold");
+        boldItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.B,
+                        KeyCombination.SHORTCUT_DOWN));
+
+        MenuItem italicItem = new MenuItem("Italic");
+        italicItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.I,
+                        KeyCombination.SHORTCUT_DOWN));
+
+        MenuItem codeItem = new MenuItem("Code");
+        codeItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.K,
+                        KeyCombination.SHORTCUT_DOWN));
+
+        Menu menu = new Menu("Format");
+        menu.getItems().addAll(boldItem, italicItem, codeItem);
         return menu;
     }
 

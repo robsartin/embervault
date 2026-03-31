@@ -1,6 +1,7 @@
 module com.embervault {
     requires javafx.controls;
     requires javafx.fxml;
+    requires org.fxmisc.richtext;
     requires org.slf4j;
     requires org.snakeyaml.engine.v2;
 
