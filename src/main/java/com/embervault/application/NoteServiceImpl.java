@@ -42,24 +42,36 @@ public final class NoteServiceImpl implements NoteService {
 
     private final NoteRepository repository;
     private final Random random;
+    private final UndoRedoService undoRedoService;
 
-    /**
-     * Constructs a NoteServiceImpl backed by the given repository.
-     */
+    /** Constructs a NoteServiceImpl backed by the given repository. */
     public NoteServiceImpl(NoteRepository repository) {
-        this(repository, new Random());
+        this(repository, new Random(), null);
     }
 
-    /**
-     * Constructs a NoteServiceImpl backed by the given repository and random source.
-     *
-     * @param repository the repository
-     * @param random     the random source for position generation
-     */
+    /** Constructs a NoteServiceImpl with an undo/redo service. */
+    public NoteServiceImpl(NoteRepository repository,
+            UndoRedoService undoRedoService) {
+        this(repository, new Random(), undoRedoService);
+    }
+
+    /** Constructs with repository, random source, and optional undo. */
     public NoteServiceImpl(NoteRepository repository, Random random) {
+        this(repository, random, null);
+    }
+
+    private NoteServiceImpl(NoteRepository repository, Random random,
+            UndoRedoService undoRedoService) {
         this.repository = Objects.requireNonNull(repository,
                 "repository must not be null");
         this.random = Objects.requireNonNull(random, "random must not be null");
+        this.undoRedoService = undoRedoService;
+    }
+
+    private void recordForUndo(Note note) {
+        if (undoRedoService != null) {
+            undoRedoService.recordChange(note);
+        }
     }
 
     @Override
@@ -83,6 +95,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + id));
+        recordForUndo(note);
         note.update(title, content);
         return repository.save(note);
     }
@@ -117,6 +130,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(noteId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
+        recordForUndo(note);
         note.setAttribute(NAME, new AttributeValue.StringValue(newTitle));
         return repository.save(note);
     }
@@ -149,6 +163,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(noteId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
+        recordForUndo(note);
         repository.findById(newParentId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Parent note not found: " + newParentId));
@@ -168,6 +183,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(noteId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
+        recordForUndo(note);
         repository.findById(newParentId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Parent not found: " + newParentId));
@@ -254,6 +270,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(noteId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
+        recordForUndo(note);
 
         String containerId = note.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)
@@ -307,6 +324,7 @@ public final class NoteServiceImpl implements NoteService {
         Note note = repository.findById(noteId)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Note not found: " + noteId));
+        recordForUndo(note);
 
         String containerId = note.getAttribute(CONTAINER)
                 .filter(v -> v instanceof AttributeValue.StringValue)

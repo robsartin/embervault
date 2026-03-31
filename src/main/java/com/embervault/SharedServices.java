@@ -48,7 +48,9 @@ public record SharedServices(
         Project project =
                 new ProjectServiceImpl().createEmptyProject();
         InMemoryNoteRepository noteRepo = new InMemoryNoteRepository();
-        NoteService noteService = new NoteServiceImpl(noteRepo);
+        UndoRedoService undoRedoService = new UndoRedoService();
+        NoteService noteService = new NoteServiceImpl(
+                noteRepo, undoRedoService);
         LinkService linkService =
                 new LinkServiceImpl(new InMemoryLinkRepository());
         StampService stampService = new StampServiceImpl(
@@ -56,7 +58,6 @@ public record SharedServices(
         noteRepo.save(project.getRootNote());
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
-        UndoRedoService undoRedoService = new UndoRedoService();
         return new SharedServices(project, noteRepo,
                 noteService, linkService,
                 stampService, schemaRegistry,
