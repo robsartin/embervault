@@ -1,12 +1,9 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
-import static com.embervault.domain.Attributes.TEXT;
-
 import java.util.Objects;
 import java.util.UUID;
 
 import com.embervault.application.port.in.NoteService;
-import com.embervault.domain.AttributeValue;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -109,8 +106,11 @@ public final class SelectedNoteViewModel {
             return;
         }
         noteService.getNote(noteId).ifPresent(note -> {
-            note.setAttribute(TEXT,
-                    new AttributeValue.StringValue(newText));
+            String currentTitle = note.getTitle();
+            if (currentTitle == null || currentTitle.isBlank()) {
+                currentTitle = "Untitled";
+            }
+            noteService.updateNote(noteId, currentTitle, newText);
         });
         text.set(newText);
         dataChangeSupport.notifyDataChanged();
