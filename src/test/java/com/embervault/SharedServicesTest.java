@@ -10,6 +10,7 @@ import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
 import com.embervault.application.StampServiceImpl;
+import com.embervault.application.UndoRedoService;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
@@ -35,9 +36,10 @@ class SharedServicesTest {
         AttributeSchemaRegistry registry = new AttributeSchemaRegistry();
         Project project = new ProjectServiceImpl().createEmptyProject();
 
+        UndoRedoService undoRedoService = new UndoRedoService();
         SharedServices services = new SharedServices(
                 project, noteRepo, noteService, linkService,
-                stampService, registry);
+                stampService, registry, undoRedoService);
 
         assertNotNull(services.project());
         assertSame(noteService, services.noteService());

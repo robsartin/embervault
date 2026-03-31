@@ -7,6 +7,7 @@ import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
 import com.embervault.application.StampServiceImpl;
+import com.embervault.application.UndoRedoService;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
@@ -25,7 +26,8 @@ import com.embervault.domain.Project;
  * @param noteService     the note service
  * @param linkService     the link service
  * @param stampService    the stamp service
- * @param schemaRegistry  the attribute schema registry
+ * @param schemaRegistry    the attribute schema registry
+ * @param undoRedoService   the undo/redo service
  */
 public record SharedServices(
         Project project,
@@ -33,7 +35,8 @@ public record SharedServices(
         NoteService noteService,
         LinkService linkService,
         StampService stampService,
-        AttributeSchemaRegistry schemaRegistry
+        AttributeSchemaRegistry schemaRegistry,
+        UndoRedoService undoRedoService
 ) {
 
     /**
@@ -53,8 +56,10 @@ public record SharedServices(
         noteRepo.save(project.getRootNote());
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
+        UndoRedoService undoRedoService = new UndoRedoService();
         return new SharedServices(project, noteRepo,
                 noteService, linkService,
-                stampService, schemaRegistry);
+                stampService, schemaRegistry,
+                undoRedoService);
     }
 }
