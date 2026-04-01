@@ -12,16 +12,16 @@ import java.util.function.Consumer;
  */
 public interface ViewFactory {
 
-  /**
-   * Creates a view with its ViewModel and wiring callbacks.
-   *
-   * @param deps          the shared dependencies
-   * @param baseNoteId    the base note id for the pane
-   * @param onViewSwitch  callback to trigger a view switch
-   * @return the creation result
-   */
-  ViewCreationResult create(
-      ViewPaneDeps deps,
-      UUID baseNoteId,
-      Consumer<String> onViewSwitch);
+    /**
+     * Creates a view with its ViewModel and wiring callbacks.
+     *
+     * @param deps          the shared dependencies
+     * @param baseNoteId    the base note id for the pane
+     * @param onViewSwitch  callback to trigger a view switch
+     * @return the creation result
+     */
+    ViewCreationResult create(
+            ViewPaneDeps deps,
+            UUID baseNoteId,
+            Consumer<String> onViewSwitch);
 }

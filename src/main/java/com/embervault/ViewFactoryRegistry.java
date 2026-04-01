@@ -11,31 +11,34 @@ import java.util.Map;
  */
 public final class ViewFactoryRegistry {
 
-  private final Map<ViewType, ViewFactory> factories;
+    private final Map<ViewType, ViewFactory> factories;
 
-  /** Creates a registry pre-populated with all known view factories. */
-  public ViewFactoryRegistry() {
-    factories = Map.of(
-        ViewType.MAP, new MapViewFactory(),
-        ViewType.OUTLINE, new OutlineViewFactory(),
-        ViewType.TREEMAP, new TreemapViewFactory(),
-        ViewType.HYPERBOLIC, new HyperbolicViewFactory(),
-        ViewType.BROWSER, new AttributeBrowserViewFactory());
-  }
-
-  /**
-   * Returns the factory for the given view type.
-   *
-   * @param type the view type
-   * @return the corresponding factory
-   * @throws IllegalArgumentException if no factory is registered
-   */
-  public ViewFactory getFactory(ViewType type) {
-    ViewFactory factory = factories.get(type);
-    if (factory == null) {
-      throw new IllegalArgumentException(
-          "No factory registered for " + type);
+    /**
+     * Creates a registry pre-populated with all known view factories.
+     */
+    public ViewFactoryRegistry() {
+        factories = Map.of(
+                ViewType.MAP, new MapViewFactory(),
+                ViewType.OUTLINE, new OutlineViewFactory(),
+                ViewType.TREEMAP, new TreemapViewFactory(),
+                ViewType.HYPERBOLIC, new HyperbolicViewFactory(),
+                ViewType.BROWSER,
+                new AttributeBrowserViewFactory());
     }
-    return factory;
-  }
+
+    /**
+     * Returns the factory for the given view type.
+     *
+     * @param type the view type
+     * @return the corresponding factory
+     * @throws IllegalArgumentException if no factory is registered
+     */
+    public ViewFactory getFactory(ViewType type) {
+        ViewFactory factory = factories.get(type);
+        if (factory == null) {
+            throw new IllegalArgumentException(
+                    "No factory registered for " + type);
+        }
+        return factory;
+    }
 }

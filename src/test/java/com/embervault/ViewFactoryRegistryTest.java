@@ -1,7 +1,6 @@
 package com.embervault;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,20 +12,20 @@ import org.junit.jupiter.params.provider.EnumSource;
  */
 class ViewFactoryRegistryTest {
 
-  private ViewFactoryRegistry registry;
+    private ViewFactoryRegistry registry;
 
-  @BeforeEach
-  void setUp() {
-    registry = new ViewFactoryRegistry();
-  }
+    @BeforeEach
+    void setUp() {
+        registry = new ViewFactoryRegistry();
+    }
 
-  @ParameterizedTest
-  @EnumSource(ViewType.class)
-  @DisplayName("getFactory returns non-null factory for every ViewType")
-  void getFactory_shouldReturnNonNullForEveryViewType(
-      ViewType type) {
-    ViewFactory factory = registry.getFactory(type);
-    assertNotNull(factory,
-        "Factory should not be null for " + type);
-  }
+    @ParameterizedTest
+    @EnumSource(ViewType.class)
+    @DisplayName("getFactory returns non-null factory for every ViewType")
+    void getFactory_shouldReturnNonNullForEveryViewType(
+            ViewType type) {
+        ViewFactory factory = registry.getFactory(type);
+        assertNotNull(factory,
+                "Factory should not be null for " + type);
+    }
 }

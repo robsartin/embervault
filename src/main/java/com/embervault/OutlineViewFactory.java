@@ -11,25 +11,25 @@ import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
  */
 final class OutlineViewFactory implements ViewFactory {
 
-  @Override
-  public ViewCreationResult create(
-      ViewPaneDeps deps,
-      UUID baseNoteId,
-      Consumer<String> onViewSwitch) {
-    OutlineViewModel vm = new OutlineViewModel(
-        deps.rootNoteTitle(), deps.noteService());
-    vm.setBaseNoteId(baseNoteId);
-    vm.setOnDataChanged(deps.refreshAll());
-    return new ViewCreationResult(
-        vm.tabTitleProperty(),
-        vm::loadNotes,
-        vm::loadNotes,
-        c -> {
-          OutlineViewController ctrl =
-              (OutlineViewController) c;
-          ctrl.setOnViewSwitch(onViewSwitch);
-          ctrl.initViewModel(vm);
-        },
-        vm.selectedNoteIdProperty());
-  }
+    @Override
+    public ViewCreationResult create(
+            ViewPaneDeps deps,
+            UUID baseNoteId,
+            Consumer<String> onViewSwitch) {
+        OutlineViewModel vm = new OutlineViewModel(
+                deps.rootNoteTitle(), deps.noteService());
+        vm.setBaseNoteId(baseNoteId);
+        vm.setOnDataChanged(deps.refreshAll());
+        return new ViewCreationResult(
+                vm.tabTitleProperty(),
+                vm::loadNotes,
+                vm::loadNotes,
+                c -> {
+                    OutlineViewController ctrl =
+                            (OutlineViewController) c;
+                    ctrl.setOnViewSwitch(onViewSwitch);
+                    ctrl.initViewModel(vm);
+                },
+                vm.selectedNoteIdProperty());
+    }
 }

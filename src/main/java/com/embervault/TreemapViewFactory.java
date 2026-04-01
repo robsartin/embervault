@@ -11,25 +11,25 @@ import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
  */
 final class TreemapViewFactory implements ViewFactory {
 
-  @Override
-  public ViewCreationResult create(
-      ViewPaneDeps deps,
-      UUID baseNoteId,
-      Consumer<String> onViewSwitch) {
-    TreemapViewModel vm = new TreemapViewModel(
-        deps.rootNoteTitle(), deps.noteService());
-    vm.setBaseNoteId(baseNoteId);
-    vm.setOnDataChanged(deps.refreshAll());
-    return new ViewCreationResult(
-        vm.tabTitleProperty(),
-        vm::loadNotes,
-        vm::loadNotes,
-        c -> {
-          TreemapViewController ctrl =
-              (TreemapViewController) c;
-          ctrl.setOnViewSwitch(onViewSwitch);
-          ctrl.initViewModel(vm);
-        },
-        vm.selectedNoteIdProperty());
-  }
+    @Override
+    public ViewCreationResult create(
+            ViewPaneDeps deps,
+            UUID baseNoteId,
+            Consumer<String> onViewSwitch) {
+        TreemapViewModel vm = new TreemapViewModel(
+                deps.rootNoteTitle(), deps.noteService());
+        vm.setBaseNoteId(baseNoteId);
+        vm.setOnDataChanged(deps.refreshAll());
+        return new ViewCreationResult(
+                vm.tabTitleProperty(),
+                vm::loadNotes,
+                vm::loadNotes,
+                c -> {
+                    TreemapViewController ctrl =
+                            (TreemapViewController) c;
+                    ctrl.setOnViewSwitch(onViewSwitch);
+                    ctrl.initViewModel(vm);
+                },
+                vm.selectedNoteIdProperty());
+    }
 }

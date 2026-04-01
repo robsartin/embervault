@@ -11,25 +11,26 @@ import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
  */
 final class AttributeBrowserViewFactory implements ViewFactory {
 
-  @Override
-  public ViewCreationResult create(
-      ViewPaneDeps deps,
-      UUID baseNoteId,
-      Consumer<String> onViewSwitch) {
-    AttributeBrowserViewModel vm =
-        new AttributeBrowserViewModel(
-            deps.noteService(), deps.schemaRegistry());
-    vm.setOnDataChanged(deps.refreshAll());
-    return new ViewCreationResult(
-        vm.tabTitleProperty(),
-        vm::groupNotes,
-        vm::groupNotes,
-        c -> {
-          AttributeBrowserViewController ctrl =
-              (AttributeBrowserViewController) c;
-          ctrl.setOnViewSwitch(onViewSwitch);
-          ctrl.initViewModel(vm);
-        },
-        null);
-  }
+    @Override
+    public ViewCreationResult create(
+            ViewPaneDeps deps,
+            UUID baseNoteId,
+            Consumer<String> onViewSwitch) {
+        AttributeBrowserViewModel vm =
+                new AttributeBrowserViewModel(
+                        deps.noteService(),
+                        deps.schemaRegistry());
+        vm.setOnDataChanged(deps.refreshAll());
+        return new ViewCreationResult(
+                vm.tabTitleProperty(),
+                vm::groupNotes,
+                vm::groupNotes,
+                c -> {
+                    AttributeBrowserViewController ctrl =
+                            (AttributeBrowserViewController) c;
+                    ctrl.setOnViewSwitch(onViewSwitch);
+                    ctrl.initViewModel(vm);
+                },
+                null);
+    }
 }

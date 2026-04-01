@@ -11,31 +11,32 @@ import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
  */
 final class HyperbolicViewFactory implements ViewFactory {
 
-  @Override
-  public ViewCreationResult create(
-      ViewPaneDeps deps,
-      UUID baseNoteId,
-      Consumer<String> onViewSwitch) {
-    HyperbolicViewModel vm = new HyperbolicViewModel(
-        deps.noteService(), deps.linkService());
-    vm.setOnDataChanged(deps.refreshAll());
-    if (baseNoteId != null) {
-      vm.setFocusNote(baseNoteId);
+    @Override
+    public ViewCreationResult create(
+            ViewPaneDeps deps,
+            UUID baseNoteId,
+            Consumer<String> onViewSwitch) {
+        HyperbolicViewModel vm = new HyperbolicViewModel(
+                deps.noteService(), deps.linkService());
+        vm.setOnDataChanged(deps.refreshAll());
+        if (baseNoteId != null) {
+            vm.setFocusNote(baseNoteId);
+        }
+        return new ViewCreationResult(
+                vm.tabTitleProperty(),
+                () -> {
+                    if (vm.getFocusNoteId() != null) {
+                        vm.setFocusNote(
+                                vm.getFocusNoteId());
+                    }
+                },
+                () -> { },
+                c -> {
+                    HyperbolicViewController ctrl =
+                            (HyperbolicViewController) c;
+                    ctrl.setOnViewSwitch(onViewSwitch);
+                    ctrl.initViewModel(vm);
+                },
+                vm.selectedNoteIdProperty());
     }
-    return new ViewCreationResult(
-        vm.tabTitleProperty(),
-        () -> {
-          if (vm.getFocusNoteId() != null) {
-            vm.setFocusNote(vm.getFocusNoteId());
-          }
-        },
-        () -> { },
-        c -> {
-          HyperbolicViewController ctrl =
-              (HyperbolicViewController) c;
-          ctrl.setOnViewSwitch(onViewSwitch);
-          ctrl.initViewModel(vm);
-        },
-        vm.selectedNoteIdProperty());
-  }
 }
