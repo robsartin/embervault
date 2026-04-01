@@ -1,7 +1,6 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
@@ -20,12 +19,14 @@ class SelectedNoteViewModelEdgeCaseTest {
     private SelectedNoteViewModel viewModel;
     private NoteService noteService;
     private InMemoryNoteRepository repository;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
-        viewModel = new SelectedNoteViewModel(noteService);
+        appState = new AppState();
+        viewModel = new SelectedNoteViewModel(noteService, appState);
     }
 
     @Nested
@@ -46,12 +47,11 @@ class SelectedNoteViewModelEdgeCaseTest {
         @Test
         @DisplayName("saveTitle does not notify when no note selected")
         void noNoteSelected_doesNotNotify() {
-            boolean[] notified = {false};
-            viewModel.setOnDataChanged(() -> notified[0] = true);
+            int versionBefore = appState.getDataVersion();
 
             viewModel.saveTitle("Something");
 
-            assertFalse(notified[0]);
+            assertEquals(versionBefore, appState.getDataVersion());
         }
 
         @Test
@@ -59,12 +59,11 @@ class SelectedNoteViewModelEdgeCaseTest {
         void blankTitle_doesNotNotify() {
             Note note = noteService.createNote("Title", "Content");
             viewModel.setSelectedNoteId(note.getId());
-            boolean[] notified = {false};
-            viewModel.setOnDataChanged(() -> notified[0] = true);
+            int versionBefore = appState.getDataVersion();
 
             viewModel.saveTitle("   ");
 
-            assertFalse(notified[0]);
+            assertEquals(versionBefore, appState.getDataVersion());
         }
     }
 
@@ -88,12 +87,11 @@ class SelectedNoteViewModelEdgeCaseTest {
         @Test
         @DisplayName("saveText does not notify when no note selected")
         void noNoteSelected_doesNotNotify() {
-            boolean[] notified = {false};
-            viewModel.setOnDataChanged(() -> notified[0] = true);
+            int versionBefore = appState.getDataVersion();
 
             viewModel.saveText("Something");
 
-            assertFalse(notified[0]);
+            assertEquals(versionBefore, appState.getDataVersion());
         }
     }
 

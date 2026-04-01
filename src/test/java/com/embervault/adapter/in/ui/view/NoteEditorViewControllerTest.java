@@ -55,7 +55,8 @@ class NoteEditorViewControllerTest {
         InMemoryNoteRepository repo = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repo);
         AttributeSchemaRegistry registry = new AttributeSchemaRegistry();
-        viewModel = new NoteEditorViewModel(noteService, registry);
+        viewModel = new NoteEditorViewModel(noteService, registry,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         controller = new NoteEditorViewController();
         titleField = new TextField();

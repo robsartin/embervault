@@ -50,31 +50,26 @@ public final class AttributeBrowserViewModel {
     private final NoteService noteService;
     private final AttributeSchemaRegistry schemaRegistry;
     private String selectedAttribute;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
 
     /**
      * Constructs an AttributeBrowserViewModel.
      *
      * @param noteService    the note service for querying notes
      * @param schemaRegistry the attribute schema registry
+     * @param appState       the shared application state for data-change notification
      */
     public AttributeBrowserViewModel(NoteService noteService,
-            AttributeSchemaRegistry schemaRegistry) {
+            AttributeSchemaRegistry schemaRegistry,
+            AppState appState) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.schemaRegistry = Objects.requireNonNull(schemaRegistry,
                 "schemaRegistry must not be null");
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
         updateTabTitle(null);
         loadAvailableAttributes();
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */

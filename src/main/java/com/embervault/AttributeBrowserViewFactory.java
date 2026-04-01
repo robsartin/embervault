@@ -19,8 +19,8 @@ final class AttributeBrowserViewFactory implements ViewFactory {
         AttributeBrowserViewModel vm =
                 new AttributeBrowserViewModel(
                         deps.noteService(),
-                        deps.schemaRegistry());
-        vm.setOnDataChanged(deps.refreshAll());
+                        deps.schemaRegistry(),
+                        deps.appState());
         return new ViewCreationResult(
                 vm.tabTitleProperty(),
                 vm::groupNotes,

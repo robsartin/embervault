@@ -27,13 +27,15 @@ class OutlineViewModelTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
-        viewModel = new OutlineViewModel(noteTitle, noteService);
+        appState = new AppState();
+        viewModel = new OutlineViewModel(noteTitle, noteService, appState);
     }
 
     @Test
@@ -72,14 +74,14 @@ class OutlineViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new OutlineViewModel(null, noteService));
+                () -> new OutlineViewModel(null, noteService, appState));
     }
 
     @Test
     @DisplayName("Constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new OutlineViewModel(noteTitle, null));
+                () -> new OutlineViewModel(noteTitle, null, appState));
     }
 
     @Test
@@ -557,12 +559,11 @@ class OutlineViewModelTest {
         viewModel.setBaseNoteId(parent.getId());
         Note child = noteService.createChildNote(parent.getId(), "Child");
         viewModel.loadNotes();
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.deleteNote(child.getId());
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test

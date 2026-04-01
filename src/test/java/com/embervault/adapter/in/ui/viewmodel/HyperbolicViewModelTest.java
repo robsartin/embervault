@@ -26,6 +26,7 @@ class HyperbolicViewModelTest {
     private HyperbolicViewModel viewModel;
     private NoteService noteService;
     private LinkService linkService;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
@@ -33,21 +34,22 @@ class HyperbolicViewModelTest {
         noteService = new NoteServiceImpl(noteRepo);
         InMemoryLinkRepository linkRepo = new InMemoryLinkRepository();
         linkService = new LinkServiceImpl(linkRepo);
-        viewModel = new HyperbolicViewModel(noteService, linkService);
+        appState = new AppState();
+        viewModel = new HyperbolicViewModel(noteService, linkService, appState);
     }
 
     @Test
     @DisplayName("constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new HyperbolicViewModel(null, linkService));
+                () -> new HyperbolicViewModel(null, linkService, appState));
     }
 
     @Test
     @DisplayName("constructor rejects null linkService")
     void constructor_shouldRejectNullLinkService() {
         assertThrows(NullPointerException.class,
-                () -> new HyperbolicViewModel(noteService, null));
+                () -> new HyperbolicViewModel(noteService, null, appState));
     }
 
     @Test
@@ -210,17 +212,16 @@ class HyperbolicViewModelTest {
     }
 
     @Test
-    @DisplayName("createLink notifies data changed")
+    @DisplayName("createLink notifies data changed via AppState")
     void createLink_shouldNotifyDataChanged() {
         Note n1 = noteService.createNote("N1", "");
         Note n2 = noteService.createNote("N2", "");
         viewModel.setFocusNote(n1.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.createLink(n1.getId(), n2.getId());
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
@@ -253,18 +254,16 @@ class HyperbolicViewModelTest {
     }
 
     @Test
-    @DisplayName("setOnDataChanged with null clears callback")
-    void setOnDataChanged_null_shouldClearCallback() {
+    @DisplayName("AppState always notified on createLink")
+    void appState_shouldAlwaysBeNotified() {
         Note n1 = noteService.createNote("N1", "");
         Note n2 = noteService.createNote("N2", "");
         viewModel.setFocusNote(n1.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
-        viewModel.setOnDataChanged(null);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.createLink(n1.getId(), n2.getId());
 
-        assertFalse(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test

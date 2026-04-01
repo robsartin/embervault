@@ -78,7 +78,8 @@ class ViewSwitchContextMenuTest {
         controller.setOnViewSwitch(received::set);
 
         MapViewModel vm = new MapViewModel(
-                new SimpleStringProperty("Test"), noteService);
+                new SimpleStringProperty("Test"), noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -101,7 +102,8 @@ class ViewSwitchContextMenuTest {
         controller.setOnViewSwitch(received::set);
 
         MapViewModel vm = new MapViewModel(
-                new SimpleStringProperty("Test"), noteService);
+                new SimpleStringProperty("Test"), noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -129,7 +131,8 @@ class ViewSwitchContextMenuTest {
         controller.setOnViewSwitch(received::set);
 
         OutlineViewModel vm = new OutlineViewModel(
-                new SimpleStringProperty("Test"), noteService);
+                new SimpleStringProperty("Test"), noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -154,7 +157,8 @@ class ViewSwitchContextMenuTest {
         controller.setOnViewSwitch(received::set);
 
         OutlineViewModel vm = new OutlineViewModel(
-                new SimpleStringProperty("Test"), noteService);
+                new SimpleStringProperty("Test"), noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -178,7 +182,8 @@ class ViewSwitchContextMenuTest {
         controller.setOnViewSwitch(received::set);
 
         TreemapViewModel vm = new TreemapViewModel(
-                new SimpleStringProperty("Test"), noteService);
+                new SimpleStringProperty("Test"), noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -201,7 +206,8 @@ class ViewSwitchContextMenuTest {
         controller.setOnViewSwitch(received::set);
 
         HyperbolicViewModel vm = new HyperbolicViewModel(
-                noteService, linkService);
+                noteService, linkService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setFocusNote(parentId);
         controller.initViewModel(vm);
 
@@ -235,7 +241,8 @@ class ViewSwitchContextMenuTest {
 
         AttributeBrowserViewModel vm =
                 new AttributeBrowserViewModel(
-                        noteService, new AttributeSchemaRegistry());
+                        noteService, new AttributeSchemaRegistry(),
+                        new com.embervault.adapter.in.ui.viewmodel.AppState());
         controller.initViewModel(vm);
 
         ContextMenu menu = treeView.getContextMenu();
@@ -277,7 +284,8 @@ class ViewSwitchContextMenuTest {
 
         AttributeBrowserViewModel vm =
                 new AttributeBrowserViewModel(
-                        noteService, new AttributeSchemaRegistry());
+                        noteService, new AttributeSchemaRegistry(),
+                        new com.embervault.adapter.in.ui.viewmodel.AppState());
         controller.initViewModel(vm);
 
         // Fire the "Switch to Map" item

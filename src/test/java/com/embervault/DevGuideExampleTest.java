@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
@@ -241,7 +242,9 @@ class DevGuideExampleTest {
             StringProperty titleProp =
                     new SimpleStringProperty(rootNote.getTitle());
 
-            MapViewModel mapVm = new MapViewModel(titleProp, noteService);
+            AppState appState = new AppState();
+            MapViewModel mapVm = new MapViewModel(
+                    titleProp, noteService, appState);
             mapVm.setBaseNoteId(rootId);
             mapVm.loadNotes();
 
@@ -257,7 +260,8 @@ class DevGuideExampleTest {
                     new SimpleStringProperty(rootNote.getTitle());
 
             OutlineViewModel outlineVm =
-                    new OutlineViewModel(titleProp, noteService);
+                    new OutlineViewModel(titleProp, noteService,
+                            new AppState());
             outlineVm.setBaseNoteId(rootId);
             outlineVm.loadNotes();
 
@@ -272,7 +276,8 @@ class DevGuideExampleTest {
                     new SimpleStringProperty(rootNote.getTitle());
 
             TreemapViewModel treemapVm =
-                    new TreemapViewModel(titleProp, noteService);
+                    new TreemapViewModel(titleProp, noteService,
+                            new AppState());
             treemapVm.setBaseNoteId(rootId);
             treemapVm.loadNotes();
 
@@ -283,7 +288,8 @@ class DevGuideExampleTest {
         @DisplayName("Section 7: HyperbolicViewModel sets focus")
         void hyperbolicViewModel() {
             HyperbolicViewModel hyperVm =
-                    new HyperbolicViewModel(noteService, linkService);
+                    new HyperbolicViewModel(noteService, linkService,
+                            new AppState());
             hyperVm.setFocusNote(rootId);
 
             assertEquals(rootId, hyperVm.getFocusNoteId());
@@ -295,16 +301,18 @@ class DevGuideExampleTest {
             noteService.createChildNote(rootId, "Note A");
             AttributeSchemaRegistry schemaRegistry =
                     new AttributeSchemaRegistry();
+            AppState appState = new AppState();
 
             AttributeBrowserViewModel browserVm =
                     new AttributeBrowserViewModel(
-                            noteService, schemaRegistry);
+                            noteService, schemaRegistry, appState);
             browserVm.setSelectedAttribute(Attributes.COLOR);
 
             assertNotNull(browserVm.tabTitleProperty().get());
 
             NoteEditorViewModel editorVm =
-                    new NoteEditorViewModel(noteService, schemaRegistry);
+                    new NoteEditorViewModel(noteService, schemaRegistry,
+                            appState);
             assertNotNull(editorVm);
         }
     }
@@ -314,21 +322,23 @@ class DevGuideExampleTest {
     class SyncViews {
 
         @Test
-        @DisplayName("setOnDataChanged wires refresh callback")
+        @DisplayName("AppState notifies observers on data change")
         void syncCallback() {
             StringProperty titleProp =
                     new SimpleStringProperty(rootNote.getTitle());
-            MapViewModel mapVm = new MapViewModel(titleProp, noteService);
+            AppState appState = new AppState();
+            MapViewModel mapVm = new MapViewModel(
+                    titleProp, noteService, appState);
             mapVm.setBaseNoteId(rootId);
 
             int[] callCount = {0};
-            Runnable refreshAll = () -> callCount[0]++;
-            mapVm.setOnDataChanged(refreshAll);
+            appState.dataVersionProperty().addListener(
+                    (obs, oldVal, newVal) -> callCount[0]++);
 
             // Creating a child note through the VM triggers the callback
             mapVm.createChildNote("Trigger");
             assertTrue(callCount[0] > 0,
-                    "refreshAll should have been called");
+                    "appState listener should have been called");
         }
     }
 

@@ -27,13 +27,15 @@ class TreemapViewModelTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
-        viewModel = new TreemapViewModel(noteTitle, noteService);
+        appState = new AppState();
+        viewModel = new TreemapViewModel(noteTitle, noteService, appState);
     }
 
     @Test
@@ -74,14 +76,14 @@ class TreemapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new TreemapViewModel(null, noteService));
+                () -> new TreemapViewModel(null, noteService, appState));
     }
 
     @Test
     @DisplayName("Constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new TreemapViewModel(noteTitle, null));
+                () -> new TreemapViewModel(noteTitle, null, appState));
     }
 
     @Test
@@ -262,47 +264,44 @@ class TreemapViewModelTest {
     }
 
     @Test
-    @DisplayName("setOnDataChanged callback is invoked on drillDown")
+    @DisplayName("drillDown notifies data changed via AppState")
     void onDataChanged_shouldBeInvokedOnDrillDown() {
         Note root = noteService.createNote("Root", "");
         Note child = noteService.createChildNote(root.getId(), "Child");
         viewModel.setBaseNoteId(root.getId());
         viewModel.loadNotes();
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.drillDown(child.getId());
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
-    @DisplayName("setOnDataChanged callback is invoked on navigateBack")
+    @DisplayName("navigateBack notifies data changed via AppState")
     void onDataChanged_shouldBeInvokedOnNavigateBack() {
         Note root = noteService.createNote("Root", "");
         Note child = noteService.createChildNote(root.getId(), "Child");
         viewModel.setBaseNoteId(root.getId());
         viewModel.loadNotes();
         viewModel.drillDown(child.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.navigateBack();
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
-    @DisplayName("setOnDataChanged callback is invoked on createChildNote")
+    @DisplayName("createChildNote notifies data changed via AppState")
     void onDataChanged_shouldBeInvokedOnCreateChildNote() {
         Note parent = noteService.createNote("Parent", "");
         viewModel.setBaseNoteId(parent.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.createChildNote("New");
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
@@ -404,14 +403,15 @@ class TreemapViewModelTest {
     }
 
     @Test
-    @DisplayName("setOnDataChanged(null) clears callback without error")
-    void setOnDataChanged_null_shouldClearCallback() {
-        viewModel.setOnDataChanged(null);
+    @DisplayName("AppState is shared and always notified on mutation")
+    void appState_shouldAlwaysBeNotified() {
         Note root = noteService.createNote("Root", "");
         viewModel.setBaseNoteId(root.getId());
+        int versionBefore = appState.getDataVersion();
 
-        // Should not throw
         viewModel.createChildNote("Test");
+
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test

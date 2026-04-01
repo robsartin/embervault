@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
@@ -67,8 +68,9 @@ class ViewPaneContextBranchTest {
         linkService = new LinkServiceImpl(
                 new InMemoryLinkRepository());
         schemaRegistry = new AttributeSchemaRegistry();
+        AppState appState = new AppState();
         selectedNoteVm =
-                new SelectedNoteViewModel(noteService);
+                new SelectedNoteViewModel(noteService, appState);
         rootNoteTitle = new SimpleStringProperty("Root");
         refreshCount = new AtomicInteger(0);
 
@@ -77,7 +79,7 @@ class ViewPaneContextBranchTest {
                 rootNote.getId(), "Child1");
 
         mapViewModel = new MapViewModel(
-                rootNoteTitle, noteService);
+                rootNoteTitle, noteService, appState);
         mapViewModel.setBaseNoteId(rootNote.getId());
         mapViewModel.loadNotes();
 
@@ -89,10 +91,9 @@ class ViewPaneContextBranchTest {
                 rootNote.getId(),
                 mapViewModel::loadNotes);
 
-        Runnable refreshAll = refreshCount::incrementAndGet;
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                refreshAll, selectedNoteVm, rootNoteTitle);
+                appState, selectedNoteVm, rootNoteTitle);
         paneContext.setDeps(deps);
     }
 

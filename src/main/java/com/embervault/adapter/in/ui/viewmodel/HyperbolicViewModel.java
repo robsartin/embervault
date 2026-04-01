@@ -48,29 +48,24 @@ public final class HyperbolicViewModel {
             new SimpleObjectProperty<>();
     private final NavigationStack navigationStack = new NavigationStack();
     private double viewportRadius = DEFAULT_VIEWPORT_RADIUS;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
 
     /**
      * Constructs a HyperbolicViewModel with the given services.
      *
      * @param noteService the note service for querying notes
      * @param linkService the link service for querying links
+     * @param appState    the shared application state for data-change notification
      */
-    public HyperbolicViewModel(NoteService noteService, LinkService linkService) {
+    public HyperbolicViewModel(NoteService noteService, LinkService linkService,
+            AppState appState) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.linkService = Objects.requireNonNull(linkService,
                 "linkService must not be null");
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
         tabTitle.set("Hyperbolic");
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /**
@@ -141,7 +136,7 @@ public final class HyperbolicViewModel {
     public void createLink(UUID source, UUID dest) {
         linkService.createLink(source, dest);
         computeLayout();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /** Returns the focus note id property. */

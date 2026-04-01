@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.application.port.in.LinkService;
@@ -55,8 +56,9 @@ public final class WindowFactory {
                 services.schemaRegistry();
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
+        AppState appState = new AppState();
         MapViewModel mapVm = new MapViewModel(
-                rootNoteTitle, noteService);
+                rootNoteTitle, noteService, appState);
         mapVm.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent mapView = loadView("MapView.fxml", c -> {
@@ -67,7 +69,7 @@ public final class WindowFactory {
             ctrl.initViewModel(mapVm);
         });
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService);
+                new SelectedNoteViewModel(noteService, appState);
         FXMLLoader textPaneLoader = new FXMLLoader(
                 WindowFactory.class.getResource(
                         "/com/embervault/adapter/in/ui/view/"
@@ -91,12 +93,11 @@ public final class WindowFactory {
         };
         windowManager.register(newStage);
         windowManager.addRefreshListener(localRefresh);
-        Runnable refreshAll = windowManager::notifyAllWindows;
-        mapVm.setOnDataChanged(refreshAll);
-        selectedNoteVm.setOnDataChanged(refreshAll);
+        appState.dataVersionProperty().addListener(
+                (obs, oldVal, newVal) -> windowManager.notifyAllWindows());
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                refreshAll, selectedNoteVm, rootNoteTitle);
+                appState, selectedNoteVm, rootNoteTitle);
         mapPane.setDeps(paneDeps);
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(
@@ -107,7 +108,7 @@ public final class WindowFactory {
         WindowContext winCtx = new WindowContext(
                 services, windowManager,
                 mapVm.selectedNoteIdProperty(),
-                refreshAll, newStage, null,
+                appState, newStage, null,
                 newRootId -> {
                     mapVm.setBaseNoteId(newRootId);
                     mapVm.loadNotes();

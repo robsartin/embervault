@@ -32,36 +32,29 @@ public final class NoteEditorViewModel {
             FXCollections.observableArrayList();
     private final NoteService noteService;
     private final AttributeSchemaRegistry schemaRegistry;
+    private final AppState appState;
     private UUID currentNoteId;
-    private Runnable onDataChanged;
 
     /**
      * Constructs a NoteEditorViewModel.
      *
      * @param noteService    the note service for querying and updating notes
      * @param schemaRegistry the attribute schema registry
+     * @param appState       the shared application state for data-change notification
      */
     public NoteEditorViewModel(NoteService noteService,
-            AttributeSchemaRegistry schemaRegistry) {
+            AttributeSchemaRegistry schemaRegistry,
+            AppState appState) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.schemaRegistry = Objects.requireNonNull(schemaRegistry,
                 "schemaRegistry must not be null");
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        this.onDataChanged = callback;
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
     }
 
     private void notifyDataChanged() {
-        if (onDataChanged != null) {
-            onDataChanged.run();
-        }
+        appState.notifyDataChanged();
     }
 
     /** Returns the title property. */

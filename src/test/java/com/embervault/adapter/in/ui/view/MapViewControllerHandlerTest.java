@@ -52,7 +52,8 @@ class MapViewControllerHandlerTest {
         InMemoryNoteRepository repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         SimpleStringProperty noteTitle = new SimpleStringProperty("Test");
-        viewModel = new MapViewModel(noteTitle, noteService);
+        viewModel = new MapViewModel(noteTitle, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         parentId = noteService.createNote("Parent", "").getId();
         viewModel.setBaseNoteId(parentId);

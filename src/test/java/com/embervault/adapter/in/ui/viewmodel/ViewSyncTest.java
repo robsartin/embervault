@@ -35,19 +35,23 @@ class ViewSyncTest {
         noteService = new NoteServiceImpl(repository);
         StringProperty noteTitle = new SimpleStringProperty("Root");
 
-        mapViewModel = new MapViewModel(noteTitle, noteService);
-        outlineViewModel = new OutlineViewModel(noteTitle, noteService);
-        treemapViewModel = new TreemapViewModel(noteTitle, noteService);
-        searchViewModel = new SearchViewModel(noteService);
-        selectedNoteViewModel = new SelectedNoteViewModel(noteService);
+        AppState appState = new AppState();
+        mapViewModel = new MapViewModel(noteTitle, noteService, appState);
+        outlineViewModel = new OutlineViewModel(
+                noteTitle, noteService, appState);
+        treemapViewModel = new TreemapViewModel(
+                noteTitle, noteService, appState);
+        searchViewModel = new SearchViewModel(noteService, appState);
+        selectedNoteViewModel = new SelectedNoteViewModel(
+                noteService, appState);
 
         root = noteService.createNote("Root", "");
         mapViewModel.setBaseNoteId(root.getId());
         outlineViewModel.setBaseNoteId(root.getId());
         treemapViewModel.setBaseNoteId(root.getId());
 
-        // Wire the shared refresh callback (same pattern as App.java)
-        Runnable refreshAll = () -> {
+        // Wire the shared refresh via appState listener (same pattern as App.java)
+        appState.dataVersionProperty().addListener((obs, oldVal, newVal) -> {
             mapViewModel.loadNotes();
             outlineViewModel.loadNotes();
             treemapViewModel.loadNotes();
@@ -56,12 +60,7 @@ class ViewSyncTest {
             if (selId != null) {
                 selectedNoteViewModel.setSelectedNoteId(selId);
             }
-        };
-        mapViewModel.setOnDataChanged(refreshAll);
-        outlineViewModel.setOnDataChanged(refreshAll);
-        treemapViewModel.setOnDataChanged(refreshAll);
-        searchViewModel.setOnDataChanged(refreshAll);
-        selectedNoteViewModel.setOnDataChanged(refreshAll);
+        });
 
         mapViewModel.loadNotes();
         outlineViewModel.loadNotes();

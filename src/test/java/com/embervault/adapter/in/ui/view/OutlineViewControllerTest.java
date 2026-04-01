@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.UUID;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
@@ -56,7 +57,8 @@ class OutlineViewControllerTest {
 
         parentId = noteService.createNote("Parent", "").getId();
         SimpleStringProperty noteTitle = new SimpleStringProperty("Parent");
-        viewModel = new OutlineViewModel(noteTitle, noteService);
+        viewModel = new OutlineViewModel(
+                noteTitle, noteService, new AppState());
         viewModel.setBaseNoteId(parentId);
 
         controller = new OutlineViewController();

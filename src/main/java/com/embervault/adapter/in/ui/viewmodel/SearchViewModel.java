@@ -29,25 +29,19 @@ public final class SearchViewModel {
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
     private final NoteService noteService;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
 
     /**
      * Constructs a SearchViewModel backed by the given NoteService.
      *
      * @param noteService the note service for searching
+     * @param appState    the shared application state for data-change notification
      */
-    public SearchViewModel(NoteService noteService) {
+    public SearchViewModel(NoteService noteService, AppState appState) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
     }
 
     /**

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
@@ -39,7 +40,7 @@ public final class ViewPaneContext {
     private NoteService noteService;
     private LinkService linkService;
     private AttributeSchemaRegistry schemaRegistry;
-    private Runnable refreshAll;
+    private AppState appState;
     private SelectedNoteViewModel selectedNoteVm;
     private StringProperty rootNoteTitle;
 
@@ -120,7 +121,7 @@ public final class ViewPaneContext {
         this.noteService = deps.noteService();
         this.linkService = deps.linkService();
         this.schemaRegistry = deps.schemaRegistry();
-        this.refreshAll = deps.refreshAll();
+        this.appState = deps.appState();
         this.selectedNoteVm = deps.selectedNoteVm();
         this.rootNoteTitle = deps.rootNoteTitle();
     }
@@ -157,7 +158,7 @@ public final class ViewPaneContext {
 
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                refreshAll, selectedNoteVm, rootNoteTitle);
+                appState, selectedNoteVm, rootNoteTitle);
         ViewFactory factory = registry.getFactory(newType);
         ViewCreationResult result = factory.create(
                 deps, baseNoteId,

@@ -50,7 +50,8 @@ class AttributeBrowserViewControllerTest {
         InMemoryNoteRepository repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         AttributeSchemaRegistry registry = new AttributeSchemaRegistry();
-        viewModel = new AttributeBrowserViewModel(noteService, registry);
+        viewModel = new AttributeBrowserViewModel(noteService, registry,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         controller = new AttributeBrowserViewController();
         categoryTreeView = new TreeView<>();

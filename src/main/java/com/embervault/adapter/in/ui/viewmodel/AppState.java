@@ -14,20 +14,20 @@ import javafx.beans.property.SimpleIntegerProperty;
  */
 public class AppState {
 
-  private final IntegerProperty dataVersion = new SimpleIntegerProperty(0);
+    private final IntegerProperty dataVersion = new SimpleIntegerProperty(0);
 
-  /** Increment the data version, notifying all observers. */
-  public void notifyDataChanged() {
-    dataVersion.set(dataVersion.get() + 1);
-  }
+    /** Increment the data version, notifying all observers. */
+    public void notifyDataChanged() {
+        dataVersion.set(dataVersion.get() + 1);
+    }
 
-  /** Observable property that changes when any data is modified. */
-  public ReadOnlyIntegerProperty dataVersionProperty() {
-    return dataVersion;
-  }
+    /** Observable property that changes when any data is modified. */
+    public ReadOnlyIntegerProperty dataVersionProperty() {
+        return dataVersion;
+    }
 
-  /** Returns the current data version. */
-  public int getDataVersion() {
-    return dataVersion.get();
-  }
+    /** Returns the current data version. */
+    public int getDataVersion() {
+        return dataVersion.get();
+    }
 }

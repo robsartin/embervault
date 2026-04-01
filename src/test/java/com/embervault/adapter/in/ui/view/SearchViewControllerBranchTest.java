@@ -65,7 +65,8 @@ class SearchViewControllerBranchTest {
         noteService.createNote("Banana", "fruit content");
         noteService.createNote("ApplePie", "dessert content");
 
-        viewModel = new SearchViewModel(noteService);
+        viewModel = new SearchViewModel(noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         controller = new SearchViewController();
         searchRoot = new VBox();

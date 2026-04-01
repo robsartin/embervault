@@ -21,19 +21,21 @@ class SelectedNoteViewModelTest {
     private SelectedNoteViewModel viewModel;
     private NoteService noteService;
     private InMemoryNoteRepository repository;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
-        viewModel = new SelectedNoteViewModel(noteService);
+        appState = new AppState();
+        viewModel = new SelectedNoteViewModel(noteService, appState);
     }
 
     @Test
     @DisplayName("Constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new SelectedNoteViewModel(null));
+                () -> new SelectedNoteViewModel(null, appState));
     }
 
     @Test
@@ -169,44 +171,27 @@ class SelectedNoteViewModelTest {
     }
 
     @Test
-    @DisplayName("saveTitle notifies data changed")
+    @DisplayName("saveTitle notifies data changed via AppState")
     void saveTitle_shouldNotifyDataChanged() {
         Note note = noteService.createNote("Title", "Content");
         viewModel.setSelectedNoteId(note.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.saveTitle("New Title");
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
-    @DisplayName("saveText notifies data changed")
+    @DisplayName("saveText notifies data changed via AppState")
     void saveText_shouldNotifyDataChanged() {
         Note note = noteService.createNote("Title", "Content");
         viewModel.setSelectedNoteId(note.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.saveText("New Content");
 
-        assertTrue(notified[0]);
-    }
-
-    @Test
-    @DisplayName("onDataChanged callback can be cleared with null")
-    void onDataChanged_shouldBeCleared() {
-        Note note = noteService.createNote("Title", "Content");
-        viewModel.setSelectedNoteId(note.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
-        viewModel.setOnDataChanged(null);
-
-        viewModel.saveTitle("New Title");
-
-        // notified should still be false since callback was cleared
-        assertTrue(!notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test

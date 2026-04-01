@@ -57,7 +57,8 @@ class OutlineEditModeTest {
                 .getId();
         viewModel = new OutlineViewModel(
                 new SimpleStringProperty("Parent"),
-                noteService);
+                noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         viewModel.setBaseNoteId(parentId);
 
         controller = new OutlineViewController();

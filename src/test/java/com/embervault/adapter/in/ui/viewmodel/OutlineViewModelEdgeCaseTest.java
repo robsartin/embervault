@@ -27,13 +27,15 @@ class OutlineViewModelEdgeCaseTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("Root Title");
-        viewModel = new OutlineViewModel(noteTitle, noteService);
+        appState = new AppState();
+        viewModel = new OutlineViewModel(noteTitle, noteService, appState);
     }
 
     @Nested
@@ -201,12 +203,11 @@ class OutlineViewModelEdgeCaseTest {
             viewModel.setBaseNoteId(parent.getId());
             viewModel.loadNotes();
 
-            boolean[] notified = {false};
-            viewModel.setOnDataChanged(() -> notified[0] = true);
+            int versionBefore = appState.getDataVersion();
 
             viewModel.deleteNote(child.getId()); // has children, fails
 
-            assertFalse(notified[0]);
+            assertEquals(versionBefore, appState.getDataVersion());
         }
     }
 }

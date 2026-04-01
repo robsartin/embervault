@@ -59,7 +59,8 @@ class SearchViewControllerTest {
         noteService.createNote("Beta Note", "content about beta");
         noteService.createNote("Alpha Beta", "mixed content");
 
-        viewModel = new SearchViewModel(noteService);
+        viewModel = new SearchViewModel(noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         controller = new SearchViewController();
         searchRoot = new VBox();

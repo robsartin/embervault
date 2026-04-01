@@ -26,13 +26,15 @@ class MapViewModelTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
-        viewModel = new MapViewModel(noteTitle, noteService);
+        appState = new AppState();
+        viewModel = new MapViewModel(noteTitle, noteService, appState);
     }
 
     @Test
@@ -69,14 +71,21 @@ class MapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(null, noteService));
+                () -> new MapViewModel(null, noteService, appState));
     }
 
     @Test
     @DisplayName("Constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(noteTitle, null));
+                () -> new MapViewModel(noteTitle, null, appState));
+    }
+
+    @Test
+    @DisplayName("Constructor rejects null appState")
+    void constructor_shouldRejectNullAppState() {
+        assertThrows(NullPointerException.class,
+                () -> new MapViewModel(noteTitle, noteService, null));
     }
 
     @Test
@@ -259,17 +268,16 @@ class MapViewModelTest {
     }
 
     @Test
-    @DisplayName("createSiblingNote() notifies data changed")
+    @DisplayName("createSiblingNote() notifies data changed via AppState")
     void createSiblingNote_shouldNotifyDataChanged() {
         Note parent = noteService.createNote("Parent", "");
         viewModel.setBaseNoteId(parent.getId());
         NoteDisplayItem existing = viewModel.createChildNote("First");
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.createSiblingNote(existing.getId(), "Second");
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
