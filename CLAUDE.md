@@ -109,6 +109,49 @@ All enforced by `mvn verify`:
 - `mvn verify -Pui-tests` includes UI tests (requires display or xvfb)
 - CI runs full suite with `-Pui-tests` under `xvfb` (X virtual framebuffer)
 
+## Quick Commands
+
+All commands require the JAVA_HOME prefix:
+
+```bash
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home
+
+# Single test class:
+JAVA_HOME=... ./mvnw test -Dtest=ClassName -DfailIfNoTests=false
+
+# Single test method:
+JAVA_HOME=... ./mvnw test -Dtest="ClassName#methodName" -DfailIfNoTests=false
+
+# Compile only (fast feedback):
+JAVA_HOME=... ./mvnw compile -q
+
+# Checkstyle only:
+JAVA_HOME=... ./mvnw checkstyle:check -q
+
+# Full verify (logic tests + checkstyle + coverage + ArchUnit):
+JAVA_HOME=... ./mvnw verify
+
+# UI tests require a display — do not run headless:
+JAVA_HOME=... ./mvnw verify -Pui-tests
+```
+
+## Common Mistakes
+
+- Do NOT use `./mvnw` without setting JAVA_HOME — system Java is not 25
+- Do NOT run UI tests (`-Pui-tests`) during headless TDD — they require a display
+- Do NOT use `$(...)` command substitution for JAVA_HOME — use the literal path
+- Do NOT use raw attribute strings like `"$Name"` — use `Attributes.NAME` constants
+- Checkstyle: Google style requires `{` on same line, 2-space indent, no wildcard imports
+- Do NOT merge PRs automatically — leave them for manual review
+
+## Test Organization
+
+- Domain tests: `src/test/java/com/embervault/domain/`
+- Application service tests: `src/test/java/com/embervault/application/`
+- ViewModel tests: `src/test/java/com/embervault/adapter/in/ui/viewmodel/`
+- UI controller tests (`@Tag("ui")` required): `src/test/java/com/embervault/adapter/in/ui/view/`
+- Architecture tests: `src/test/java/com/embervault/architecture/`
+
 ## PR Workflow
 
 All work is done on issue branches and submitted as PRs to main (see ADR-0001):
