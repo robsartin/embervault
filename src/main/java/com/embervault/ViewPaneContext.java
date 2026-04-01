@@ -4,17 +4,7 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.embervault.adapter.in.ui.view.AttributeBrowserViewController;
-import com.embervault.adapter.in.ui.view.HyperbolicViewController;
-import com.embervault.adapter.in.ui.view.MapViewController;
-import com.embervault.adapter.in.ui.view.OutlineViewController;
-import com.embervault.adapter.in.ui.view.TreemapViewController;
-import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
-import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
-import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
-import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
-import com.embervault.adapter.in.ui.viewmodel.TreemapViewModel;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
@@ -52,6 +42,9 @@ public final class ViewPaneContext {
     private Runnable refreshAll;
     private SelectedNoteViewModel selectedNoteVm;
     private StringProperty rootNoteTitle;
+
+    private final ViewFactoryRegistry registry =
+            new ViewFactoryRegistry();
 
     private ViewType currentViewType;
     private UUID baseNoteId;
@@ -158,115 +151,30 @@ public final class ViewPaneContext {
         }
     }
 
-    @SuppressWarnings("CyclomaticComplexity")
     private void doSwitchView(ViewType newType)
             throws IOException {
         label.textProperty().unbind();
 
-        ReadOnlyStringProperty newTitleProp;
+        ViewPaneDeps deps = new ViewPaneDeps(
+                noteService, linkService, schemaRegistry,
+                refreshAll, selectedNoteVm, rootNoteTitle);
+        ViewFactory factory = registry.getFactory(newType);
+        ViewCreationResult result = factory.create(
+                deps, baseNoteId,
+                name -> switchView(ViewType.valueOf(name)));
 
-        switch (newType) {
-            case MAP -> {
-                MapViewModel vm = new MapViewModel(
-                        rootNoteTitle, noteService);
-                vm.setBaseNoteId(baseNoteId);
-                vm.setOnDataChanged(refreshAll);
-                wireSelection(vm.selectedNoteIdProperty());
-                Parent view = loadFxml(newType, c -> {
-                    MapViewController ctrl =
-                            (MapViewController) c;
-                    ctrl.setOnViewSwitch(name ->
-                            switchView(ViewType.valueOf(name)));
-                    ctrl.initViewModel(vm);
-                });
-                replaceView(view);
-                newTitleProp = vm.tabTitleProperty();
-                currentViewRefresh = vm::loadNotes;
-                vm.loadNotes();
-            }
-            case OUTLINE -> {
-                OutlineViewModel vm = new OutlineViewModel(
-                        rootNoteTitle, noteService);
-                vm.setBaseNoteId(baseNoteId);
-                vm.setOnDataChanged(refreshAll);
-                wireSelection(vm.selectedNoteIdProperty());
-                Parent view = loadFxml(newType, c -> {
-                    OutlineViewController ctrl =
-                            (OutlineViewController) c;
-                    ctrl.setOnViewSwitch(name ->
-                            switchView(ViewType.valueOf(name)));
-                    ctrl.initViewModel(vm);
-                });
-                replaceView(view);
-                newTitleProp = vm.tabTitleProperty();
-                currentViewRefresh = vm::loadNotes;
-                vm.loadNotes();
-            }
-            case TREEMAP -> {
-                TreemapViewModel vm = new TreemapViewModel(
-                        rootNoteTitle, noteService);
-                vm.setBaseNoteId(baseNoteId);
-                vm.setOnDataChanged(refreshAll);
-                wireSelection(vm.selectedNoteIdProperty());
-                Parent view = loadFxml(newType, c -> {
-                    TreemapViewController ctrl =
-                            (TreemapViewController) c;
-                    ctrl.setOnViewSwitch(name ->
-                            switchView(ViewType.valueOf(name)));
-                    ctrl.initViewModel(vm);
-                });
-                replaceView(view);
-                newTitleProp = vm.tabTitleProperty();
-                currentViewRefresh = vm::loadNotes;
-                vm.loadNotes();
-            }
-            case HYPERBOLIC -> {
-                HyperbolicViewModel vm =
-                        new HyperbolicViewModel(
-                                noteService, linkService);
-                vm.setOnDataChanged(refreshAll);
-                wireSelection(vm.selectedNoteIdProperty());
-                if (baseNoteId != null) {
-                    vm.setFocusNote(baseNoteId);
-                }
-                Parent view = loadFxml(newType, c -> {
-                    HyperbolicViewController ctrl =
-                            (HyperbolicViewController) c;
-                    ctrl.setOnViewSwitch(name ->
-                            switchView(ViewType.valueOf(name)));
-                    ctrl.initViewModel(vm);
-                });
-                replaceView(view);
-                newTitleProp = vm.tabTitleProperty();
-                currentViewRefresh = () -> {
-                    if (vm.getFocusNoteId() != null) {
-                        vm.setFocusNote(
-                                vm.getFocusNoteId());
-                    }
-                };
-            }
-            case BROWSER -> {
-                AttributeBrowserViewModel vm =
-                        new AttributeBrowserViewModel(
-                                noteService, schemaRegistry);
-                vm.setOnDataChanged(refreshAll);
-                Parent view = loadFxml(newType, c -> {
-                    AttributeBrowserViewController ctrl =
-                            (AttributeBrowserViewController) c;
-                    ctrl.setOnViewSwitch(name ->
-                            switchView(ViewType.valueOf(name)));
-                    ctrl.initViewModel(vm);
-                });
-                replaceView(view);
-                newTitleProp = vm.tabTitleProperty();
-                currentViewRefresh = vm::groupNotes;
-                vm.groupNotes();
-            }
-            default -> throw new IllegalArgumentException(
-                    "Unknown view type: " + newType);
+        Parent view = loadFxml(newType,
+                result.controllerInitializer());
+        replaceView(view);
+
+        if (result.selectedNoteIdProperty() != null) {
+            wireSelection(result.selectedNoteIdProperty());
         }
 
-        label.textProperty().bind(newTitleProp);
+        currentViewRefresh = result.viewRefresh();
+        result.initialLoad().run();
+
+        label.textProperty().bind(result.tabTitle());
         currentViewType = newType;
         labelContextMenu = buildContextMenu();
         label.setContextMenu(labelContextMenu);
