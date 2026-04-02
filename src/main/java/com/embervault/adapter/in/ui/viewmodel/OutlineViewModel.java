@@ -35,18 +35,22 @@ public final class OutlineViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from the given note title property.
      *
      * @param noteTitle   the observable note title
      * @param noteService the note service for creating and querying notes
+     * @param appState    the shared application state for data-change notification
      */
-    public OutlineViewModel(StringProperty noteTitle, NoteService noteService) {
+    public OutlineViewModel(StringProperty noteTitle, NoteService noteService,
+            AppState appState) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
@@ -55,15 +59,6 @@ public final class OutlineViewModel {
                 updateTabTitle(newVal);
             }
         });
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */
@@ -135,7 +130,7 @@ public final class OutlineViewModel {
         if (parentId.equals(navigationStack.getCurrentId())) {
             rootItems.add(item);
         }
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return item;
     }
 
@@ -150,7 +145,7 @@ public final class OutlineViewModel {
         Note sibling = noteService.createSiblingNote(siblingId, title);
         NoteDisplayItem item = toDisplayItem(sibling);
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return item;
     }
 
@@ -162,7 +157,7 @@ public final class OutlineViewModel {
     public void indentNote(UUID noteId) {
         noteService.indentNote(noteId);
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -173,7 +168,7 @@ public final class OutlineViewModel {
     public void outdentNote(UUID noteId) {
         noteService.outdentNote(noteId);
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -188,7 +183,7 @@ public final class OutlineViewModel {
         noteService.moveNoteToPosition(noteId, newParentId,
                 position);
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -215,7 +210,7 @@ public final class OutlineViewModel {
                 break;
             }
         }
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return true;
     }
 
@@ -234,7 +229,7 @@ public final class OutlineViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -252,7 +247,7 @@ public final class OutlineViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -287,7 +282,7 @@ public final class OutlineViewModel {
         boolean deleted = noteService.deleteNoteIfLeaf(noteId);
         if (deleted) {
             loadNotes();
-            dataChangeSupport.notifyDataChanged();
+            appState.notifyDataChanged();
         }
         return deleted;
     }

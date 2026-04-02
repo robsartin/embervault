@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.UUID;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
@@ -39,8 +40,9 @@ class ViewFactoryCreateTest {
                 new InMemoryLinkRepository());
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
+        AppState appState = new AppState();
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService);
+                new SelectedNoteViewModel(noteService, appState);
         StringProperty rootNoteTitle =
                 new SimpleStringProperty("Root");
 
@@ -49,7 +51,7 @@ class ViewFactoryCreateTest {
 
         deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                () -> { }, selectedNoteVm, rootNoteTitle);
+                appState, selectedNoteVm, rootNoteTitle);
         registry = new ViewFactoryRegistry();
     }
 

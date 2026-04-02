@@ -76,7 +76,8 @@ class BadgeRenderingTest {
         child.setAttribute("$Badge", new AttributeValue.StringValue("star"));
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
-        MapViewModel vm = new MapViewModel(title, noteService);
+        MapViewModel vm = new MapViewModel(title, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
 
         MapViewController controller = new MapViewController();
@@ -102,7 +103,8 @@ class BadgeRenderingTest {
         noteService.createChildNote(parentId, "NoBadge");
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
-        MapViewModel vm = new MapViewModel(title, noteService);
+        MapViewModel vm = new MapViewModel(title, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
 
         MapViewController controller = new MapViewController();
@@ -131,7 +133,8 @@ class BadgeRenderingTest {
                 new AttributeValue.StringValue("flag"));
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
-        OutlineViewModel vm = new OutlineViewModel(title, noteService);
+        OutlineViewModel vm = new OutlineViewModel(title, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         vm.loadNotes();
 
@@ -156,7 +159,8 @@ class BadgeRenderingTest {
         noteService.createChildNote(parentId, "Plain");
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
-        OutlineViewModel vm = new OutlineViewModel(title, noteService);
+        OutlineViewModel vm = new OutlineViewModel(title, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         vm.loadNotes();
 
@@ -178,7 +182,8 @@ class BadgeRenderingTest {
                 new AttributeValue.StringValue("check"));
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
-        TreemapViewModel vm = new TreemapViewModel(title, noteService);
+        TreemapViewModel vm = new TreemapViewModel(title, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
 
         TreemapViewController controller = new TreemapViewController();
@@ -228,7 +233,8 @@ class BadgeRenderingTest {
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
         AttributeBrowserViewModel vm =
-                new AttributeBrowserViewModel(noteService, schemaRegistry);
+                new AttributeBrowserViewModel(noteService, schemaRegistry,
+                        new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         AttributeBrowserViewController controller =
                 new AttributeBrowserViewController();
@@ -285,7 +291,8 @@ class BadgeRenderingTest {
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
         AttributeBrowserViewModel vm =
-                new AttributeBrowserViewModel(noteService, schemaRegistry);
+                new AttributeBrowserViewModel(noteService, schemaRegistry,
+                        new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         AttributeBrowserViewController controller =
                 new AttributeBrowserViewController();
@@ -338,7 +345,8 @@ class BadgeRenderingTest {
         LinkService linkService = new LinkServiceImpl(
                 new InMemoryLinkRepository());
         HyperbolicViewModel vm = new HyperbolicViewModel(
-                noteService, linkService);
+                noteService, linkService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setViewportRadius(200);
         vm.setFocusNote(parentId);
 
@@ -362,7 +370,8 @@ class BadgeRenderingTest {
         LinkService linkService = new LinkServiceImpl(
                 new InMemoryLinkRepository());
         HyperbolicViewModel vm = new HyperbolicViewModel(
-                noteService, linkService);
+                noteService, linkService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setViewportRadius(200);
         vm.setFocusNote(parentId);
 

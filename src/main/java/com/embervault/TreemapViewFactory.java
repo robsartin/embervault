@@ -17,9 +17,9 @@ final class TreemapViewFactory implements ViewFactory {
             UUID baseNoteId,
             Consumer<String> onViewSwitch) {
         TreemapViewModel vm = new TreemapViewModel(
-                deps.rootNoteTitle(), deps.noteService());
+                deps.rootNoteTitle(), deps.noteService(),
+                deps.appState());
         vm.setBaseNoteId(baseNoteId);
-        vm.setOnDataChanged(deps.refreshAll());
         return new ViewCreationResult(
                 vm.tabTitleProperty(),
                 vm::loadNotes,

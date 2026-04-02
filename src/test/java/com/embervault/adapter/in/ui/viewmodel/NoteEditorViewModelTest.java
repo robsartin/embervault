@@ -29,27 +29,32 @@ class NoteEditorViewModelTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private AttributeSchemaRegistry schemaRegistry;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         schemaRegistry = new AttributeSchemaRegistry();
-        viewModel = new NoteEditorViewModel(noteService, schemaRegistry);
+        appState = new AppState();
+        viewModel = new NoteEditorViewModel(
+                noteService, schemaRegistry, appState);
     }
 
     @Test
     @DisplayName("Constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new NoteEditorViewModel(null, schemaRegistry));
+                () -> new NoteEditorViewModel(
+                        null, schemaRegistry, appState));
     }
 
     @Test
     @DisplayName("Constructor rejects null schemaRegistry")
     void constructor_shouldRejectNullSchemaRegistry() {
         assertThrows(NullPointerException.class,
-                () -> new NoteEditorViewModel(noteService, null));
+                () -> new NoteEditorViewModel(
+                        noteService, null, appState));
     }
 
     @Test
@@ -223,42 +228,39 @@ class NoteEditorViewModelTest {
     }
 
     @Test
-    @DisplayName("saveTitle notifies data changed")
+    @DisplayName("saveTitle notifies data changed via AppState")
     void saveTitle_shouldNotifyDataChanged() {
         Note note = noteService.createNote("Title", "Content");
         viewModel.setNote(note.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.saveTitle("New Title");
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
-    @DisplayName("saveText notifies data changed")
+    @DisplayName("saveText notifies data changed via AppState")
     void saveText_shouldNotifyDataChanged() {
         Note note = noteService.createNote("Title", "Content");
         viewModel.setNote(note.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.saveText("New Content");
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test
-    @DisplayName("saveAttribute notifies data changed")
+    @DisplayName("saveAttribute notifies data changed via AppState")
     void saveAttribute_shouldNotifyDataChanged() {
         Note note = noteService.createNote("Title", "Content");
         viewModel.setNote(note.getId());
-        boolean[] notified = {false};
-        viewModel.setOnDataChanged(() -> notified[0] = true);
+        int versionBefore = appState.getDataVersion();
 
         viewModel.saveAttribute("$Prototype", "Value");
 
-        assertTrue(notified[0]);
+        assertTrue(appState.getDataVersion() > versionBefore);
     }
 
     @Test

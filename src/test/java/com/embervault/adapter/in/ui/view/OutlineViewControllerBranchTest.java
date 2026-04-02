@@ -61,7 +61,8 @@ class OutlineViewControllerBranchTest {
         parentId = noteService.createNote("Parent", "").getId();
         SimpleStringProperty noteTitle =
                 new SimpleStringProperty("Parent");
-        viewModel = new OutlineViewModel(noteTitle, noteService);
+        viewModel = new OutlineViewModel(noteTitle, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState());
         viewModel.setBaseNoteId(parentId);
 
         controller = new OutlineViewController();

@@ -26,13 +26,15 @@ class MapViewModelEdgeCaseTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("Root Title");
-        viewModel = new MapViewModel(noteTitle, noteService);
+        appState = new AppState();
+        viewModel = new MapViewModel(noteTitle, noteService, appState);
     }
 
     @Nested

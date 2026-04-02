@@ -17,9 +17,9 @@ final class MapViewFactory implements ViewFactory {
             UUID baseNoteId,
             Consumer<String> onViewSwitch) {
         MapViewModel vm = new MapViewModel(
-                deps.rootNoteTitle(), deps.noteService());
+                deps.rootNoteTitle(), deps.noteService(),
+                deps.appState());
         vm.setBaseNoteId(baseNoteId);
-        vm.setOnDataChanged(deps.refreshAll());
         return new ViewCreationResult(
                 vm.tabTitleProperty(),
                 vm::loadNotes,

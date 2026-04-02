@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
@@ -54,10 +55,11 @@ public class App extends Application {
                 "Welcome to EmberVault");
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
+        AppState appState = new AppState();
 
         // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
-                rootNoteTitle, noteService);
+                rootNoteTitle, noteService, appState);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {
@@ -69,14 +71,15 @@ public class App extends Application {
         });
 
         // Search
-        SearchViewModel searchViewModel = new SearchViewModel(noteService);
+        SearchViewModel searchViewModel = new SearchViewModel(
+                noteService, appState);
         Parent searchView = loadView("SearchView.fxml",
                 c -> ((SearchViewController) c)
                         .initViewModel(searchViewModel));
 
         // Text pane for selected note
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService);
+                new SelectedNoteViewModel(noteService, appState);
         FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/TextPaneView.fxml"));
         Parent textPaneView = textPaneLoader.load();
@@ -108,10 +111,8 @@ public class App extends Application {
         };
         windowManager.register(stage);
         windowManager.addRefreshListener(localRefresh);
-        Runnable refreshAll = windowManager::notifyAllWindows;
-        outlineViewModel.setOnDataChanged(refreshAll);
-        selectedNoteVm.setOnDataChanged(refreshAll);
-        searchViewModel.setOnDataChanged(refreshAll);
+        appState.dataVersionProperty().addListener(
+                (obs, oldVal, newVal) -> windowManager.notifyAllWindows());
         stage.setOnCloseRequest(event -> {
             windowManager.removeRefreshListener(localRefresh);
             windowManager.unregister(stage);
@@ -121,7 +122,7 @@ public class App extends Application {
         });
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                refreshAll, selectedNoteVm, rootNoteTitle);
+                appState, selectedNoteVm, rootNoteTitle);
         outlinePane.setDeps(paneDeps);
 
         // Layout: outline + text pane
@@ -135,7 +136,7 @@ public class App extends Application {
         WindowContext winCtx = new WindowContext(
                 sharedServices, windowManager,
                 outlineViewModel.selectedNoteIdProperty(),
-                refreshAll, stage,
+                appState, stage,
                 searchViewModel::toggleVisible,
                 newRootId -> {
                     outlineViewModel.setBaseNoteId(newRootId);

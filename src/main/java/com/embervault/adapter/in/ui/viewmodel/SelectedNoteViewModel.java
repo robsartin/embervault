@@ -26,25 +26,19 @@ public final class SelectedNoteViewModel {
     private final StringProperty title = new SimpleStringProperty("");
     private final StringProperty text = new SimpleStringProperty("");
     private final NoteService noteService;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
 
     /**
      * Constructs a SelectedNoteViewModel.
      *
      * @param noteService the note service for querying and updating notes
+     * @param appState    the shared application state for data-change notification
      */
-    public SelectedNoteViewModel(NoteService noteService) {
+    public SelectedNoteViewModel(NoteService noteService, AppState appState) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
     }
 
     /** Returns the selected note id property. */
@@ -95,7 +89,7 @@ public final class SelectedNoteViewModel {
         }
         noteService.renameNote(noteId, newTitle);
         title.set(newTitle);
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -113,6 +107,6 @@ public final class SelectedNoteViewModel {
                     new AttributeValue.StringValue(newText));
         });
         text.set(newText);
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 }

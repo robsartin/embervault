@@ -28,27 +28,32 @@ class AttributeBrowserViewModelTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private AttributeSchemaRegistry schemaRegistry;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         schemaRegistry = new AttributeSchemaRegistry();
-        viewModel = new AttributeBrowserViewModel(noteService, schemaRegistry);
+        appState = new AppState();
+        viewModel = new AttributeBrowserViewModel(
+                noteService, schemaRegistry, appState);
     }
 
     @Test
     @DisplayName("Constructor rejects null noteService")
     void constructor_shouldRejectNullNoteService() {
         assertThrows(NullPointerException.class,
-                () -> new AttributeBrowserViewModel(null, schemaRegistry));
+                () -> new AttributeBrowserViewModel(
+                        null, schemaRegistry, appState));
     }
 
     @Test
     @DisplayName("Constructor rejects null schemaRegistry")
     void constructor_shouldRejectNullSchemaRegistry() {
         assertThrows(NullPointerException.class,
-                () -> new AttributeBrowserViewModel(noteService, null));
+                () -> new AttributeBrowserViewModel(
+                        noteService, null, appState));
     }
 
     @Test

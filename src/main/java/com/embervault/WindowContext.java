@@ -3,6 +3,7 @@ package com.embervault;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import javafx.beans.property.ObjectProperty;
 import javafx.stage.Stage;
 
@@ -16,7 +17,7 @@ import javafx.stage.Stage;
  * @param sharedServices shared singleton services
  * @param windowManager  the application window manager
  * @param selectedNoteId this window's selected note id property
- * @param refreshAll     callback to refresh all windows
+ * @param appState       the shared application state for data-change notification
  * @param ownerStage     this window's stage (for modal dialogs)
  * @param onFind         callback for Edit &gt; Find, or null
  * @param onBaseNoteChanged callback when loaded project changes
@@ -26,7 +27,7 @@ public record WindowContext(
         SharedServices sharedServices,
         WindowManager windowManager,
         ObjectProperty<UUID> selectedNoteId,
-        Runnable refreshAll,
+        AppState appState,
         Stage ownerStage,
         Runnable onFind,
         Consumer<UUID> onBaseNoteChanged) {

@@ -96,7 +96,7 @@ final class MenuBarFactory {
                 if (ctx.onBaseNoteChanged() != null) {
                     ctx.onBaseNoteChanged().accept(rootId);
                 }
-                ctx.refreshAll().run();
+                ctx.appState().notifyDataChanged();
             }
         });
 
@@ -115,7 +115,7 @@ final class MenuBarFactory {
             if (parentId != null) {
                 ctx.sharedServices().noteService()
                         .createChildNote(parentId, "Untitled");
-                ctx.refreshAll().run();
+                ctx.appState().notifyDataChanged();
             }
         });
         Menu menu = new Menu("Note");
@@ -213,7 +213,7 @@ final class MenuBarFactory {
         try {
             ctx.sharedServices().stampService()
                     .applyStamp(stampId, noteId);
-            ctx.refreshAll().run();
+            ctx.appState().notifyDataChanged();
         } catch (Exception ex) {
             LOG.error("Failed to apply stamp", ex);
         }

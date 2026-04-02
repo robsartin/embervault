@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
@@ -59,14 +60,16 @@ class ViewPaneContextTest {
         linkService = new LinkServiceImpl(
                 new InMemoryLinkRepository());
         schemaRegistry = new AttributeSchemaRegistry();
-        selectedNoteVm = new SelectedNoteViewModel(noteService);
+        AppState appState = new AppState();
+        selectedNoteVm = new SelectedNoteViewModel(
+                noteService, appState);
         rootNoteTitle = new SimpleStringProperty("Root");
 
         rootNote = noteService.createNote("Root", "");
         noteService.createChildNote(rootNote.getId(), "Child1");
 
         mapViewModel = new MapViewModel(
-                rootNoteTitle, noteService);
+                rootNoteTitle, noteService, appState);
         mapViewModel.setBaseNoteId(rootNote.getId());
         mapViewModel.loadNotes();
 
@@ -78,10 +81,9 @@ class ViewPaneContextTest {
                 rootNote.getId(),
                 mapViewModel::loadNotes);
 
-        Runnable refreshAll = () -> { };
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                refreshAll, selectedNoteVm, rootNoteTitle);
+                new AppState(), selectedNoteVm, rootNoteTitle);
         paneContext.setDeps(deps);
     }
 
@@ -163,7 +165,7 @@ class ViewPaneContextTest {
                 count::incrementAndGet);
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                () -> { }, selectedNoteVm, rootNoteTitle);
+                new AppState(), selectedNoteVm, rootNoteTitle);
         ctx.setDeps(deps);
 
         ctx.refreshCurrentView();

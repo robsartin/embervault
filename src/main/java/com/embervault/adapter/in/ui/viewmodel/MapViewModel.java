@@ -50,7 +50,7 @@ public final class MapViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
     private final DoubleProperty zoomLevel = new SimpleDoubleProperty(1.0);
     private final ReadOnlyObjectWrapper<ZoomTier> currentTier =
             new ReadOnlyObjectWrapper<>(ZoomTier.NORMAL);
@@ -60,11 +60,15 @@ public final class MapViewModel {
      *
      * @param noteTitle   the observable note title
      * @param noteService the note service for creating and querying notes
+     * @param appState    the shared application state for data-change notification
      */
-    public MapViewModel(StringProperty noteTitle, NoteService noteService) {
+    public MapViewModel(StringProperty noteTitle, NoteService noteService,
+            AppState appState) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
@@ -77,15 +81,6 @@ public final class MapViewModel {
         // Update current tier when zoom level changes
         zoomLevel.addListener((obs, oldVal, newVal) ->
                 currentTier.set(ZoomTier.fromZoomLevel(newVal.doubleValue())));
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */
@@ -155,7 +150,7 @@ public final class MapViewModel {
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return item;
     }
 
@@ -175,7 +170,7 @@ public final class MapViewModel {
         child.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return item;
     }
 
@@ -199,7 +194,7 @@ public final class MapViewModel {
         }
         NoteDisplayItem item = toDisplayItem(sibling);
         noteItems.add(item);
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return item;
     }
 
@@ -305,7 +300,7 @@ public final class MapViewModel {
                 break;
             }
         }
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return true;
     }
 
@@ -319,7 +314,7 @@ public final class MapViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -337,7 +332,7 @@ public final class MapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     private void updateTabTitle(String title) {

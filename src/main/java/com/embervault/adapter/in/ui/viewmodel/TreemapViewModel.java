@@ -35,18 +35,22 @@ public final class TreemapViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
-    private final DataChangeSupport dataChangeSupport = new DataChangeSupport();
+    private final AppState appState;
 
     /**
      * Constructs a TreemapViewModel that derives its tab title from the given note title property.
      *
      * @param noteTitle   the observable note title
      * @param noteService the note service for creating and querying notes
+     * @param appState    the shared application state for data-change notification
      */
-    public TreemapViewModel(StringProperty noteTitle, NoteService noteService) {
+    public TreemapViewModel(StringProperty noteTitle, NoteService noteService,
+            AppState appState) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
+        this.appState = Objects.requireNonNull(appState,
+                "appState must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         noteTitle.addListener((obs, oldVal, newVal) -> {
@@ -54,15 +58,6 @@ public final class TreemapViewModel {
                 updateTabTitle(newVal);
             }
         });
-    }
-
-    /**
-     * Sets a callback to be invoked after any mutation operation.
-     *
-     * @param callback the callback to invoke, or null to clear
-     */
-    public void setOnDataChanged(Runnable callback) {
-        dataChangeSupport.setOnDataChanged(callback);
     }
 
     /** Returns the tab title property. */
@@ -133,7 +128,7 @@ public final class TreemapViewModel {
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
         return item;
     }
 
@@ -152,7 +147,7 @@ public final class TreemapViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**
@@ -170,7 +165,7 @@ public final class TreemapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        dataChangeSupport.notifyDataChanged();
+        appState.notifyDataChanged();
     }
 
     /**

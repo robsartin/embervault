@@ -17,8 +17,8 @@ final class HyperbolicViewFactory implements ViewFactory {
             UUID baseNoteId,
             Consumer<String> onViewSwitch) {
         HyperbolicViewModel vm = new HyperbolicViewModel(
-                deps.noteService(), deps.linkService());
-        vm.setOnDataChanged(deps.refreshAll());
+                deps.noteService(), deps.linkService(),
+                deps.appState());
         if (baseNoteId != null) {
             vm.setFocusNote(baseNoteId);
         }

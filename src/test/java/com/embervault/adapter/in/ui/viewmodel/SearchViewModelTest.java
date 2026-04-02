@@ -19,12 +19,14 @@ class SearchViewModelTest {
 
     private SearchViewModel viewModel;
     private NoteService noteService;
+    private AppState appState;
 
     @BeforeEach
     void setUp() {
         InMemoryNoteRepository repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
-        viewModel = new SearchViewModel(noteService);
+        appState = new AppState();
+        viewModel = new SearchViewModel(noteService, appState);
     }
 
     @Test
@@ -168,7 +170,7 @@ class SearchViewModelTest {
     void constructor_shouldRejectNullNoteService() {
         org.junit.jupiter.api.Assertions.assertThrows(
                 NullPointerException.class,
-                () -> new SearchViewModel(null));
+                () -> new SearchViewModel(null, appState));
     }
 
     @Test
@@ -212,11 +214,4 @@ class SearchViewModelTest {
         assertTrue(viewModel.getResults().isEmpty());
     }
 
-    @Test
-    @DisplayName("setOnDataChanged() callback is invoked (not used by SearchViewModel mutations, but is wirable)")
-    void setOnDataChanged_shouldAcceptCallback() {
-        // SearchViewModel has no local mutations that call notifyDataChanged,
-        // but the method should exist and not throw.
-        viewModel.setOnDataChanged(() -> { });
-    }
 }
