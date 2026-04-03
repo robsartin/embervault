@@ -50,4 +50,26 @@ class ShortcutRegistry {
   List<ShortcutAction> getAll() {
     return List.copyOf(shortcuts.values());
   }
+
+  /**
+   * Searches registered shortcuts by name or description substring
+   * (case-insensitive). An empty query returns all shortcuts.
+   *
+   * @param query the search query
+   * @return matching actions in insertion order
+   */
+  List<ShortcutAction> search(String query) {
+    if (query == null || query.isEmpty()) {
+      return getAll();
+    }
+    String lowerQuery = query.toLowerCase();
+    List<ShortcutAction> results = new ArrayList<>();
+    for (ShortcutAction action : shortcuts.values()) {
+      if (action.name().toLowerCase().contains(lowerQuery)
+          || action.description().toLowerCase().contains(lowerQuery)) {
+        results.add(action);
+      }
+    }
+    return results;
+  }
 }

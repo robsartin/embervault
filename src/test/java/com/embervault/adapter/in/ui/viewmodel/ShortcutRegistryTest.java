@@ -58,4 +58,46 @@ class ShortcutRegistryTest {
 
     assertTrue(result.isEmpty());
   }
+
+  @Test
+  @DisplayName("search filters shortcuts by name substring (case-insensitive)")
+  void search_shouldFilterByNameCaseInsensitive() {
+    registry.register("Shortcut+N", "New Note",
+        "Create a new note", () -> { });
+    registry.register("Shortcut+F", "Find",
+        "Open search", () -> { });
+    registry.register("Shortcut+Shift+N", "New Child Note",
+        "Create child note", () -> { });
+
+    List<ShortcutAction> results = registry.search("new");
+
+    assertEquals(2, results.size());
+    assertEquals("New Note", results.get(0).name());
+    assertEquals("New Child Note", results.get(1).name());
+  }
+
+  @Test
+  @DisplayName("search also matches description substring")
+  void search_shouldMatchDescription() {
+    registry.register("Shortcut+F", "Find",
+        "Open search panel", () -> { });
+
+    List<ShortcutAction> results = registry.search("search");
+
+    assertEquals(1, results.size());
+    assertEquals("Find", results.get(0).name());
+  }
+
+  @Test
+  @DisplayName("search with empty query returns all shortcuts")
+  void search_shouldReturnAllForEmptyQuery() {
+    registry.register("Shortcut+N", "New Note",
+        "Create note", () -> { });
+    registry.register("Shortcut+F", "Find",
+        "Open search", () -> { });
+
+    List<ShortcutAction> results = registry.search("");
+
+    assertEquals(2, results.size());
+  }
 }
