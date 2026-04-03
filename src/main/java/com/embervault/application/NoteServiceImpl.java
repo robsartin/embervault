@@ -29,6 +29,7 @@ import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.MoveNoteUseCase;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.RenameNoteUseCase;
+import com.embervault.application.port.in.UpdateNoteUseCase;
 import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeMap;
 import com.embervault.domain.AttributeValue;
@@ -42,7 +43,7 @@ import com.embervault.domain.UuidGenerator;
  */
 public final class NoteServiceImpl implements NoteService,
         CreateNoteUseCase, GetNoteQuery, DeleteNoteUseCase,
-        RenameNoteUseCase, MoveNoteUseCase {
+        RenameNoteUseCase, MoveNoteUseCase, UpdateNoteUseCase {
 
     private static final double MAX_XPOS = 12.0;
     private static final double MAX_YPOS = 8.0;
