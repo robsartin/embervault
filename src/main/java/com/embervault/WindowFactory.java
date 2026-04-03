@@ -105,7 +105,7 @@ public final class WindowFactory {
         WindowContext winCtx = new WindowContext(
                 services, windowManager,
                 mapVm.selectedNoteIdProperty(),
-                setup.appState(), newStage, null,
+                setup.appState(), newStage, null, null,
                 newRootId -> {
                     mapVm.setBaseNoteId(newRootId);
                     mapVm.loadNotes();

@@ -132,7 +132,7 @@ public class App extends Application {
                 sharedServices, windowManager,
                 outlineViewModel.selectedNoteIdProperty(),
                 setup.appState(), stage,
-                searchViewModel::toggleVisible,
+                searchViewModel::toggleVisible, null,
                 newRootId -> {
                     outlineViewModel.setBaseNoteId(newRootId);
                     outlineViewModel.loadNotes();

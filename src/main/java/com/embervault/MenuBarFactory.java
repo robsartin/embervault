@@ -124,6 +124,32 @@ final class MenuBarFactory {
     }
 
     private static Menu buildEditMenu(WindowContext ctx) {
+        MenuItem undoItem = new MenuItem("Undo");
+        undoItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.Z,
+                        KeyCombination.SHORTCUT_DOWN));
+        MenuItem redoItem = new MenuItem("Redo");
+        redoItem.setAccelerator(
+                new KeyCodeCombination(KeyCode.Z,
+                        KeyCombination.SHORTCUT_DOWN,
+                        KeyCombination.SHIFT_DOWN));
+        if (ctx.commandHistory() != null) {
+            var history = ctx.commandHistory();
+            undoItem.setDisable(!history.canUndo());
+            redoItem.setDisable(!history.canRedo());
+            undoItem.setOnAction(e -> {
+                history.undo();
+                ctx.appState().notifyDataChanged();
+            });
+            redoItem.setOnAction(e -> {
+                history.redo();
+                ctx.appState().notifyDataChanged();
+            });
+        } else {
+            undoItem.setDisable(true);
+            redoItem.setDisable(true);
+        }
+
         MenuItem findItem = new MenuItem("Find");
         findItem.setAccelerator(
                 new KeyCodeCombination(KeyCode.F,
@@ -134,7 +160,8 @@ final class MenuBarFactory {
             }
         });
         Menu menu = new Menu("Edit");
-        menu.getItems().add(findItem);
+        menu.getItems().addAll(undoItem, redoItem,
+                new SeparatorMenuItem(), findItem);
         return menu;
     }
 
