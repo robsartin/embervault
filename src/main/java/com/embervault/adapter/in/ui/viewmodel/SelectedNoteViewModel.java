@@ -27,6 +27,7 @@ public final class SelectedNoteViewModel {
     private final StringProperty text = new SimpleStringProperty("");
     private final NoteService noteService;
     private final AppState appState;
+    private final EventBus eventBus;
 
     /**
      * Constructs a SelectedNoteViewModel.
@@ -35,10 +36,24 @@ public final class SelectedNoteViewModel {
      * @param appState    the shared application state for data-change notification
      */
     public SelectedNoteViewModel(NoteService noteService, AppState appState) {
+        this(noteService, appState, new EventBus());
+    }
+
+    /**
+     * Constructs a SelectedNoteViewModel with an explicit EventBus.
+     *
+     * @param noteService the note service for querying and updating notes
+     * @param appState    the shared application state for data-change notification
+     * @param eventBus    the event bus for publishing domain events
+     */
+    public SelectedNoteViewModel(NoteService noteService, AppState appState,
+            EventBus eventBus) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
     }
 
     /** Returns the selected note id property. */
@@ -89,7 +104,7 @@ public final class SelectedNoteViewModel {
         }
         noteService.renameNote(noteId, newTitle);
         title.set(newTitle);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
     }
 
     /**
@@ -107,6 +122,6 @@ public final class SelectedNoteViewModel {
                     new AttributeValue.StringValue(newText));
         });
         text.set(newText);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteUpdatedEvent(noteId));
     }
 }

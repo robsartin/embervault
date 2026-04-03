@@ -28,6 +28,7 @@ class TreemapViewModelTest {
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -35,7 +36,10 @@ class TreemapViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        viewModel = new TreemapViewModel(noteTitle, noteService, appState);
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
+        viewModel = new TreemapViewModel(
+                noteTitle, noteService, appState, eventBus);
     }
 
     @Test

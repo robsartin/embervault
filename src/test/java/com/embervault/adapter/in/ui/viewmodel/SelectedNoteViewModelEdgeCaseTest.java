@@ -20,13 +20,17 @@ class SelectedNoteViewModelEdgeCaseTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         appState = new AppState();
-        viewModel = new SelectedNoteViewModel(noteService, appState);
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
+        viewModel = new SelectedNoteViewModel(
+                noteService, appState, eventBus);
     }
 
     @Nested

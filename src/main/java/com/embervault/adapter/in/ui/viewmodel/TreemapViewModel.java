@@ -36,6 +36,7 @@ public final class TreemapViewModel {
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
+    private final EventBus eventBus;
 
     /**
      * Constructs a TreemapViewModel that derives its tab title from the given note title property.
@@ -46,11 +47,26 @@ public final class TreemapViewModel {
      */
     public TreemapViewModel(StringProperty noteTitle, NoteService noteService,
             AppState appState) {
+        this(noteTitle, noteService, appState, new EventBus());
+    }
+
+    /**
+     * Constructs a TreemapViewModel with an explicit EventBus.
+     *
+     * @param noteTitle   the observable note title
+     * @param noteService the note service for creating and querying notes
+     * @param appState    the shared application state for data-change notification
+     * @param eventBus    the event bus for publishing domain events
+     */
+    public TreemapViewModel(StringProperty noteTitle, NoteService noteService,
+            AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         noteTitle.addListener((obs, oldVal, newVal) -> {
@@ -128,7 +144,7 @@ public final class TreemapViewModel {
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -147,7 +163,7 @@ public final class TreemapViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -165,7 +181,7 @@ public final class TreemapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(previous));
     }
 
     /**
