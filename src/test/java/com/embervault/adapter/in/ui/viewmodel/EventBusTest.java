@@ -87,4 +87,16 @@ class EventBusTest {
     void unsubscribe_nonExistentType_doesNotThrow() {
         eventBus.unsubscribe(String.class, s -> { });
     }
+
+    @Test
+    @DisplayName("subscribe returns Subscription whose unsubscribe removes handler")
+    void subscribe_returnsSubscription_unsubscribeRemovesHandler() {
+        List<String> received = new ArrayList<>();
+        Subscription subscription = eventBus.subscribe(String.class, received::add);
+
+        subscription.unsubscribe();
+        eventBus.publish("after-unsub");
+
+        assertTrue(received.isEmpty());
+    }
 }

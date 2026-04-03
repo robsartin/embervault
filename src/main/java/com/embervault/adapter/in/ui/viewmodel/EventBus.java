@@ -42,9 +42,11 @@ public class EventBus {
      *                  is published
      * @param <T>       the event type
      */
-    public <T> void subscribe(Class<T> eventType, Consumer<T> handler) {
+    public <T> Subscription subscribe(Class<T> eventType,
+            Consumer<T> handler) {
         subscribers.computeIfAbsent(
                 eventType, k -> new CopyOnWriteArrayList<>()).add(handler);
+        return () -> unsubscribe(eventType, handler);
     }
 
     /**
