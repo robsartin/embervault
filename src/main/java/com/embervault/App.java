@@ -8,6 +8,7 @@ import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
@@ -56,6 +57,7 @@ public class App extends Application {
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
         AppState appState = new AppState();
+        EventBus eventBus = new EventBus();
 
         // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
@@ -122,7 +124,7 @@ public class App extends Application {
         });
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                appState, selectedNoteVm, rootNoteTitle);
+                appState, eventBus, selectedNoteVm, rootNoteTitle);
         outlinePane.setDeps(paneDeps);
 
         // Layout: outline + text pane
