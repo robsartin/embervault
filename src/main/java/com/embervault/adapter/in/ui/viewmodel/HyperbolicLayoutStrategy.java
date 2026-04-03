@@ -15,7 +15,7 @@ import java.util.UUID;
 public final class HyperbolicLayoutStrategy implements LayoutStrategy {
 
     @Override
-    public List<HyperbolicNode> layout(UUID focusId,
+    public List<PositionedNode> layout(UUID focusId,
             Map<UUID, Set<UUID>> adjacency, double viewportRadius) {
         return HyperbolicLayout.layout(focusId, adjacency, viewportRadius);
     }

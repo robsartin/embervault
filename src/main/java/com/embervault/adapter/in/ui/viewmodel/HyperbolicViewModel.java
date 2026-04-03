@@ -38,7 +38,7 @@ public final class HyperbolicViewModel {
     private final NoteService noteService;
     private final LinkService linkService;
     private final ReadOnlyStringWrapper tabTitle = new ReadOnlyStringWrapper();
-    private final ObservableList<HyperbolicNode> nodes =
+    private final ObservableList<PositionedNode> nodes =
             FXCollections.observableArrayList();
     private final ObservableList<HyperbolicEdge> edges =
             FXCollections.observableArrayList();
@@ -178,7 +178,7 @@ public final class HyperbolicViewModel {
     }
 
     /** Returns the observable list of positioned nodes. */
-    public ObservableList<HyperbolicNode> getNodes() {
+    public ObservableList<PositionedNode> getNodes() {
         return nodes;
     }
 
@@ -254,7 +254,7 @@ public final class HyperbolicViewModel {
             }
         }
 
-        List<HyperbolicNode> layoutNodes = layoutStrategy.layout(
+        List<PositionedNode> layoutNodes = layoutStrategy.layout(
                 focus, adjacency, viewportRadius);
 
         nodes.setAll(layoutNodes);
