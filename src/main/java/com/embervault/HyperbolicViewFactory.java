@@ -4,6 +4,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.embervault.adapter.in.ui.view.HyperbolicViewController;
+import com.embervault.adapter.in.ui.viewmodel.HyperbolicLayoutStrategy;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 
 /**
@@ -18,7 +19,8 @@ final class HyperbolicViewFactory implements ViewFactory {
             Consumer<String> onViewSwitch) {
         HyperbolicViewModel vm = new HyperbolicViewModel(
                 deps.noteService(), deps.linkService(),
-                deps.appState());
+                deps.appState(), deps.eventBus(),
+                new HyperbolicLayoutStrategy());
         if (baseNoteId != null) {
             vm.setFocusNote(baseNoteId);
         }

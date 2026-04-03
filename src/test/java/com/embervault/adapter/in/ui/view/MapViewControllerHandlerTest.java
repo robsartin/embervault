@@ -54,7 +54,8 @@ class MapViewControllerHandlerTest {
         SimpleStringProperty noteTitle = new SimpleStringProperty("Test");
         viewModel = new MapViewModel(noteTitle, noteService,
                 noteService, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new com.embervault.adapter.in.ui.viewmodel.EventBus());
 
         parentId = noteService.createNote("Parent", "").getId();
         viewModel.setBaseNoteId(parentId);

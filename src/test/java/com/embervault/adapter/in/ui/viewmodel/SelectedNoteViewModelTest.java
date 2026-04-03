@@ -9,9 +9,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
-import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
-import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,16 +22,17 @@ class SelectedNoteViewModelTest {
     private NoteService noteService;
     private InMemoryNoteRepository repository;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         appState = new AppState();
-        GetNoteQuery getNoteQuery = noteService;
-        RenameNoteUseCase renameNoteUseCase = noteService;
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
         viewModel = new SelectedNoteViewModel(
-                getNoteQuery, renameNoteUseCase, appState);
+                noteService, noteService, appState, eventBus);
     }
 
     @Test
@@ -41,7 +40,8 @@ class SelectedNoteViewModelTest {
     void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
                 () -> new SelectedNoteViewModel(
-                        null, noteService, appState));
+                        null, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
@@ -49,7 +49,8 @@ class SelectedNoteViewModelTest {
     void constructor_shouldRejectNullRenameNoteUseCase() {
         assertThrows(NullPointerException.class,
                 () -> new SelectedNoteViewModel(
-                        noteService, null, appState));
+                        noteService, null, appState,
+                        new EventBus()));
     }
 
     @Test

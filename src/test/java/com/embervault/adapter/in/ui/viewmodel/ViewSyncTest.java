@@ -36,17 +36,20 @@ class ViewSyncTest {
         StringProperty noteTitle = new SimpleStringProperty("Root");
 
         AppState appState = new AppState();
+        EventBus eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
         mapViewModel = new MapViewModel(noteTitle, noteService,
-                noteService, noteService, appState);
+                noteService, noteService, appState, eventBus);
         outlineViewModel = new OutlineViewModel(
                 noteTitle, noteService, noteService,
                 noteService, noteService, noteService,
-                noteService, appState);
+                noteService, appState, eventBus);
         treemapViewModel = new TreemapViewModel(
-                noteTitle, noteService, noteService, appState);
+                noteTitle, noteService, noteService,
+                appState, eventBus);
         searchViewModel = new SearchViewModel(noteService, appState);
         selectedNoteViewModel = new SelectedNoteViewModel(
-                noteService, noteService, appState);
+                noteService, noteService, appState, eventBus);
 
         root = noteService.createNote("Root", "");
         mapViewModel.setBaseNoteId(root.getId());

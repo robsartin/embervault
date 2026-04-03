@@ -28,6 +28,7 @@ class HyperbolicViewModelTest {
     private NoteService noteService;
     private LinkService linkService;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -36,9 +37,11 @@ class HyperbolicViewModelTest {
         InMemoryLinkRepository linkRepo = new InMemoryLinkRepository();
         linkService = new LinkServiceImpl(linkRepo);
         appState = new AppState();
-        GetNoteQuery getNoteQuery = noteService;
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
         viewModel = new HyperbolicViewModel(
-                getNoteQuery, linkService, appState);
+                noteService, linkService, appState, eventBus,
+                new HyperbolicLayoutStrategy());
     }
 
     @Test

@@ -11,13 +11,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
-import com.embervault.application.port.in.CreateNoteUseCase;
-import com.embervault.application.port.in.DeleteNoteUseCase;
-import com.embervault.application.port.in.GetNoteQuery;
-import com.embervault.application.port.in.GetOutlineNavigationQuery;
-import com.embervault.application.port.in.MoveNoteUseCase;
 import com.embervault.application.port.in.NoteService;
-import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
@@ -34,6 +28,7 @@ class OutlineViewModelTest {
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -41,15 +36,11 @@ class OutlineViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        GetNoteQuery getNoteQuery = noteService;
-        CreateNoteUseCase createNoteUseCase = noteService;
-        RenameNoteUseCase renameNoteUseCase = noteService;
-        MoveNoteUseCase moveNoteUseCase = noteService;
-        DeleteNoteUseCase deleteNoteUseCase = noteService;
-        GetOutlineNavigationQuery outlineNavQuery = noteService;
-        viewModel = new OutlineViewModel(noteTitle, getNoteQuery,
-                createNoteUseCase, renameNoteUseCase, moveNoteUseCase,
-                deleteNoteUseCase, outlineNavQuery, appState);
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
+        viewModel = new OutlineViewModel(noteTitle, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService, appState, eventBus);
     }
 
     @Test
@@ -90,7 +81,8 @@ class OutlineViewModelTest {
         assertThrows(NullPointerException.class,
                 () -> new OutlineViewModel(null, noteService,
                         noteService, noteService, noteService,
-                        noteService, noteService, appState));
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
@@ -99,7 +91,8 @@ class OutlineViewModelTest {
         assertThrows(NullPointerException.class,
                 () -> new OutlineViewModel(noteTitle, null,
                         noteService, noteService, noteService,
-                        noteService, noteService, appState));
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test

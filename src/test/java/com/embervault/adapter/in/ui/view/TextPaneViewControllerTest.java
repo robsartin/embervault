@@ -65,7 +65,8 @@ class TextPaneViewControllerTest {
 
         viewModel = new SelectedNoteViewModel(
                 noteService, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new com.embervault.adapter.in.ui.viewmodel.EventBus());
 
         controller = new TextPaneViewController();
 

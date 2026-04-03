@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
+import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
@@ -47,6 +48,7 @@ public class App extends Application {
         WindowSetupContext setupCtx = new WindowSetupContext(
                 sharedServices, windowManager);
         WindowSetupResult setup = WindowBuilder.build(setupCtx);
+        new AppStateEventBridge(setup.eventBus(), setup.appState());
         SelectedNoteViewModel selectedNoteVm = setup.selectedNoteVm();
 
         // Single Outline view
@@ -58,7 +60,7 @@ public class App extends Application {
                 setup.paneDeps().noteService(),
                 setup.paneDeps().noteService(),
                 setup.paneDeps().noteService(),
-                setup.appState());
+                setup.appState(), setup.eventBus());
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {

@@ -46,6 +46,7 @@ public final class OutlineViewModel {
     private final GetOutlineNavigationQuery outlineNavQuery;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
+    private final EventBus eventBus;
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from
@@ -68,7 +69,7 @@ public final class OutlineViewModel {
             MoveNoteUseCase moveNoteUseCase,
             DeleteNoteUseCase deleteNoteUseCase,
             GetOutlineNavigationQuery outlineNavQuery,
-            AppState appState) {
+            AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
                 "getNoteQuery must not be null");
@@ -89,6 +90,8 @@ public final class OutlineViewModel {
                 "outlineNavQuery must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
@@ -168,7 +171,7 @@ public final class OutlineViewModel {
         if (parentId.equals(navigationStack.getCurrentId())) {
             rootItems.add(item);
         }
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -183,7 +186,7 @@ public final class OutlineViewModel {
         Note sibling = createNoteUseCase.createSiblingNote(siblingId, title);
         NoteDisplayItem item = toDisplayItem(sibling);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(sibling.getId()));
         return item;
     }
 
@@ -195,7 +198,7 @@ public final class OutlineViewModel {
     public void indentNote(UUID noteId) {
         moveNoteUseCase.indentNote(noteId);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -206,7 +209,7 @@ public final class OutlineViewModel {
     public void outdentNote(UUID noteId) {
         moveNoteUseCase.outdentNote(noteId);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -221,7 +224,7 @@ public final class OutlineViewModel {
         moveNoteUseCase.moveNoteToPosition(noteId, newParentId,
                 position);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -248,7 +251,7 @@ public final class OutlineViewModel {
                 break;
             }
         }
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
         return true;
     }
 
@@ -267,7 +270,7 @@ public final class OutlineViewModel {
         getNoteQuery.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -285,7 +288,7 @@ public final class OutlineViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(previous));
     }
 
     /**
@@ -320,7 +323,7 @@ public final class OutlineViewModel {
         boolean deleted = deleteNoteUseCase.deleteNoteIfLeaf(noteId);
         if (deleted) {
             loadNotes();
-            appState.notifyDataChanged();
+            eventBus.publish(new NoteDeletedEvent(noteId));
         }
         return deleted;
     }

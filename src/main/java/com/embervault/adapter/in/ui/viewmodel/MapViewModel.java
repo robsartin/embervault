@@ -55,6 +55,7 @@ public final class MapViewModel {
     private final RenameNoteUseCase renameNoteUseCase;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
+    private final EventBus eventBus;
     private final DoubleProperty zoomLevel = new SimpleDoubleProperty(1.0);
     private final ReadOnlyObjectWrapper<ZoomTier> currentTier =
             new ReadOnlyObjectWrapper<>(ZoomTier.NORMAL);
@@ -74,7 +75,7 @@ public final class MapViewModel {
             GetNoteQuery getNoteQuery,
             CreateNoteUseCase createNoteUseCase,
             RenameNoteUseCase renameNoteUseCase,
-            AppState appState) {
+            AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
                 "getNoteQuery must not be null");
@@ -86,6 +87,8 @@ public final class MapViewModel {
                 "renameNoteUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
@@ -167,7 +170,7 @@ public final class MapViewModel {
         Note child = createNoteUseCase.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -187,7 +190,7 @@ public final class MapViewModel {
         child.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -211,7 +214,7 @@ public final class MapViewModel {
         }
         NoteDisplayItem item = toDisplayItem(sibling);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(sibling.getId()));
         return item;
     }
 
@@ -317,7 +320,7 @@ public final class MapViewModel {
                 break;
             }
         }
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
         return true;
     }
 
@@ -331,7 +334,7 @@ public final class MapViewModel {
         getNoteQuery.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -349,7 +352,7 @@ public final class MapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(previous));
     }
 
     private void updateTabTitle(String title) {

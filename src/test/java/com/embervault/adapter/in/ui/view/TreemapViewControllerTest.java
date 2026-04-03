@@ -56,7 +56,8 @@ class TreemapViewControllerTest {
         SimpleStringProperty noteTitle = new SimpleStringProperty("Parent");
         viewModel = new TreemapViewModel(noteTitle, noteService,
                 noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new com.embervault.adapter.in.ui.viewmodel.EventBus());
         viewModel.setBaseNoteId(parentId);
 
         controller = new TreemapViewController();

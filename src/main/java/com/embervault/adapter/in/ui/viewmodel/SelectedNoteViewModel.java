@@ -30,6 +30,7 @@ public final class SelectedNoteViewModel {
     private final GetNoteQuery getNoteQuery;
     private final RenameNoteUseCase renameNoteUseCase;
     private final AppState appState;
+    private final EventBus eventBus;
 
     /**
      * Constructs a SelectedNoteViewModel.
@@ -40,13 +41,16 @@ public final class SelectedNoteViewModel {
      *                         data-change notification
      */
     public SelectedNoteViewModel(GetNoteQuery getNoteQuery,
-            RenameNoteUseCase renameNoteUseCase, AppState appState) {
+            RenameNoteUseCase renameNoteUseCase, AppState appState,
+            EventBus eventBus) {
         this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
                 "getNoteQuery must not be null");
         this.renameNoteUseCase = Objects.requireNonNull(renameNoteUseCase,
                 "renameNoteUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
     }
 
     /** Returns the selected note id property. */
@@ -97,7 +101,7 @@ public final class SelectedNoteViewModel {
         }
         renameNoteUseCase.renameNote(noteId, newTitle);
         title.set(newTitle);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
     }
 
     /**
@@ -115,6 +119,6 @@ public final class SelectedNoteViewModel {
                     new AttributeValue.StringValue(newText));
         });
         text.set(newText);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteUpdatedEvent(noteId));
     }
 }

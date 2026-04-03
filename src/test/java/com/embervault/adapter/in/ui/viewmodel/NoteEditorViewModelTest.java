@@ -30,6 +30,7 @@ class NoteEditorViewModelTest {
     private InMemoryNoteRepository repository;
     private AttributeSchemaRegistry schemaRegistry;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -37,8 +38,10 @@ class NoteEditorViewModelTest {
         noteService = new NoteServiceImpl(repository);
         schemaRegistry = new AttributeSchemaRegistry();
         appState = new AppState();
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
         viewModel = new NoteEditorViewModel(
-                noteService, schemaRegistry, appState);
+                noteService, schemaRegistry, appState, eventBus);
     }
 
     @Test

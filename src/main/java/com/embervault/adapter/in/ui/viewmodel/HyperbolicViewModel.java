@@ -49,6 +49,7 @@ public final class HyperbolicViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private double viewportRadius = DEFAULT_VIEWPORT_RADIUS;
     private final AppState appState;
+    private final EventBus eventBus;
     private final LayoutStrategy layoutStrategy;
 
     /**
@@ -62,7 +63,7 @@ public final class HyperbolicViewModel {
      */
     public HyperbolicViewModel(GetNoteQuery getNoteQuery,
             LinkService linkService, AppState appState) {
-        this(getNoteQuery, linkService, appState,
+        this(getNoteQuery, linkService, appState, new EventBus(),
                 new HyperbolicLayoutStrategy());
     }
 
@@ -79,12 +80,32 @@ public final class HyperbolicViewModel {
     public HyperbolicViewModel(GetNoteQuery getNoteQuery,
             LinkService linkService, AppState appState,
             LayoutStrategy layoutStrategy) {
+        this(getNoteQuery, linkService, appState, new EventBus(),
+                layoutStrategy);
+    }
+
+    /**
+     * Constructs a HyperbolicViewModel with an explicit EventBus and
+     * layout strategy.
+     *
+     * @param getNoteQuery   the query interface for reading notes
+     * @param linkService    the link service for querying links
+     * @param appState       the shared application state for
+     *                       data-change notification
+     * @param eventBus       the event bus for publishing domain events
+     * @param layoutStrategy the strategy for computing node positions
+     */
+    public HyperbolicViewModel(GetNoteQuery getNoteQuery,
+            LinkService linkService, AppState appState, EventBus eventBus,
+            LayoutStrategy layoutStrategy) {
         this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
                 "getNoteQuery must not be null");
         this.linkService = Objects.requireNonNull(linkService,
                 "linkService must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.layoutStrategy = Objects.requireNonNull(layoutStrategy,
                 "layoutStrategy must not be null");
         tabTitle.set("Hyperbolic");
@@ -158,7 +179,7 @@ public final class HyperbolicViewModel {
     public void createLink(UUID source, UUID dest) {
         linkService.createLink(source, dest);
         computeLayout();
-        appState.notifyDataChanged();
+        eventBus.publish(new LinkCreatedEvent(source, dest));
     }
 
     /** Returns the focus note id property. */

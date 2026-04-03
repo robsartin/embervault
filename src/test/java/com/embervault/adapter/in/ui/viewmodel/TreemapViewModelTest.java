@@ -12,8 +12,6 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
-import com.embervault.application.port.in.CreateNoteUseCase;
-import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
@@ -30,6 +28,7 @@ class TreemapViewModelTest {
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -37,10 +36,11 @@ class TreemapViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        GetNoteQuery getNoteQuery = noteService;
-        CreateNoteUseCase createNoteUseCase = noteService;
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
         viewModel = new TreemapViewModel(
-                noteTitle, getNoteQuery, createNoteUseCase, appState);
+                noteTitle, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test
@@ -82,7 +82,8 @@ class TreemapViewModelTest {
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
                 () -> new TreemapViewModel(
-                        null, noteService, noteService, appState));
+                        null, noteService, noteService,
+                        appState, eventBus));
     }
 
     @Test
@@ -90,7 +91,8 @@ class TreemapViewModelTest {
     void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
                 () -> new TreemapViewModel(
-                        noteTitle, null, noteService, appState));
+                        noteTitle, null, noteService,
+                        appState, eventBus));
     }
 
     @Test
@@ -98,7 +100,8 @@ class TreemapViewModelTest {
     void constructor_shouldRejectNullCreateNoteUseCase() {
         assertThrows(NullPointerException.class,
                 () -> new TreemapViewModel(
-                        noteTitle, noteService, null, appState));
+                        noteTitle, noteService, null,
+                        appState, eventBus));
     }
 
     @Test

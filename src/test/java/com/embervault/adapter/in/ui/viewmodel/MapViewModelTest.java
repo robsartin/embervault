@@ -11,10 +11,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
-import com.embervault.application.port.in.CreateNoteUseCase;
-import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
-import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
@@ -30,6 +27,7 @@ class MapViewModelTest {
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -37,11 +35,10 @@ class MapViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        GetNoteQuery getNoteQuery = noteService;
-        CreateNoteUseCase createNoteUseCase = noteService;
-        RenameNoteUseCase renameNoteUseCase = noteService;
-        viewModel = new MapViewModel(noteTitle, getNoteQuery,
-                createNoteUseCase, renameNoteUseCase, appState);
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
+        viewModel = new MapViewModel(noteTitle, noteService,
+                noteService, noteService, appState, eventBus);
     }
 
     @Test
@@ -79,7 +76,8 @@ class MapViewModelTest {
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
                 () -> new MapViewModel(null, noteService,
-                        noteService, noteService, appState));
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
@@ -87,7 +85,8 @@ class MapViewModelTest {
     void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
                 () -> new MapViewModel(noteTitle, null,
-                        noteService, noteService, appState));
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
@@ -95,7 +94,8 @@ class MapViewModelTest {
     void constructor_shouldRejectNullAppState() {
         assertThrows(NullPointerException.class,
                 () -> new MapViewModel(noteTitle, noteService,
-                        noteService, noteService, null));
+                        noteService, noteService, null,
+                        new EventBus()));
     }
 
     @Test

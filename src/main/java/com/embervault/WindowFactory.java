@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
+import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.domain.Project;
@@ -47,6 +48,7 @@ public final class WindowFactory {
         WindowSetupContext setupCtx = new WindowSetupContext(
                 services, windowManager);
         WindowSetupResult setup = WindowBuilder.build(setupCtx);
+        new AppStateEventBridge(setup.eventBus(), setup.appState());
         SelectedNoteViewModel selectedNoteVm = setup.selectedNoteVm();
 
         MapViewModel mapVm = new MapViewModel(
@@ -54,7 +56,7 @@ public final class WindowFactory {
                 setup.paneDeps().noteService(),
                 setup.paneDeps().noteService(),
                 setup.paneDeps().noteService(),
-                setup.appState());
+                setup.appState(), setup.eventBus());
         mapVm.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent mapView = loadView("MapView.fxml", c -> {

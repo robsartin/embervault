@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
@@ -245,7 +247,8 @@ class DevGuideExampleTest {
             AppState appState = new AppState();
             MapViewModel mapVm = new MapViewModel(
                     titleProp, noteService,
-                    noteService, noteService, appState);
+                    noteService, noteService, appState,
+                    new EventBus());
             mapVm.setBaseNoteId(rootId);
             mapVm.loadNotes();
 
@@ -263,7 +266,8 @@ class DevGuideExampleTest {
             OutlineViewModel outlineVm =
                     new OutlineViewModel(titleProp, noteService,
                             noteService, noteService, noteService,
-                            noteService, noteService, new AppState());
+                            noteService, noteService, new AppState(),
+                            new EventBus());
             outlineVm.setBaseNoteId(rootId);
             outlineVm.loadNotes();
 
@@ -279,7 +283,8 @@ class DevGuideExampleTest {
 
             TreemapViewModel treemapVm =
                     new TreemapViewModel(titleProp, noteService,
-                            noteService, new AppState());
+                            noteService, new AppState(),
+                            new EventBus());
             treemapVm.setBaseNoteId(rootId);
             treemapVm.loadNotes();
 
@@ -329,9 +334,11 @@ class DevGuideExampleTest {
             StringProperty titleProp =
                     new SimpleStringProperty(rootNote.getTitle());
             AppState appState = new AppState();
+            EventBus eventBus = new EventBus();
+            new AppStateEventBridge(eventBus, appState);
             MapViewModel mapVm = new MapViewModel(
                     titleProp, noteService,
-                    noteService, noteService, appState);
+                    noteService, noteService, appState, eventBus);
             mapVm.setBaseNoteId(rootId);
 
             int[] callCount = {0};

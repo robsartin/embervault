@@ -72,7 +72,8 @@ class ViewPaneContextBranchTest {
         AppState appState = new AppState();
         selectedNoteVm =
                 new SelectedNoteViewModel(
-                        noteService, noteService, appState);
+                        noteService, noteService, appState,
+                        new EventBus());
         rootNoteTitle = new SimpleStringProperty("Root");
         refreshCount = new AtomicInteger(0);
 
@@ -82,7 +83,8 @@ class ViewPaneContextBranchTest {
 
         mapViewModel = new MapViewModel(
                 rootNoteTitle, noteService,
-                noteService, noteService, appState);
+                noteService, noteService, appState,
+                new EventBus());
         mapViewModel.setBaseNoteId(rootNote.getId());
         mapViewModel.loadNotes();
 

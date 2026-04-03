@@ -19,7 +19,7 @@ final class MapViewFactory implements ViewFactory {
         MapViewModel vm = new MapViewModel(
                 deps.rootNoteTitle(), deps.noteService(),
                 deps.noteService(), deps.noteService(),
-                deps.appState());
+                deps.appState(), deps.eventBus());
         vm.setBaseNoteId(baseNoteId);
         return new ViewCreationResult(
                 vm.tabTitleProperty(),

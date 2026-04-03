@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
@@ -80,7 +81,8 @@ class ViewSwitchContextMenuTest {
         MapViewModel vm = new MapViewModel(
                 new SimpleStringProperty("Test"), noteService,
                 noteService, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -105,7 +107,8 @@ class ViewSwitchContextMenuTest {
         MapViewModel vm = new MapViewModel(
                 new SimpleStringProperty("Test"), noteService,
                 noteService, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -136,7 +139,8 @@ class ViewSwitchContextMenuTest {
                 new SimpleStringProperty("Test"), noteService,
                 noteService, noteService, noteService,
                 noteService, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -164,7 +168,8 @@ class ViewSwitchContextMenuTest {
                 new SimpleStringProperty("Test"), noteService,
                 noteService, noteService, noteService,
                 noteService, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 
@@ -190,7 +195,8 @@ class ViewSwitchContextMenuTest {
         TreemapViewModel vm = new TreemapViewModel(
                 new SimpleStringProperty("Test"), noteService,
                 noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
 

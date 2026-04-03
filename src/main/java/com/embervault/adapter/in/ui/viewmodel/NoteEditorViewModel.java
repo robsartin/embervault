@@ -33,6 +33,7 @@ public final class NoteEditorViewModel {
     private final NoteService noteService;
     private final AttributeSchemaRegistry schemaRegistry;
     private final AppState appState;
+    private final EventBus eventBus;
     private UUID currentNoteId;
 
     /**
@@ -45,16 +46,28 @@ public final class NoteEditorViewModel {
     public NoteEditorViewModel(NoteService noteService,
             AttributeSchemaRegistry schemaRegistry,
             AppState appState) {
+        this(noteService, schemaRegistry, appState, new EventBus());
+    }
+
+    /**
+     * Constructs a NoteEditorViewModel with an explicit EventBus.
+     *
+     * @param noteService    the note service for querying and updating notes
+     * @param schemaRegistry the attribute schema registry
+     * @param appState       the shared application state for data-change notification
+     * @param eventBus       the event bus for publishing domain events
+     */
+    public NoteEditorViewModel(NoteService noteService,
+            AttributeSchemaRegistry schemaRegistry,
+            AppState appState, EventBus eventBus) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.schemaRegistry = Objects.requireNonNull(schemaRegistry,
                 "schemaRegistry must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
-    }
-
-    private void notifyDataChanged() {
-        appState.notifyDataChanged();
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
     }
 
     /** Returns the title property. */
@@ -108,7 +121,7 @@ public final class NoteEditorViewModel {
         }
         noteService.renameNote(currentNoteId, newTitle);
         title.set(newTitle);
-        notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(currentNoteId, newTitle));
     }
 
     /**
@@ -124,7 +137,7 @@ public final class NoteEditorViewModel {
             note.setAttribute(TEXT, new AttributeValue.StringValue(newText));
         });
         text.set(newText);
-        notifyDataChanged();
+        eventBus.publish(new NoteUpdatedEvent(currentNoteId));
     }
 
     /**
@@ -143,7 +156,7 @@ public final class NoteEditorViewModel {
         });
         // Reload attributes to reflect the change
         noteService.getNote(currentNoteId).ifPresent(this::loadAttributes);
-        notifyDataChanged();
+        eventBus.publish(new NoteUpdatedEvent(currentNoteId));
     }
 
     private void loadAttributes(Note note) {

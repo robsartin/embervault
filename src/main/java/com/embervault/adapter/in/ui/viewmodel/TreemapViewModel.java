@@ -38,6 +38,7 @@ public final class TreemapViewModel {
     private final CreateNoteUseCase createNoteUseCase;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
+    private final EventBus eventBus;
 
     /**
      * Constructs a TreemapViewModel that derives its tab title from
@@ -52,7 +53,7 @@ public final class TreemapViewModel {
     public TreemapViewModel(StringProperty noteTitle,
             GetNoteQuery getNoteQuery,
             CreateNoteUseCase createNoteUseCase,
-            AppState appState) {
+            AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
                 "getNoteQuery must not be null");
@@ -61,6 +62,8 @@ public final class TreemapViewModel {
                 "createNoteUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         noteTitle.addListener((obs, oldVal, newVal) -> {
@@ -138,7 +141,7 @@ public final class TreemapViewModel {
         Note child = createNoteUseCase.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -157,7 +160,7 @@ public final class TreemapViewModel {
         getNoteQuery.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -175,7 +178,7 @@ public final class TreemapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(previous));
     }
 
     /**

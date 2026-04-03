@@ -20,7 +20,7 @@ final class OutlineViewFactory implements ViewFactory {
                 deps.rootNoteTitle(), deps.noteService(),
                 deps.noteService(), deps.noteService(),
                 deps.noteService(), deps.noteService(),
-                deps.noteService(), deps.appState());
+                deps.noteService(), deps.appState(), deps.eventBus());
         vm.setBaseNoteId(baseNoteId);
         return new ViewCreationResult(
                 vm.tabTitleProperty(),
