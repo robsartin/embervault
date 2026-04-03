@@ -1,6 +1,8 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,5 +40,14 @@ class ShortcutRegistry {
    */
   Optional<ShortcutAction> lookup(String keyCombination) {
     return Optional.ofNullable(shortcuts.get(keyCombination));
+  }
+
+  /**
+   * Returns all registered shortcut actions in insertion order.
+   *
+   * @return unmodifiable list of all actions
+   */
+  List<ShortcutAction> getAll() {
+    return List.copyOf(shortcuts.values());
   }
 }
