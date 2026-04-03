@@ -27,4 +27,50 @@ public class CommandHistory {
         undoStack.push(command);
         redoStack.clear();
     }
+
+    /**
+     * Undoes the most recently executed command.
+     *
+     * <p>If the undo stack is empty, this method does nothing.</p>
+     */
+    public void undo() {
+        if (undoStack.isEmpty()) {
+            return;
+        }
+        Command command = undoStack.pop();
+        command.undo();
+        redoStack.push(command);
+    }
+
+    /**
+     * Re-applies the most recently undone command.
+     *
+     * <p>If the redo stack is empty, this method does nothing.</p>
+     */
+    public void redo() {
+        if (redoStack.isEmpty()) {
+            return;
+        }
+        Command command = redoStack.pop();
+        command.execute();
+        undoStack.push(command);
+    }
+
+    /**
+     * Returns whether there are commands that can be undone.
+     *
+     * @return true if the undo stack is not empty
+     */
+    public boolean canUndo() {
+        return !undoStack.isEmpty();
+    }
+
+    /**
+     * Returns whether there are commands that can be redone.
+     *
+     * @return true if the redo stack is not empty
+     */
+    public boolean canRedo() {
+        return !redoStack.isEmpty();
+    }
 }
