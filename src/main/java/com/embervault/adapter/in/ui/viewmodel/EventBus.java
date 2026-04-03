@@ -41,10 +41,25 @@ public class EventBus {
      * @param handler   the handler to invoke when an event of this type
      *                  is published
      * @param <T>       the event type
+     * @return a {@link Subscription} that can be used to unsubscribe
      */
-    public <T> void subscribe(Class<T> eventType, Consumer<T> handler) {
+    public <T> Subscription subscribe(Class<T> eventType,
+            Consumer<T> handler) {
         subscribers.computeIfAbsent(
                 eventType, k -> new CopyOnWriteArrayList<>()).add(handler);
+        return () -> unsubscribe(eventType, handler);
+    }
+
+    /**
+     * Creates a new {@link SubscriptionScope} tied to this EventBus.
+     *
+     * <p>All subscriptions made through the scope are tracked and can be
+     * unsubscribed together via {@link SubscriptionScope#close()}.</p>
+     *
+     * @return a new subscription scope
+     */
+    public SubscriptionScope createScope() {
+        return new SubscriptionScope(this);
     }
 
     /**
