@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
@@ -83,7 +84,8 @@ class ViewPaneContextTest {
 
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                new AppState(), selectedNoteVm, rootNoteTitle);
+                new AppState(), new EventBus(), selectedNoteVm,
+                rootNoteTitle);
         paneContext.setDeps(deps);
     }
 
@@ -165,7 +167,8 @@ class ViewPaneContextTest {
                 count::incrementAndGet);
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                new AppState(), selectedNoteVm, rootNoteTitle);
+                new AppState(), new EventBus(), selectedNoteVm,
+                rootNoteTitle);
         ctx.setDeps(deps);
 
         ctx.refreshCurrentView();

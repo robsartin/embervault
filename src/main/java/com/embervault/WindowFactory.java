@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.application.port.in.LinkService;
@@ -57,6 +58,7 @@ public final class WindowFactory {
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 project.getRootNote().getTitle());
         AppState appState = new AppState();
+        EventBus eventBus = new EventBus();
         MapViewModel mapVm = new MapViewModel(
                 rootNoteTitle, noteService, appState);
         mapVm.setBaseNoteId(project.getRootNote().getId());
@@ -97,7 +99,7 @@ public final class WindowFactory {
                 (obs, oldVal, newVal) -> windowManager.notifyAllWindows());
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                appState, selectedNoteVm, rootNoteTitle);
+                appState, eventBus, selectedNoteVm, rootNoteTitle);
         mapPane.setDeps(paneDeps);
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(
