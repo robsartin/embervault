@@ -262,6 +262,41 @@ class HyperbolicViewModelTest {
         assertFalse(viewModel.canNavigateBackProperty().get());
     }
 
+    // --- Breadcrumb navigation tests ---
+
+    @Test
+    @DisplayName("getBreadcrumbs grows after drillDown")
+    void getBreadcrumbs_shouldGrowAfterDrillDown() {
+        Note n1 = noteService.createNote("N1", "");
+        Note n2 = noteService.createNote("N2", "");
+        linkService.createLink(n1.getId(), n2.getId());
+        viewModel.setFocusNote(n1.getId());
+
+        viewModel.drillDown(n2.getId());
+
+        assertEquals(2, viewModel.getBreadcrumbs().size());
+        assertEquals("N1", viewModel.getBreadcrumbs().get(0).displayName());
+        assertEquals("N2", viewModel.getBreadcrumbs().get(1).displayName());
+    }
+
+    @Test
+    @DisplayName("navigateToBreadcrumb jumps to ancestor")
+    void navigateToBreadcrumb_shouldJumpToAncestor() {
+        Note n1 = noteService.createNote("N1", "");
+        Note n2 = noteService.createNote("N2", "");
+        Note n3 = noteService.createNote("N3", "");
+        linkService.createLink(n1.getId(), n2.getId());
+        linkService.createLink(n2.getId(), n3.getId());
+        viewModel.setFocusNote(n1.getId());
+        viewModel.drillDown(n2.getId());
+        viewModel.drillDown(n3.getId());
+
+        viewModel.navigateToBreadcrumb(0);
+
+        assertEquals(n1.getId(), viewModel.getFocusNoteId());
+        assertEquals(1, viewModel.getBreadcrumbs().size());
+    }
+
     @Test
     @DisplayName("AppState always notified on createLink")
     void appState_shouldAlwaysBeNotified() {

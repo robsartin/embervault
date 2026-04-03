@@ -123,7 +123,9 @@ public final class OutlineViewModel {
      * @param noteId the base note id
      */
     public void setBaseNoteId(UUID noteId) {
-        navigationStack.setCurrentId(noteId);
+        String name = getNoteQuery.getNote(noteId)
+                .map(Note::getTitle).orElse("Unknown");
+        navigationStack.setCurrentId(noteId, name);
     }
 
     /** Returns the base note id. */
@@ -261,14 +263,41 @@ public final class OutlineViewModel {
     }
 
     /**
+     * Returns the observable breadcrumb trail for the current drill-down path.
+     *
+     * @return the unmodifiable observable list of breadcrumb entries
+     */
+    public ObservableList<BreadcrumbEntry> getBreadcrumbs() {
+        return navigationStack.getBreadcrumbs();
+    }
+
+    /**
+     * Navigates to the breadcrumb at the given index, reloading notes
+     * and updating the tab title.
+     *
+     * @param index the zero-based breadcrumb index to navigate to
+     */
+    public void navigateToBreadcrumb(int index) {
+        navigationStack.navigateTo(index);
+        if (navigationStack.isAtRoot()) {
+            updateTabTitle(rootNoteTitle.get());
+        } else {
+            getNoteQuery.getNote(navigationStack.getCurrentId())
+                    .ifPresent(note -> updateTabTitle(note.getTitle()));
+        }
+        loadNotes();
+    }
+
+    /**
      * Drills down into a child note, making it the new base note.
      *
      * @param noteId the note id to drill into
      */
     public void drillDown(UUID noteId) {
-        navigationStack.push(noteId);
-        getNoteQuery.getNote(noteId).ifPresent(note ->
-                updateTabTitle(note.getTitle()));
+        String name = getNoteQuery.getNote(noteId)
+                .map(Note::getTitle).orElse("Unknown");
+        navigationStack.push(noteId, name);
+        updateTabTitle(name);
         loadNotes();
         eventBus.publish(new NoteMovedEvent(noteId));
     }

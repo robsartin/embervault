@@ -14,7 +14,6 @@ import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.input.KeyCode;
@@ -43,7 +42,7 @@ public class TreemapViewController {
     @FXML private Pane treemapCanvas;
 
     private TreemapViewModel viewModel;
-    private Button backButton;
+    private BreadcrumbBar breadcrumbBar;
     private ViewColorConfig currentColors;
     private Consumer<String> onViewSwitch;
 
@@ -65,13 +64,11 @@ public class TreemapViewController {
     public void initViewModel(TreemapViewModel treemapViewModel) {
         this.viewModel = treemapViewModel;
 
-        backButton = new Button("\u2190 Back");
-        backButton.setVisible(false);
-        backButton.setOnAction(e -> viewModel.navigateBack());
-        backButton.setLayoutX(BACK_BUTTON_PADDING);
-        backButton.setLayoutY(BACK_BUTTON_PADDING);
-        viewModel.canNavigateBackProperty().addListener(
-                (obs, oldVal, newVal) -> backButton.setVisible(newVal));
+        breadcrumbBar = new BreadcrumbBar(
+                viewModel.getBreadcrumbs(),
+                viewModel::navigateToBreadcrumb);
+        breadcrumbBar.setLayoutX(BACK_BUTTON_PADDING);
+        breadcrumbBar.setLayoutY(BACK_BUTTON_PADDING);
 
         viewModel.loadNotes();
         renderAllNotes();
@@ -135,7 +132,7 @@ public class TreemapViewController {
         double width = treemapCanvas.getWidth();
         double height = treemapCanvas.getHeight();
         if (width <= 0 || height <= 0) {
-            treemapCanvas.getChildren().add(backButton);
+            treemapCanvas.getChildren().add(breadcrumbBar);
             return;
         }
 
@@ -150,7 +147,7 @@ public class TreemapViewController {
                 treemapCanvas.getChildren().add(noteNode);
             }
         }
-        treemapCanvas.getChildren().add(backButton);
+        treemapCanvas.getChildren().add(breadcrumbBar);
     }
 
     private StackPane createNoteNode(NoteDisplayItem item, TreemapRect tr) {

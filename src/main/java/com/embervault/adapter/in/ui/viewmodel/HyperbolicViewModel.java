@@ -14,6 +14,7 @@ import java.util.UUID;
 import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.domain.Link;
+import com.embervault.domain.Note;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
 import javafx.beans.property.ReadOnlyStringProperty;
@@ -144,8 +145,16 @@ public final class HyperbolicViewModel {
     public void drillDown(UUID noteId) {
         UUID current = focusNoteId.get();
         if (current != null) {
-            navigationStack.setCurrentId(current);
-            navigationStack.push(noteId);
+            String newName = getNoteQuery.getNote(noteId)
+                    .map(Note::getTitle).orElse("Unknown");
+            if (navigationStack.getBreadcrumbs().isEmpty()) {
+                String currentName = getNoteQuery.getNote(current)
+                        .map(Note::getTitle).orElse("Unknown");
+                navigationStack.setCurrentId(current, currentName);
+            } else {
+                navigationStack.setCurrentId(current);
+            }
+            navigationStack.push(noteId, newName);
         }
         setFocusNote(noteId);
     }
@@ -215,6 +224,29 @@ public final class HyperbolicViewModel {
     /** Returns the canNavigateBack property. */
     public ReadOnlyBooleanProperty canNavigateBackProperty() {
         return navigationStack.canNavigateBackProperty();
+    }
+
+    /**
+     * Returns the observable breadcrumb trail for the current drill-down path.
+     *
+     * @return the unmodifiable observable list of breadcrumb entries
+     */
+    public ObservableList<BreadcrumbEntry> getBreadcrumbs() {
+        return navigationStack.getBreadcrumbs();
+    }
+
+    /**
+     * Navigates to the breadcrumb at the given index, setting the focus note
+     * to that ancestor.
+     *
+     * @param index the zero-based breadcrumb index to navigate to
+     */
+    public void navigateToBreadcrumb(int index) {
+        navigationStack.navigateTo(index);
+        UUID targetId = navigationStack.getCurrentId();
+        if (targetId != null) {
+            setFocusNote(targetId);
+        }
     }
 
     /**
