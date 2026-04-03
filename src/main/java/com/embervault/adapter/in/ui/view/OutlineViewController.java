@@ -241,7 +241,8 @@ public class OutlineViewController {
                     viewModel.drillDown(getItem().getId());
                     event.consume();
                 } else if (event.getClickCount() == 1
-                        && !editing) {
+                        && !editing
+                        && isSelected()) {
                     startInlineEdit();
                     event.consume();
                 }
