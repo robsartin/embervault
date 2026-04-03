@@ -401,6 +401,69 @@ class OutlineViewModelTest {
         assertEquals("Outline: New Root Title", viewModel.tabTitleProperty().get());
     }
 
+    // --- Breadcrumb navigation tests ---
+
+    @Test
+    @DisplayName("getBreadcrumbs returns single root entry after setBaseNoteId")
+    void getBreadcrumbs_shouldReturnRootAfterSetBaseNoteId() {
+        Note root = noteService.createNote("Root", "");
+        viewModel.setBaseNoteId(root.getId());
+
+        ObservableList<BreadcrumbEntry> crumbs = viewModel.getBreadcrumbs();
+        assertEquals(1, crumbs.size());
+        assertEquals(root.getId(), crumbs.get(0).noteId());
+        assertEquals("Root", crumbs.get(0).displayName());
+    }
+
+    @Test
+    @DisplayName("getBreadcrumbs grows after drillDown")
+    void getBreadcrumbs_shouldGrowAfterDrillDown() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        ObservableList<BreadcrumbEntry> crumbs = viewModel.getBreadcrumbs();
+        assertEquals(2, crumbs.size());
+        assertEquals("Root", crumbs.get(0).displayName());
+        assertEquals("Child", crumbs.get(1).displayName());
+    }
+
+    @Test
+    @DisplayName("navigateToBreadcrumb jumps to ancestor and reloads")
+    void navigateToBreadcrumb_shouldJumpToAncestorAndReload() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateToBreadcrumb(0);
+
+        assertEquals(root.getId(), viewModel.getBaseNoteId());
+        assertEquals(1, viewModel.getBreadcrumbs().size());
+        assertEquals(1, viewModel.getRootItems().size());
+        assertEquals("Child", viewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("navigateToBreadcrumb updates tab title")
+    void navigateToBreadcrumb_shouldUpdateTabTitle() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateToBreadcrumb(0);
+
+        assertEquals("Outline: My Note", viewModel.tabTitleProperty().get());
+    }
+
     // --- createSiblingNote tests ---
 
     @Test
