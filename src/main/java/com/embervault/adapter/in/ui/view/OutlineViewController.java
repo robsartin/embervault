@@ -197,16 +197,17 @@ public class OutlineViewController {
         }
     }
 
-    private TreeItem<NoteDisplayItem> findTreeItem(TreeItem<NoteDisplayItem> root,
-            UUID noteId) {
+    private TreeItem<NoteDisplayItem> findTreeItem(
+            TreeItem<NoteDisplayItem> root, UUID noteId) {
         if (root == null || noteId == null) {
             return null;
         }
-        if (root.getValue() != null && noteId.equals(root.getValue().getId())) {
+        if (root.getValue() != null
+                && noteId.equals(root.getValue().getId())) {
             return root;
         }
-        for (TreeItem<NoteDisplayItem> child : root.getChildren()) {
-            TreeItem<NoteDisplayItem> found = findTreeItem(child, noteId);
+        for (var child : root.getChildren()) {
+            var found = findTreeItem(child, noteId);
             if (found != null) {
                 return found;
             }
@@ -215,13 +216,9 @@ public class OutlineViewController {
     }
 
     private boolean isAnyoneEditing() {
-        for (var node : outlineTreeView.lookupAll(".tree-cell")) {
-            if (node instanceof OutlineNoteTreeCell cell
-                    && cell.editing) {
-                return true;
-            }
-        }
-        return false;
+        return outlineTreeView.lookupAll(".tree-cell").stream()
+                .anyMatch(n -> n instanceof OutlineNoteTreeCell cell
+                        && cell.editing);
     }
 
     private final class OutlineNoteTreeCell
@@ -229,8 +226,11 @@ public class OutlineViewController {
 
         private TextField textField;
         private boolean editing;
+        private boolean wasSelectedBeforePress;
 
         OutlineNoteTreeCell() {
+            setOnMousePressed(e -> wasSelectedBeforePress = isSelected());
+
             setOnMouseClicked(event -> {
                 if (event.getButton() != MouseButton.PRIMARY
                         || isEmpty() || getItem() == null) {
@@ -242,7 +242,7 @@ public class OutlineViewController {
                     event.consume();
                 } else if (event.getClickCount() == 1
                         && !editing
-                        && isSelected()) {
+                        && wasSelectedBeforePress) {
                     startInlineEdit();
                     event.consume();
                 }
