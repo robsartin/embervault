@@ -8,6 +8,7 @@ import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
 import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
@@ -58,10 +59,11 @@ public class App extends Application {
                 project.getRootNote().getTitle());
         AppState appState = new AppState();
         EventBus eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
 
         // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService, appState, eventBus);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {
@@ -81,7 +83,7 @@ public class App extends Application {
 
         // Text pane for selected note
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(noteService, appState, eventBus);
         FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/TextPaneView.fxml"));
         Parent textPaneView = textPaneLoader.load();

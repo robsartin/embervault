@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
 import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
@@ -59,8 +60,9 @@ public final class WindowFactory {
                 project.getRootNote().getTitle());
         AppState appState = new AppState();
         EventBus eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
         MapViewModel mapVm = new MapViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService, appState, eventBus);
         mapVm.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent mapView = loadView("MapView.fxml", c -> {
@@ -71,7 +73,7 @@ public final class WindowFactory {
             ctrl.initViewModel(mapVm);
         });
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(noteService, appState, eventBus);
         FXMLLoader textPaneLoader = new FXMLLoader(
                 WindowFactory.class.getResource(
                         "/com/embervault/adapter/in/ui/view/"
