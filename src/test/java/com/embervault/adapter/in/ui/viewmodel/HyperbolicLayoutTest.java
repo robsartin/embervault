@@ -24,16 +24,16 @@ class HyperbolicLayoutTest {
         UUID focus = UUID.randomUUID();
         Map<UUID, Set<UUID>> adjacency = new HashMap<>();
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(1, nodes.size());
-        HyperbolicNode node = nodes.get(0);
+        PositionedNode node = nodes.get(0);
         assertEquals(focus, node.noteId());
         assertEquals(0, node.x(), 0.001);
         assertEquals(0, node.y(), 0.001);
-        assertEquals(0, node.level());
-        assertTrue(node.displayRadius() > 0);
+        assertEquals(0, node.depth());
+        assertTrue(node.size() > 0);
     }
 
     @Test
@@ -50,22 +50,22 @@ class HyperbolicLayoutTest {
         adjacency.put(n2, new HashSet<>(Set.of(focus)));
         adjacency.put(n3, new HashSet<>(Set.of(focus)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(4, nodes.size());
 
-        HyperbolicNode center = findNode(nodes, focus);
+        PositionedNode center = findNode(nodes, focus);
         assertNotNull(center);
         assertEquals(0, center.x(), 0.001);
         assertEquals(0, center.y(), 0.001);
-        assertEquals(0, center.level());
+        assertEquals(0, center.depth());
 
-        // Neighbors should be at level 1 and not at origin
+        // Neighbors should be at depth 1 and not at origin
         for (UUID id : List.of(n1, n2, n3)) {
-            HyperbolicNode neighbor = findNode(nodes, id);
+            PositionedNode neighbor = findNode(nodes, id);
             assertNotNull(neighbor);
-            assertEquals(1, neighbor.level());
+            assertEquals(1, neighbor.depth());
             double dist = Math.sqrt(neighbor.x() * neighbor.x()
                     + neighbor.y() * neighbor.y());
             assertTrue(dist > 0, "Neighbor should not be at origin");
@@ -73,8 +73,8 @@ class HyperbolicLayoutTest {
     }
 
     @Test
-    @DisplayName("chain graph assigns increasing levels")
-    void chainGraph_shouldAssignIncreasingLevels() {
+    @DisplayName("chain graph assigns increasing depths")
+    void chainGraph_shouldAssignIncreasingDepths() {
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
         UUID c = UUID.randomUUID();
@@ -86,19 +86,19 @@ class HyperbolicLayoutTest {
         adjacency.put(c, new HashSet<>(Set.of(b, d)));
         adjacency.put(d, new HashSet<>(Set.of(c)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 a, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(4, nodes.size());
-        assertEquals(0, findNode(nodes, a).level());
-        assertEquals(1, findNode(nodes, b).level());
-        assertEquals(2, findNode(nodes, c).level());
-        assertEquals(3, findNode(nodes, d).level());
+        assertEquals(0, findNode(nodes, a).depth());
+        assertEquals(1, findNode(nodes, b).depth());
+        assertEquals(2, findNode(nodes, c).depth());
+        assertEquals(3, findNode(nodes, d).depth());
     }
 
     @Test
-    @DisplayName("node radius decreases with level")
-    void nodeRadius_shouldDecreaseWithLevel() {
+    @DisplayName("node size decreases with depth")
+    void nodeSize_shouldDecreaseWithDepth() {
         UUID a = UUID.randomUUID();
         UUID b = UUID.randomUUID();
         UUID c = UUID.randomUUID();
@@ -108,17 +108,17 @@ class HyperbolicLayoutTest {
         adjacency.put(b, new HashSet<>(Set.of(a, c)));
         adjacency.put(c, new HashSet<>(Set.of(b)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 a, adjacency, VIEWPORT_RADIUS);
 
-        double level0Radius = findNode(nodes, a).displayRadius();
-        double level1Radius = findNode(nodes, b).displayRadius();
-        double level2Radius = findNode(nodes, c).displayRadius();
+        double depth0Size = findNode(nodes, a).size();
+        double depth1Size = findNode(nodes, b).size();
+        double depth2Size = findNode(nodes, c).size();
 
-        assertTrue(level0Radius > level1Radius,
-                "Level 0 radius should be larger than level 1");
-        assertTrue(level1Radius > level2Radius,
-                "Level 1 radius should be larger than level 2");
+        assertTrue(depth0Size > depth1Size,
+                "Depth 0 size should be larger than depth 1");
+        assertTrue(depth1Size > depth2Size,
+                "Depth 1 size should be larger than depth 2");
     }
 
     @Test
@@ -133,12 +133,12 @@ class HyperbolicLayoutTest {
         adjacency.put(b, new HashSet<>(Set.of(a, c)));
         adjacency.put(c, new HashSet<>(Set.of(a, b)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 a, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(3, nodes.size());
         Set<UUID> ids = new HashSet<>();
-        for (HyperbolicNode node : nodes) {
+        for (PositionedNode node : nodes) {
             assertTrue(ids.add(node.noteId()),
                     "Duplicate node: " + node.noteId());
         }
@@ -151,7 +151,7 @@ class HyperbolicLayoutTest {
         Map<UUID, Set<UUID>> adjacency = new HashMap<>();
         adjacency.put(UUID.randomUUID(), Set.of(UUID.randomUUID()));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(1, nodes.size());
@@ -159,8 +159,8 @@ class HyperbolicLayoutTest {
     }
 
     @Test
-    @DisplayName("two-level graph places level 2 nodes around their parent")
-    void twoLevelGraph_shouldPlaceLevel2NodesAroundParent() {
+    @DisplayName("two-level graph places depth 2 nodes around their parent")
+    void twoLevelGraph_shouldPlaceDepth2NodesAroundParent() {
         UUID focus = UUID.randomUUID();
         UUID child1 = UUID.randomUUID();
         UUID grandchild1 = UUID.randomUUID();
@@ -172,17 +172,17 @@ class HyperbolicLayoutTest {
         adjacency.put(grandchild1, new HashSet<>(Set.of(child1)));
         adjacency.put(grandchild2, new HashSet<>(Set.of(child1)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(4, nodes.size());
-        assertEquals(2, findNode(nodes, grandchild1).level());
-        assertEquals(2, findNode(nodes, grandchild2).level());
+        assertEquals(2, findNode(nodes, grandchild1).depth());
+        assertEquals(2, findNode(nodes, grandchild2).depth());
     }
 
     @Test
-    @DisplayName("single child at level 1 is placed correctly")
-    void singleChildAtLevel1_shouldBePlacedCorrectly() {
+    @DisplayName("single child at depth 1 is placed correctly")
+    void singleChildAtDepth1_shouldBePlacedCorrectly() {
         UUID focus = UUID.randomUUID();
         UUID child = UUID.randomUUID();
 
@@ -190,13 +190,13 @@ class HyperbolicLayoutTest {
         adjacency.put(focus, new HashSet<>(Set.of(child)));
         adjacency.put(child, new HashSet<>(Set.of(focus)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(2, nodes.size());
-        HyperbolicNode childNode = findNode(nodes, child);
+        PositionedNode childNode = findNode(nodes, child);
         assertNotNull(childNode);
-        assertEquals(1, childNode.level());
+        assertEquals(1, childNode.depth());
         double dist = Math.sqrt(childNode.x() * childNode.x()
                 + childNode.y() * childNode.y());
         assertTrue(dist > 0, "Single child should not be at origin");
@@ -213,14 +213,14 @@ class HyperbolicLayoutTest {
         adjacency.put(a, new HashSet<>(Set.of(b)));
         adjacency.put(b, new HashSet<>(Set.of(a)));
 
-        List<HyperbolicNode> nodes = HyperbolicLayout.layout(
+        List<PositionedNode> nodes = HyperbolicLayout.layout(
                 a, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(2, nodes.size());
     }
 
-    private static HyperbolicNode findNode(List<HyperbolicNode> nodes, UUID id) {
-        for (HyperbolicNode node : nodes) {
+    private static PositionedNode findNode(List<PositionedNode> nodes, UUID id) {
+        for (PositionedNode node : nodes) {
             if (node.noteId().equals(id)) {
                 return node;
             }

@@ -31,11 +31,11 @@ class HyperbolicLayoutStrategyTest {
         UUID focus = UUID.randomUUID();
         Map<UUID, Set<UUID>> adjacency = new HashMap<>();
 
-        List<HyperbolicNode> nodes = strategy.layout(
+        List<PositionedNode> nodes = strategy.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(1, nodes.size());
-        HyperbolicNode node = nodes.get(0);
+        PositionedNode node = nodes.get(0);
         assertEquals(focus, node.noteId());
         assertEquals(0, node.x(), 0.001);
         assertEquals(0, node.y(), 0.001);
@@ -54,7 +54,7 @@ class HyperbolicLayoutStrategyTest {
         adjacency.put(n1, new HashSet<>(Set.of(focus)));
         adjacency.put(n2, new HashSet<>(Set.of(focus)));
 
-        List<HyperbolicNode> nodes = strategy.layout(
+        List<PositionedNode> nodes = strategy.layout(
                 focus, adjacency, VIEWPORT_RADIUS);
 
         assertEquals(3, nodes.size());
