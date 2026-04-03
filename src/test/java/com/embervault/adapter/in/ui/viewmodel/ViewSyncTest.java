@@ -39,7 +39,9 @@ class ViewSyncTest {
         mapViewModel = new MapViewModel(noteTitle, noteService,
                 noteService, noteService, appState);
         outlineViewModel = new OutlineViewModel(
-                noteTitle, noteService, appState);
+                noteTitle, noteService, noteService,
+                noteService, noteService, noteService,
+                noteService, appState);
         treemapViewModel = new TreemapViewModel(
                 noteTitle, noteService, noteService, appState);
         searchViewModel = new SearchViewModel(noteService, appState);

@@ -61,7 +61,9 @@ public class App extends Application {
 
         // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService, noteService,
+                noteService, noteService, noteService,
+                noteService, appState);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {

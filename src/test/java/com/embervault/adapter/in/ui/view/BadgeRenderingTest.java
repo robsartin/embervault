@@ -136,6 +136,8 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         OutlineViewModel vm = new OutlineViewModel(title, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         vm.loadNotes();
@@ -162,6 +164,8 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         OutlineViewModel vm = new OutlineViewModel(title, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         vm.loadNotes();

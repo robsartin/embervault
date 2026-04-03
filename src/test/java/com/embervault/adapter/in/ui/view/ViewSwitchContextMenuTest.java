@@ -134,6 +134,8 @@ class ViewSwitchContextMenuTest {
 
         OutlineViewModel vm = new OutlineViewModel(
                 new SimpleStringProperty("Test"), noteService,
+                noteService, noteService, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
@@ -160,6 +162,8 @@ class ViewSwitchContextMenuTest {
 
         OutlineViewModel vm = new OutlineViewModel(
                 new SimpleStringProperty("Test"), noteService,
+                noteService, noteService, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);

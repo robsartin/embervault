@@ -35,7 +35,9 @@ class OutlineViewModelEdgeCaseTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("Root Title");
         appState = new AppState();
-        viewModel = new OutlineViewModel(noteTitle, noteService, appState);
+        viewModel = new OutlineViewModel(noteTitle, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService, appState);
     }
 
     @Nested

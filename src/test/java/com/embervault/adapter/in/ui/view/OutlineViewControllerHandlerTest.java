@@ -55,6 +55,8 @@ class OutlineViewControllerHandlerTest {
         parentId = noteService.createNote("Parent", "").getId();
         SimpleStringProperty noteTitle = new SimpleStringProperty("Parent");
         viewModel = new OutlineViewModel(noteTitle, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         viewModel.setBaseNoteId(parentId);
 

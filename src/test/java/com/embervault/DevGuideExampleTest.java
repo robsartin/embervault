@@ -262,7 +262,8 @@ class DevGuideExampleTest {
 
             OutlineViewModel outlineVm =
                     new OutlineViewModel(titleProp, noteService,
-                            new AppState());
+                            noteService, noteService, noteService,
+                            noteService, noteService, new AppState());
             outlineVm.setBaseNoteId(rootId);
             outlineVm.loadNotes();
 
