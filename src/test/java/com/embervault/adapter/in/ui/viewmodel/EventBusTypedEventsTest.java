@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import com.embervault.ViewType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,15 +38,15 @@ class EventBusTypedEventsTest {
     }
 
     @Test
-    @DisplayName("ViewRefreshedEvent carries view type name through EventBus")
+    @DisplayName("ViewRefreshedEvent carries view type through EventBus")
     void viewRefreshedEvent_carriesViewType() {
-        List<String> refreshedViews = new ArrayList<>();
+        List<ViewType> refreshedViews = new ArrayList<>();
         eventBus.subscribe(ViewRefreshedEvent.class,
-                e -> refreshedViews.add(e.viewTypeName()));
+                e -> refreshedViews.add(e.viewType()));
 
-        eventBus.publish(new ViewRefreshedEvent("Map"));
+        eventBus.publish(new ViewRefreshedEvent(ViewType.MAP));
 
-        assertEquals(List.of("Map"), refreshedViews);
+        assertEquals(List.of(ViewType.MAP), refreshedViews);
     }
 
     @Test
