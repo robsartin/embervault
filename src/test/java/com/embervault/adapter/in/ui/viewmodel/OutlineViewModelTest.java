@@ -38,8 +38,9 @@ class OutlineViewModelTest {
         appState = new AppState();
         eventBus = new EventBus();
         new AppStateEventBridge(eventBus, appState);
-        viewModel = new OutlineViewModel(
-                noteTitle, noteService, appState, eventBus);
+        viewModel = new OutlineViewModel(noteTitle, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService, appState, eventBus);
     }
 
     @Test
@@ -78,14 +79,20 @@ class OutlineViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new OutlineViewModel(null, noteService, appState));
+                () -> new OutlineViewModel(null, noteService,
+                        noteService, noteService, noteService,
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new OutlineViewModel(noteTitle, null, appState));
+                () -> new OutlineViewModel(noteTitle, null,
+                        noteService, noteService, noteService,
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test

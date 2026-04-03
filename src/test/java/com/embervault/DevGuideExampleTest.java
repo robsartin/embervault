@@ -246,7 +246,9 @@ class DevGuideExampleTest {
 
             AppState appState = new AppState();
             MapViewModel mapVm = new MapViewModel(
-                    titleProp, noteService, appState);
+                    titleProp, noteService,
+                    noteService, noteService, appState,
+                    new EventBus());
             mapVm.setBaseNoteId(rootId);
             mapVm.loadNotes();
 
@@ -263,7 +265,9 @@ class DevGuideExampleTest {
 
             OutlineViewModel outlineVm =
                     new OutlineViewModel(titleProp, noteService,
-                            new AppState());
+                            noteService, noteService, noteService,
+                            noteService, noteService, new AppState(),
+                            new EventBus());
             outlineVm.setBaseNoteId(rootId);
             outlineVm.loadNotes();
 
@@ -279,7 +283,8 @@ class DevGuideExampleTest {
 
             TreemapViewModel treemapVm =
                     new TreemapViewModel(titleProp, noteService,
-                            new AppState());
+                            noteService, new AppState(),
+                            new EventBus());
             treemapVm.setBaseNoteId(rootId);
             treemapVm.loadNotes();
 
@@ -332,7 +337,8 @@ class DevGuideExampleTest {
             EventBus eventBus = new EventBus();
             new AppStateEventBridge(eventBus, appState);
             MapViewModel mapVm = new MapViewModel(
-                    titleProp, noteService, appState, eventBus);
+                    titleProp, noteService,
+                    noteService, noteService, appState, eventBus);
             mapVm.setBaseNoteId(rootId);
 
             int[] callCount = {0};

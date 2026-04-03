@@ -33,7 +33,9 @@ class OutlineViewModelEventBusTest {
         AppState appState = new AppState();
         eventBus = new EventBus();
         viewModel = new OutlineViewModel(
-                noteTitle, noteService, appState, eventBus);
+                noteTitle, noteService, noteService, noteService,
+                noteService, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test

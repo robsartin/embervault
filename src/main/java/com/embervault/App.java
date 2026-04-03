@@ -7,22 +7,14 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
-import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
-import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
-import com.embervault.application.port.in.LinkService;
-import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
-import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Project;
 import javafx.application.Application;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -47,23 +39,28 @@ public class App extends Application {
     public void start(Stage stage) throws IOException {
         sharedServices = SharedServices.create();
         Project project = sharedServices.project();
-        NoteService noteService = sharedServices.noteService();
-        LinkService linkService = sharedServices.linkService();
         StampService stampService = sharedServices.stampService();
-        AttributeSchemaRegistry schemaRegistry =
-                sharedServices.schemaRegistry();
         populateBuiltInStamps(stampService);
-        noteService.createChildNote(project.getRootNote().getId(),
+        sharedServices.noteService().createChildNote(
+                project.getRootNote().getId(),
                 "Welcome to EmberVault");
-        StringProperty rootNoteTitle = new SimpleStringProperty(
-                project.getRootNote().getTitle());
-        AppState appState = new AppState();
-        EventBus eventBus = new EventBus();
-        new AppStateEventBridge(eventBus, appState);
+
+        WindowSetupContext setupCtx = new WindowSetupContext(
+                sharedServices, windowManager);
+        WindowSetupResult setup = WindowBuilder.build(setupCtx);
+        new AppStateEventBridge(setup.eventBus(), setup.appState());
+        SelectedNoteViewModel selectedNoteVm = setup.selectedNoteVm();
 
         // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
-                rootNoteTitle, noteService, appState, eventBus);
+                setup.rootNoteTitle(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.appState(), setup.eventBus());
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {
@@ -76,20 +73,19 @@ public class App extends Application {
 
         // Search
         SearchViewModel searchViewModel = new SearchViewModel(
-                noteService, appState);
+                setup.paneDeps().noteService(), setup.appState());
         Parent searchView = loadView("SearchView.fxml",
                 c -> ((SearchViewController) c)
                         .initViewModel(searchViewModel));
 
         // Text pane for selected note
-        SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState, eventBus);
         FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/TextPaneView.fxml"));
         Parent textPaneView = textPaneLoader.load();
         ((TextPaneViewController) textPaneLoader.getController())
                 .initViewModel(selectedNoteVm);
-        wireSelection(outlineViewModel.selectedNoteIdProperty(),
+        WindowBuilder.wireSelection(
+                outlineViewModel.selectedNoteIdProperty(),
                 selectedNoteVm);
         searchViewModel.selectedNoteIdProperty().addListener(
                 (obs, oldVal, newVal) -> {
@@ -115,8 +111,6 @@ public class App extends Application {
         };
         windowManager.register(stage);
         windowManager.addRefreshListener(localRefresh);
-        appState.dataVersionProperty().addListener(
-                (obs, oldVal, newVal) -> windowManager.notifyAllWindows());
         stage.setOnCloseRequest(event -> {
             windowManager.removeRefreshListener(localRefresh);
             windowManager.unregister(stage);
@@ -124,10 +118,7 @@ public class App extends Application {
                 javafx.application.Platform.exit();
             }
         });
-        ViewPaneDeps paneDeps = new ViewPaneDeps(
-                noteService, linkService, schemaRegistry,
-                appState, eventBus, selectedNoteVm, rootNoteTitle);
-        outlinePane.setDeps(paneDeps);
+        outlinePane.setDeps(setup.paneDeps());
 
         // Layout: outline + text pane
         SplitPane mainSplitPane = new SplitPane();
@@ -140,7 +131,7 @@ public class App extends Application {
         WindowContext winCtx = new WindowContext(
                 sharedServices, windowManager,
                 outlineViewModel.selectedNoteIdProperty(),
-                appState, stage,
+                setup.appState(), stage,
                 searchViewModel::toggleVisible,
                 newRootId -> {
                     outlineViewModel.setBaseNoteId(newRootId);
@@ -169,22 +160,20 @@ public class App extends Application {
 
     private void populateBuiltInStamps(StampService stampService) {
         stampService.createStamp("Color:red", Attributes.COLOR + "=red");
-        stampService.createStamp("Color:green", Attributes.COLOR + "=green");
-        stampService.createStamp("Color:blue", Attributes.COLOR + "=blue");
-        stampService.createStamp("Mark Done", Attributes.CHECKED + "=true");
-        stampService.createStamp("Mark Undone", Attributes.CHECKED + "=false");
+        stampService.createStamp("Color:green",
+                Attributes.COLOR + "=green");
+        stampService.createStamp("Color:blue",
+                Attributes.COLOR + "=blue");
+        stampService.createStamp("Mark Done",
+                Attributes.CHECKED + "=true");
+        stampService.createStamp("Mark Undone",
+                Attributes.CHECKED + "=false");
 
         for (String b : List.of("star", "flag", "check", "warning",
                 "book", "person", "idea", "heart", "pin", "fire")) {
-            stampService.createStamp("Badge:" + b, Attributes.BADGE + "=" + b);
+            stampService.createStamp("Badge:" + b,
+                    Attributes.BADGE + "=" + b);
         }
-    }
-
-    private static void wireSelection(
-            ObjectProperty<UUID> source,
-            SelectedNoteViewModel target) {
-        source.addListener(
-                (obs, oldVal, newVal) -> target.setSelectedNoteId(newVal));
     }
 
     public static void main(String[] args) {

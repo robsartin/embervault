@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
@@ -77,7 +78,9 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         MapViewModel vm = new MapViewModel(title, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                noteService, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
 
         MapViewController controller = new MapViewController();
@@ -104,7 +107,9 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         MapViewModel vm = new MapViewModel(title, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                noteService, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
 
         MapViewController controller = new MapViewController();
@@ -134,7 +139,10 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         OutlineViewModel vm = new OutlineViewModel(title, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                noteService, noteService, noteService,
+                noteService, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         vm.loadNotes();
 
@@ -160,7 +168,10 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         OutlineViewModel vm = new OutlineViewModel(title, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                noteService, noteService, noteService,
+                noteService, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
         vm.loadNotes();
 
@@ -183,7 +194,9 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         TreemapViewModel vm = new TreemapViewModel(title, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new EventBus());
         vm.setBaseNoteId(parentId);
 
         TreemapViewController controller = new TreemapViewController();

@@ -38,8 +38,9 @@ class OutlineViewModelEdgeCaseTest {
         appState = new AppState();
         eventBus = new EventBus();
         new AppStateEventBridge(eventBus, appState);
-        viewModel = new OutlineViewModel(
-                noteTitle, noteService, appState, eventBus);
+        viewModel = new OutlineViewModel(noteTitle, noteService,
+                noteService, noteService, noteService,
+                noteService, noteService, appState, eventBus);
     }
 
     @Nested

@@ -33,7 +33,8 @@ class TreemapViewModelEventBusTest {
         AppState appState = new AppState();
         eventBus = new EventBus();
         viewModel = new TreemapViewModel(
-                noteTitle, noteService, appState, eventBus);
+                noteTitle, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test

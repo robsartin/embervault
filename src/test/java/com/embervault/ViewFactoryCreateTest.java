@@ -43,7 +43,9 @@ class ViewFactoryCreateTest {
                 new AttributeSchemaRegistry();
         AppState appState = new AppState();
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState,
+                        new EventBus());
         StringProperty rootNoteTitle =
                 new SimpleStringProperty("Root");
 

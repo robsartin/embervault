@@ -39,7 +39,8 @@ class TreemapViewModelTest {
         eventBus = new EventBus();
         new AppStateEventBridge(eventBus, appState);
         viewModel = new TreemapViewModel(
-                noteTitle, noteService, appState, eventBus);
+                noteTitle, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test
@@ -80,14 +81,27 @@ class TreemapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new TreemapViewModel(null, noteService, appState));
+                () -> new TreemapViewModel(
+                        null, noteService, noteService,
+                        appState, eventBus));
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new TreemapViewModel(noteTitle, null, appState));
+                () -> new TreemapViewModel(
+                        noteTitle, null, noteService,
+                        appState, eventBus));
+    }
+
+    @Test
+    @DisplayName("Constructor rejects null createNoteUseCase")
+    void constructor_shouldRejectNullCreateNoteUseCase() {
+        assertThrows(NullPointerException.class,
+                () -> new TreemapViewModel(
+                        noteTitle, noteService, null,
+                        appState, eventBus));
     }
 
     @Test

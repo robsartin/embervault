@@ -54,7 +54,9 @@ class InlineEditHelperTest {
         noteService = new NoteServiceImpl(repo);
         SimpleStringProperty noteTitle = new SimpleStringProperty("Test");
         viewModel = new MapViewModel(noteTitle, noteService,
-                new com.embervault.adapter.in.ui.viewmodel.AppState());
+                noteService, noteService,
+                new com.embervault.adapter.in.ui.viewmodel.AppState(),
+                new com.embervault.adapter.in.ui.viewmodel.EventBus());
 
         parentId = noteService.createNote("Parent", "").getId();
         viewModel.setBaseNoteId(parentId);

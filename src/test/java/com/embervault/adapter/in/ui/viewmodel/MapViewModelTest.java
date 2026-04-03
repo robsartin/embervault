@@ -37,8 +37,8 @@ class MapViewModelTest {
         appState = new AppState();
         eventBus = new EventBus();
         new AppStateEventBridge(eventBus, appState);
-        viewModel = new MapViewModel(
-                noteTitle, noteService, appState, eventBus);
+        viewModel = new MapViewModel(noteTitle, noteService,
+                noteService, noteService, appState, eventBus);
     }
 
     @Test
@@ -75,21 +75,27 @@ class MapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(null, noteService, appState));
+                () -> new MapViewModel(null, noteService,
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(noteTitle, null, appState));
+                () -> new MapViewModel(noteTitle, null,
+                        noteService, noteService, appState,
+                        new EventBus()));
     }
 
     @Test
     @DisplayName("Constructor rejects null appState")
     void constructor_shouldRejectNullAppState() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(noteTitle, noteService, null));
+                () -> new MapViewModel(noteTitle, noteService,
+                        noteService, noteService, null,
+                        new EventBus()));
     }
 
     @Test

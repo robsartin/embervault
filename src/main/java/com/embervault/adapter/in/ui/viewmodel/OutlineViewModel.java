@@ -5,7 +5,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.DeleteNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
+import com.embervault.application.port.in.GetOutlineNavigationQuery;
+import com.embervault.application.port.in.MoveNoteUseCase;
+import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.Note;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -33,36 +38,56 @@ public final class OutlineViewModel {
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
     private final NavigationStack navigationStack = new NavigationStack();
-    private final NoteService noteService;
+    private final GetNoteQuery getNoteQuery;
+    private final CreateNoteUseCase createNoteUseCase;
+    private final RenameNoteUseCase renameNoteUseCase;
+    private final MoveNoteUseCase moveNoteUseCase;
+    private final DeleteNoteUseCase deleteNoteUseCase;
+    private final GetOutlineNavigationQuery outlineNavQuery;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
     private final EventBus eventBus;
 
     /**
-     * Constructs an OutlineViewModel that derives its tab title from the given note title property.
+     * Constructs an OutlineViewModel that derives its tab title from
+     * the given note title property.
      *
-     * @param noteTitle   the observable note title
-     * @param noteService the note service for creating and querying notes
-     * @param appState    the shared application state for data-change notification
+     * @param noteTitle        the observable note title
+     * @param getNoteQuery     the query interface for reading notes
+     * @param createNoteUseCase the use case for creating notes
+     * @param renameNoteUseCase the use case for renaming notes
+     * @param moveNoteUseCase  the use case for moving notes
+     * @param deleteNoteUseCase the use case for deleting notes
+     * @param outlineNavQuery  the query for outline navigation
+     * @param appState         the shared application state for
+     *                         data-change notification
      */
-    public OutlineViewModel(StringProperty noteTitle, NoteService noteService,
-            AppState appState) {
-        this(noteTitle, noteService, appState, new EventBus());
-    }
-
-    /**
-     * Constructs an OutlineViewModel with an explicit EventBus.
-     *
-     * @param noteTitle   the observable note title
-     * @param noteService the note service for creating and querying notes
-     * @param appState    the shared application state for data-change notification
-     * @param eventBus    the event bus for publishing domain events
-     */
-    public OutlineViewModel(StringProperty noteTitle, NoteService noteService,
+    public OutlineViewModel(StringProperty noteTitle,
+            GetNoteQuery getNoteQuery,
+            CreateNoteUseCase createNoteUseCase,
+            RenameNoteUseCase renameNoteUseCase,
+            MoveNoteUseCase moveNoteUseCase,
+            DeleteNoteUseCase deleteNoteUseCase,
+            GetOutlineNavigationQuery outlineNavQuery,
             AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+        this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
+                "getNoteQuery must not be null");
+        this.createNoteUseCase = Objects.requireNonNull(
+                createNoteUseCase,
+                "createNoteUseCase must not be null");
+        this.renameNoteUseCase = Objects.requireNonNull(
+                renameNoteUseCase,
+                "renameNoteUseCase must not be null");
+        this.moveNoteUseCase = Objects.requireNonNull(
+                moveNoteUseCase,
+                "moveNoteUseCase must not be null");
+        this.deleteNoteUseCase = Objects.requireNonNull(
+                deleteNoteUseCase,
+                "deleteNoteUseCase must not be null");
+        this.outlineNavQuery = Objects.requireNonNull(
+                outlineNavQuery,
+                "outlineNavQuery must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
         this.eventBus = Objects.requireNonNull(eventBus,
@@ -122,8 +147,8 @@ public final class OutlineViewModel {
             rootItems.clear();
             return;
         }
-        List<Note> children = noteService.getChildren(baseNoteId);
-        Map<UUID, Boolean> hasChildrenMap = noteService.hasChildrenBatch(
+        List<Note> children = getNoteQuery.getChildren(baseNoteId);
+        Map<UUID, Boolean> hasChildrenMap = getNoteQuery.hasChildrenBatch(
                 children.stream().map(Note::getId).toList());
         rootItems.setAll(
                 children.stream()
@@ -140,7 +165,7 @@ public final class OutlineViewModel {
      * @return the display item for the created note
      */
     public NoteDisplayItem createChildNote(UUID parentId, String title) {
-        Note child = noteService.createChildNote(parentId, title);
+        Note child = createNoteUseCase.createChildNote(parentId, title);
         NoteDisplayItem item = toDisplayItem(child);
         // Add to root items if parent is the base note
         if (parentId.equals(navigationStack.getCurrentId())) {
@@ -158,7 +183,7 @@ public final class OutlineViewModel {
      * @return the display item for the created note
      */
     public NoteDisplayItem createSiblingNote(UUID siblingId, String title) {
-        Note sibling = noteService.createSiblingNote(siblingId, title);
+        Note sibling = createNoteUseCase.createSiblingNote(siblingId, title);
         NoteDisplayItem item = toDisplayItem(sibling);
         loadNotes();
         eventBus.publish(new NoteCreatedEvent(sibling.getId()));
@@ -171,7 +196,7 @@ public final class OutlineViewModel {
      * @param noteId the note id to indent
      */
     public void indentNote(UUID noteId) {
-        noteService.indentNote(noteId);
+        moveNoteUseCase.indentNote(noteId);
         loadNotes();
         eventBus.publish(new NoteMovedEvent(noteId));
     }
@@ -182,7 +207,7 @@ public final class OutlineViewModel {
      * @param noteId the note id to outdent
      */
     public void outdentNote(UUID noteId) {
-        noteService.outdentNote(noteId);
+        moveNoteUseCase.outdentNote(noteId);
         loadNotes();
         eventBus.publish(new NoteMovedEvent(noteId));
     }
@@ -196,7 +221,7 @@ public final class OutlineViewModel {
      */
     public void moveNoteToPosition(UUID noteId,
             UUID newParentId, int position) {
-        noteService.moveNoteToPosition(noteId, newParentId,
+        moveNoteUseCase.moveNoteToPosition(noteId, newParentId,
                 position);
         loadNotes();
         eventBus.publish(new NoteMovedEvent(noteId));
@@ -213,7 +238,7 @@ public final class OutlineViewModel {
         if (newTitle == null || newTitle.isBlank()) {
             return false;
         }
-        noteService.renameNote(noteId, newTitle);
+        renameNoteUseCase.renameNote(noteId, newTitle);
         for (int i = 0; i < rootItems.size(); i++) {
             NoteDisplayItem item = rootItems.get(i);
             if (item.getId().equals(noteId)) {
@@ -242,7 +267,7 @@ public final class OutlineViewModel {
      */
     public void drillDown(UUID noteId) {
         navigationStack.push(noteId);
-        noteService.getNote(noteId).ifPresent(note ->
+        getNoteQuery.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
         eventBus.publish(new NoteMovedEvent(noteId));
@@ -259,7 +284,7 @@ public final class OutlineViewModel {
         if (navigationStack.isAtRoot()) {
             updateTabTitle(rootNoteTitle.get());
         } else {
-            noteService.getNote(previous).ifPresent(note ->
+            getNoteQuery.getNote(previous).ifPresent(note ->
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
@@ -273,7 +298,7 @@ public final class OutlineViewModel {
      * @return true if the note has children
      */
     public boolean hasChildren(UUID noteId) {
-        return noteService.hasChildren(noteId);
+        return getNoteQuery.hasChildren(noteId);
     }
 
     /**
@@ -283,7 +308,7 @@ public final class OutlineViewModel {
      * @return the previous note id, or null
      */
     public UUID getPreviousNoteId(UUID noteId) {
-        return noteService.getPreviousInOutline(noteId)
+        return outlineNavQuery.getPreviousInOutline(noteId)
                 .map(Note::getId)
                 .orElse(null);
     }
@@ -295,7 +320,7 @@ public final class OutlineViewModel {
      * @return true if the note was deleted, false if it has children or does not exist
      */
     public boolean deleteNote(UUID noteId) {
-        boolean deleted = noteService.deleteNoteIfLeaf(noteId);
+        boolean deleted = deleteNoteUseCase.deleteNoteIfLeaf(noteId);
         if (deleted) {
             loadNotes();
             eventBus.publish(new NoteDeletedEvent(noteId));
@@ -310,8 +335,8 @@ public final class OutlineViewModel {
      * @return the list of child display items
      */
     public ObservableList<NoteDisplayItem> getChildren(UUID parentId) {
-        List<Note> children = noteService.getChildren(parentId);
-        Map<UUID, Boolean> hasChildrenMap = noteService.hasChildrenBatch(
+        List<Note> children = getNoteQuery.getChildren(parentId);
+        Map<UUID, Boolean> hasChildrenMap = getNoteQuery.hasChildrenBatch(
                 children.stream().map(Note::getId).toList());
         return FXCollections.observableArrayList(
                 children.stream()
@@ -325,7 +350,7 @@ public final class OutlineViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        return toDisplayItem(note, noteService.hasChildren(note.getId()));
+        return toDisplayItem(note, getNoteQuery.hasChildren(note.getId()));
     }
 
     private NoteDisplayItem toDisplayItem(Note note, boolean hasChildren) {

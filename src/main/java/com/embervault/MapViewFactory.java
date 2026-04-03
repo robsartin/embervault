@@ -18,6 +18,7 @@ final class MapViewFactory implements ViewFactory {
             Consumer<String> onViewSwitch) {
         MapViewModel vm = new MapViewModel(
                 deps.rootNoteTitle(), deps.noteService(),
+                deps.noteService(), deps.noteService(),
                 deps.appState(), deps.eventBus());
         vm.setBaseNoteId(baseNoteId);
         return new ViewCreationResult(

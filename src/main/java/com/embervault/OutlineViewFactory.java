@@ -18,7 +18,9 @@ final class OutlineViewFactory implements ViewFactory {
             Consumer<String> onViewSwitch) {
         OutlineViewModel vm = new OutlineViewModel(
                 deps.rootNoteTitle(), deps.noteService(),
-                deps.appState(), deps.eventBus());
+                deps.noteService(), deps.noteService(),
+                deps.noteService(), deps.noteService(),
+                deps.noteService(), deps.appState(), deps.eventBus());
         vm.setBaseNoteId(baseNoteId);
         return new ViewCreationResult(
                 vm.tabTitleProperty(),

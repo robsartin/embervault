@@ -71,7 +71,9 @@ class ViewPaneContextBranchTest {
         schemaRegistry = new AttributeSchemaRegistry();
         AppState appState = new AppState();
         selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState,
+                        new EventBus());
         rootNoteTitle = new SimpleStringProperty("Root");
         refreshCount = new AtomicInteger(0);
 
@@ -80,7 +82,9 @@ class ViewPaneContextBranchTest {
                 rootNote.getId(), "Child1");
 
         mapViewModel = new MapViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService,
+                noteService, noteService, appState,
+                new EventBus());
         mapViewModel.setBaseNoteId(rootNote.getId());
         mapViewModel.loadNotes();
 

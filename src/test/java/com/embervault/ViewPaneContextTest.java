@@ -63,14 +63,17 @@ class ViewPaneContextTest {
         schemaRegistry = new AttributeSchemaRegistry();
         AppState appState = new AppState();
         selectedNoteVm = new SelectedNoteViewModel(
-                noteService, appState);
+                noteService, noteService, appState,
+                new EventBus());
         rootNoteTitle = new SimpleStringProperty("Root");
 
         rootNote = noteService.createNote("Root", "");
         noteService.createChildNote(rootNote.getId(), "Child1");
 
         mapViewModel = new MapViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService,
+                noteService, noteService, appState,
+                new EventBus());
         mapViewModel.setBaseNoteId(rootNote.getId());
         mapViewModel.loadNotes();
 

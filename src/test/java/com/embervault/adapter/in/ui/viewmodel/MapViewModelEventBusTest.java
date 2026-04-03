@@ -35,7 +35,8 @@ class MapViewModelEventBusTest {
         appState = new AppState();
         eventBus = new EventBus();
         viewModel = new MapViewModel(
-                noteTitle, noteService, appState, eventBus);
+                noteTitle, noteService, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test
