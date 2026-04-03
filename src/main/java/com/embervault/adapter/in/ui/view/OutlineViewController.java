@@ -146,13 +146,11 @@ public class OutlineViewController {
     }
 
     private ContextMenu createContextMenu() {
-        MenuItem createNote = new MenuItem("Create Note");
-        createNote.setOnAction(e -> createChildUnderSelected());
-
-        ContextMenu menu = new ContextMenu(createNote);
-        menu.getItems().addAll(
-                ViewSwitchMenuHelper.createViewSwitchItems(
-                        ViewType.OUTLINE, onViewSwitch));
+        var item = new MenuItem("Create Note");
+        item.setOnAction(e -> createChildUnderSelected());
+        var menu = new ContextMenu(item);
+        menu.getItems().addAll(ViewSwitchMenuHelper
+                .createViewSwitchItems(ViewType.OUTLINE, onViewSwitch));
         return menu;
     }
 
@@ -184,14 +182,9 @@ public class OutlineViewController {
     }
 
     private void createChildUnderSelected() {
-        TreeItem<NoteDisplayItem> selected = outlineTreeView.getSelectionModel()
-                .getSelectedItem();
-        UUID parentId;
-        if (selected != null && selected.getValue() != null) {
-            parentId = selected.getValue().getId();
-        } else {
-            parentId = viewModel.getBaseNoteId();
-        }
+        var sel = outlineTreeView.getSelectionModel().getSelectedItem();
+        UUID parentId = (sel != null && sel.getValue() != null)
+                ? sel.getValue().getId() : viewModel.getBaseNoteId();
         if (parentId != null) {
             viewModel.createChildNote(parentId, "Untitled");
         }
@@ -296,7 +289,15 @@ public class OutlineViewController {
             textField.selectAll();
 
             // Key handling on the text field
-            textField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEditKeyPress);
+            textField.addEventFilter(KeyEvent.KEY_PRESSED,
+                    this::handleEditKeyPress);
+            // Consume arrow keys after TextField handles them
+            // to prevent TreeView from collapsing/expanding/navigating
+            textField.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
+                if (e.getCode().isArrowKey()) {
+                    e.consume();
+                }
+            });
 
             // Focus lost: always commit
             textField.focusedProperty().addListener(
