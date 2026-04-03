@@ -58,32 +58,18 @@ public class OutlineViewController {
                 (obs, oldVal, newVal) -> backButton.setVisible(newVal));
         outlineRoot.getChildren().add(0, backButton);
 
-        // Do NOT use TreeView's built-in edit mode
         outlineTreeView.setEditable(false);
-
-        // Set up cell factory with custom click handling
         outlineTreeView.setCellFactory(tv -> new OutlineNoteTreeCell());
-
-        // Load initial data
         viewModel.loadNotes();
         buildTree();
-
-        // Re-build tree when root items change
         viewModel.getRootItems().addListener(
                 (ListChangeListener<NoteDisplayItem>) change -> buildTree());
-
-        // Selection listener
         outlineTreeView.getSelectionModel().selectedItemProperty()
                 .addListener((obs, oldVal, newVal) ->
                         handleTreeSelection(newVal));
-
-        // Event filter to intercept Tab/Shift+Tab before TreeView handles them
-        outlineTreeView.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTreeKeyFilter);
-
-        // Key handling: Escape navigates back
+        outlineTreeView.addEventFilter(
+                KeyEvent.KEY_PRESSED, this::handleTreeKeyFilter);
         outlineTreeView.setOnKeyPressed(this::handleTreeKeyPress);
-
-        // Context menu
         outlineTreeView.setContextMenu(createContextMenu());
     }
 
@@ -100,17 +86,16 @@ public class OutlineViewController {
         }
     }
 
-    void handleTreeSelection(TreeItem<NoteDisplayItem> newVal) {
-        if (newVal != null && newVal.getValue() != null) {
-            viewModel.selectNote(newVal.getValue().getId());
-        } else {
-            viewModel.selectNote(null);
-        }
+    void handleTreeSelection(TreeItem<NoteDisplayItem> sel) {
+        viewModel.selectNote(sel != null && sel.getValue() != null
+                ? sel.getValue().getId() : null);
     }
 
     void handleTreeKeyFilter(KeyEvent event) {
-        if (event.getCode().isArrowKey()) {
-            return; // preserve TreeView navigation
+        if (isAnyoneEditing() && event.getCode().isArrowKey()) {
+            event.consume();
+            handleArrowDuringEdit(event.getCode());
+            return;
         }
         if (event.getCode() == KeyCode.ENTER
                 && !isAnyoneEditing()) {
@@ -148,14 +133,24 @@ public class OutlineViewController {
         }
     }
 
-    private ContextMenu createContextMenu() {
-        MenuItem createNote = new MenuItem("Create Note");
-        createNote.setOnAction(e -> createChildUnderSelected());
+    private void handleArrowDuringEdit(KeyCode code) {
+        if (!(outlineTreeView.getScene().getFocusOwner()
+                instanceof TextField tf)) {
+            return;
+        }
+        if (code == KeyCode.LEFT) {
+            tf.backward();
+        } else if (code == KeyCode.RIGHT) {
+            tf.forward();
+        }
+    }
 
-        ContextMenu menu = new ContextMenu(createNote);
-        menu.getItems().addAll(
-                ViewSwitchMenuHelper.createViewSwitchItems(
-                        ViewType.OUTLINE, onViewSwitch));
+    private ContextMenu createContextMenu() {
+        var item = new MenuItem("Create Note");
+        item.setOnAction(e -> createChildUnderSelected());
+        var menu = new ContextMenu(item);
+        menu.getItems().addAll(ViewSwitchMenuHelper
+                .createViewSwitchItems(ViewType.OUTLINE, onViewSwitch));
         return menu;
     }
 
@@ -187,25 +182,25 @@ public class OutlineViewController {
     }
 
     private void createChildUnderSelected() {
-        TreeItem<NoteDisplayItem> selected =
-                outlineTreeView.getSelectionModel().getSelectedItem();
-        UUID parentId = (selected != null && selected.getValue() != null)
-                ? selected.getValue().getId() : viewModel.getBaseNoteId();
+        var sel = outlineTreeView.getSelectionModel().getSelectedItem();
+        UUID parentId = (sel != null && sel.getValue() != null)
+                ? sel.getValue().getId() : viewModel.getBaseNoteId();
         if (parentId != null) {
             viewModel.createChildNote(parentId, "Untitled");
         }
     }
 
-    private TreeItem<NoteDisplayItem> findTreeItem(TreeItem<NoteDisplayItem> root,
-            UUID noteId) {
+    private TreeItem<NoteDisplayItem> findTreeItem(
+            TreeItem<NoteDisplayItem> root, UUID noteId) {
         if (root == null || noteId == null) {
             return null;
         }
-        if (root.getValue() != null && noteId.equals(root.getValue().getId())) {
+        if (root.getValue() != null
+                && noteId.equals(root.getValue().getId())) {
             return root;
         }
-        for (TreeItem<NoteDisplayItem> child : root.getChildren()) {
-            TreeItem<NoteDisplayItem> found = findTreeItem(child, noteId);
+        for (var child : root.getChildren()) {
+            var found = findTreeItem(child, noteId);
             if (found != null) {
                 return found;
             }
@@ -214,13 +209,9 @@ public class OutlineViewController {
     }
 
     private boolean isAnyoneEditing() {
-        for (var node : outlineTreeView.lookupAll(".tree-cell")) {
-            if (node instanceof OutlineNoteTreeCell cell
-                    && cell.editing) {
-                return true;
-            }
-        }
-        return false;
+        return outlineTreeView.lookupAll(".tree-cell").stream()
+                .anyMatch(n -> n instanceof OutlineNoteTreeCell cell
+                        && cell.editing);
     }
 
     private final class OutlineNoteTreeCell
@@ -228,8 +219,11 @@ public class OutlineViewController {
 
         private TextField textField;
         private boolean editing;
+        private boolean wasSelectedBeforePress;
 
         OutlineNoteTreeCell() {
+            setOnMousePressed(e -> wasSelectedBeforePress = isSelected());
+
             setOnMouseClicked(event -> {
                 if (event.getButton() != MouseButton.PRIMARY
                         || isEmpty() || getItem() == null) {
@@ -240,7 +234,8 @@ public class OutlineViewController {
                     viewModel.drillDown(getItem().getId());
                     event.consume();
                 } else if (event.getClickCount() == 1
-                        && !editing) {
+                        && !editing
+                        && wasSelectedBeforePress) {
                     startInlineEdit();
                     event.consume();
                 }
@@ -294,8 +289,8 @@ public class OutlineViewController {
             textField.selectAll();
 
             // Key handling on the text field
-            textField.addEventFilter(KeyEvent.KEY_PRESSED, this::handleEditKeyPress);
-
+            textField.addEventFilter(KeyEvent.KEY_PRESSED,
+                    this::handleEditKeyPress);
             // Focus lost: always commit
             textField.focusedProperty().addListener(
                     (obs, wasFocused, isFocused) -> {
