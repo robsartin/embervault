@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeMap;
@@ -37,7 +38,7 @@ import com.embervault.domain.UuidGenerator;
  * <p>Delegates persistence to the {@link NoteRepository} outbound port.</p>
  */
 public final class NoteServiceImpl implements NoteService,
-        CreateNoteUseCase {
+        CreateNoteUseCase, GetNoteQuery {
 
     private static final double MAX_XPOS = 12.0;
     private static final double MAX_YPOS = 8.0;
