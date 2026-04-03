@@ -1,0 +1,53 @@
+package com.embervault;
+
+import java.util.Objects;
+
+import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
+import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
+/**
+ * Creates the common per-window components shared by both
+ * {@link App} and {@link WindowFactory}.
+ *
+ * <p>Eliminates duplication of AppState, EventBus,
+ * SelectedNoteViewModel, ViewPaneDeps creation, and the
+ * dataVersion-to-WindowManager wiring that was previously
+ * copy-pasted between the two entry points.</p>
+ */
+public final class WindowBuilder {
+
+  private WindowBuilder() { }
+
+  /**
+   * Builds the common per-window components from the given setup
+   * context.
+   *
+   * @param ctx the window setup context with shared services
+   * @return a result containing the created components
+   */
+  public static WindowSetupResult build(WindowSetupContext ctx) {
+    Objects.requireNonNull(ctx, "ctx must not be null");
+
+    AppState appState = new AppState();
+    EventBus eventBus = new EventBus();
+    SelectedNoteViewModel selectedNoteVm =
+        new SelectedNoteViewModel(ctx.noteService(), appState);
+    StringProperty rootNoteTitle = new SimpleStringProperty(
+        ctx.project().getRootNote().getTitle());
+    ViewPaneDeps paneDeps = new ViewPaneDeps(
+        ctx.noteService(), ctx.linkService(),
+        ctx.schemaRegistry(), appState, eventBus,
+        selectedNoteVm, rootNoteTitle);
+
+    appState.dataVersionProperty().addListener(
+        (obs, oldVal, newVal) ->
+            ctx.windowManager().notifyAllWindows());
+
+    return new WindowSetupResult(
+        appState, eventBus, selectedNoteVm,
+        paneDeps, rootNoteTitle);
+  }
+}
