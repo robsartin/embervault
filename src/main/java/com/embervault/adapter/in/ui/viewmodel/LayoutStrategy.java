@@ -22,6 +22,6 @@ public interface LayoutStrategy {
      * @param viewportRadius the viewport radius in pixels
      * @return the list of positioned nodes
      */
-    List<HyperbolicNode> layout(UUID focusId,
+    List<PositionedNode> layout(UUID focusId,
             Map<UUID, Set<UUID>> adjacency, double viewportRadius);
 }
