@@ -21,50 +21,51 @@ import javafx.beans.property.StringProperty;
  */
 public final class WindowBuilder {
 
-  private WindowBuilder() { }
+    private WindowBuilder() { }
 
-  /**
-   * Builds the common per-window components from the given setup
-   * context.
-   *
-   * @param ctx the window setup context with shared services
-   * @return a result containing the created components
-   */
-  public static WindowSetupResult build(WindowSetupContext ctx) {
-    Objects.requireNonNull(ctx, "ctx must not be null");
+    /**
+     * Builds the common per-window components from the given setup
+     * context.
+     *
+     * @param ctx the window setup context with shared services
+     * @return a result containing the created components
+     */
+    public static WindowSetupResult build(WindowSetupContext ctx) {
+        Objects.requireNonNull(ctx, "ctx must not be null");
 
-    AppState appState = new AppState();
-    EventBus eventBus = new EventBus();
-    SelectedNoteViewModel selectedNoteVm =
-        new SelectedNoteViewModel(ctx.noteService(), appState);
-    StringProperty rootNoteTitle = new SimpleStringProperty(
-        ctx.project().getRootNote().getTitle());
-    ViewPaneDeps paneDeps = new ViewPaneDeps(
-        ctx.noteService(), ctx.linkService(),
-        ctx.schemaRegistry(), appState, eventBus,
-        selectedNoteVm, rootNoteTitle);
+        AppState appState = new AppState();
+        EventBus eventBus = new EventBus();
+        SelectedNoteViewModel selectedNoteVm =
+                new SelectedNoteViewModel(ctx.noteService(), appState);
+        StringProperty rootNoteTitle = new SimpleStringProperty(
+                ctx.project().getRootNote().getTitle());
+        ViewPaneDeps paneDeps = new ViewPaneDeps(
+                ctx.noteService(), ctx.linkService(),
+                ctx.schemaRegistry(), appState, eventBus,
+                selectedNoteVm, rootNoteTitle);
 
-    appState.dataVersionProperty().addListener(
-        (obs, oldVal, newVal) ->
-            ctx.windowManager().notifyAllWindows());
+        appState.dataVersionProperty().addListener(
+                (obs, oldVal, newVal) ->
+                        ctx.windowManager().notifyAllWindows());
 
-    return new WindowSetupResult(
-        appState, eventBus, selectedNoteVm,
-        paneDeps, rootNoteTitle);
-  }
+        return new WindowSetupResult(
+                appState, eventBus, selectedNoteVm,
+                paneDeps, rootNoteTitle);
+    }
 
-  /**
-   * Wires a view model's selected-note-id property to the shared
-   * {@link SelectedNoteViewModel} so that selection changes in
-   * any view are reflected in the text pane.
-   *
-   * @param source the source property (from the view's ViewModel)
-   * @param target the shared selected-note view model
-   */
-  public static void wireSelection(
-      ObjectProperty<UUID> source,
-      SelectedNoteViewModel target) {
-    source.addListener(
-        (obs, oldVal, newVal) -> target.setSelectedNoteId(newVal));
-  }
+    /**
+     * Wires a view model's selected-note-id property to the shared
+     * {@link SelectedNoteViewModel} so that selection changes in
+     * any view are reflected in the text pane.
+     *
+     * @param source the source property (from the view's ViewModel)
+     * @param target the shared selected-note view model
+     */
+    public static void wireSelection(
+            ObjectProperty<UUID> source,
+            SelectedNoteViewModel target) {
+        source.addListener(
+                (obs, oldVal, newVal) ->
+                        target.setSelectedNoteId(newVal));
+    }
 }

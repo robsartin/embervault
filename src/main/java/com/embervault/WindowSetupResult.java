@@ -17,9 +17,9 @@ import javafx.beans.property.StringProperty;
  * @param rootNoteTitle  the root note title property
  */
 public record WindowSetupResult(
-    AppState appState,
-    EventBus eventBus,
-    SelectedNoteViewModel selectedNoteVm,
-    ViewPaneDeps paneDeps,
-    StringProperty rootNoteTitle) {
+        AppState appState,
+        EventBus eventBus,
+        SelectedNoteViewModel selectedNoteVm,
+        ViewPaneDeps paneDeps,
+        StringProperty rootNoteTitle) {
 }

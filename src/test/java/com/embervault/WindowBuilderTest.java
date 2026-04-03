@@ -6,8 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.UUID;
 
-import com.embervault.adapter.in.ui.viewmodel.AppState;
-import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -16,89 +14,89 @@ import org.junit.jupiter.api.Test;
 
 class WindowBuilderTest {
 
-  private WindowSetupContext setupCtx;
-  private SharedServices services;
-  private WindowManager windowManager;
+    private WindowSetupContext setupCtx;
+    private SharedServices services;
+    private WindowManager windowManager;
 
-  @BeforeEach
-  void setUp() {
-    services = SharedServices.create();
-    windowManager = new WindowManager();
-    setupCtx = new WindowSetupContext(services, windowManager);
-  }
+    @BeforeEach
+    void setUp() {
+        services = SharedServices.create();
+        windowManager = new WindowManager();
+        setupCtx = new WindowSetupContext(services, windowManager);
+    }
 
-  @Test
-  void shouldCreateAppState() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
+    @Test
+    void shouldCreateAppState() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
 
-    assertNotNull(result.appState());
-  }
+        assertNotNull(result.appState());
+    }
 
-  @Test
-  void shouldCreateEventBus() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
+    @Test
+    void shouldCreateEventBus() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
 
-    assertNotNull(result.eventBus());
-  }
+        assertNotNull(result.eventBus());
+    }
 
-  @Test
-  void shouldCreateSelectedNoteViewModel() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
+    @Test
+    void shouldCreateSelectedNoteViewModel() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
 
-    assertNotNull(result.selectedNoteVm());
-  }
+        assertNotNull(result.selectedNoteVm());
+    }
 
-  @Test
-  void shouldCreateViewPaneDeps() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
+    @Test
+    void shouldCreateViewPaneDeps() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
 
-    assertNotNull(result.paneDeps());
-    assertSame(services.noteService(),
-        result.paneDeps().noteService());
-    assertSame(services.linkService(),
-        result.paneDeps().linkService());
-    assertSame(services.schemaRegistry(),
-        result.paneDeps().schemaRegistry());
-    assertSame(result.appState(),
-        result.paneDeps().appState());
-    assertSame(result.eventBus(),
-        result.paneDeps().eventBus());
-    assertSame(result.selectedNoteVm(),
-        result.paneDeps().selectedNoteVm());
-  }
+        assertNotNull(result.paneDeps());
+        assertSame(services.noteService(),
+                result.paneDeps().noteService());
+        assertSame(services.linkService(),
+                result.paneDeps().linkService());
+        assertSame(services.schemaRegistry(),
+                result.paneDeps().schemaRegistry());
+        assertSame(result.appState(),
+                result.paneDeps().appState());
+        assertSame(result.eventBus(),
+                result.paneDeps().eventBus());
+        assertSame(result.selectedNoteVm(),
+                result.paneDeps().selectedNoteVm());
+    }
 
-  @Test
-  void shouldCreateRootNoteTitleFromProject() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
+    @Test
+    void shouldCreateRootNoteTitleFromProject() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
 
-    assertEquals(services.project().getRootNote().getTitle(),
-        result.rootNoteTitle().get());
-  }
+        assertEquals(services.project().getRootNote().getTitle(),
+                result.rootNoteTitle().get());
+    }
 
-  @Test
-  void shouldWireDataVersionToWindowManager() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
-    boolean[] refreshed = {false};
-    windowManager.addRefreshListener(() -> refreshed[0] = true);
+    @Test
+    void shouldWireDataVersionToWindowManager() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
+        boolean[] refreshed = {false};
+        windowManager.addRefreshListener(() -> refreshed[0] = true);
 
-    result.appState().notifyDataChanged();
+        result.appState().notifyDataChanged();
 
-    // dataVersion listener should call windowManager.notifyAllWindows()
-    assertEquals(true, refreshed[0]);
-  }
+        assertEquals(true, refreshed[0]);
+    }
 
-  @Test
-  void wireSelectionShouldForwardNoteId() {
-    WindowSetupResult result = WindowBuilder.build(setupCtx);
-    ObjectProperty<UUID> source = new SimpleObjectProperty<>();
+    @Test
+    void wireSelectionShouldForwardNoteId() {
+        WindowSetupResult result = WindowBuilder.build(setupCtx);
+        ObjectProperty<UUID> source = new SimpleObjectProperty<>();
+        SelectedNoteViewModel target = result.selectedNoteVm();
 
-    // Create a child note so getNote() returns a valid note
-    UUID childId = services.noteService().createChildNote(
-        services.project().getRootNote().getId(), "Test Note").getId();
-    WindowBuilder.wireSelection(source, result.selectedNoteVm());
-    source.set(childId);
+        UUID childId = services.noteService().createChildNote(
+                services.project().getRootNote().getId(),
+                "Test Note").getId();
+        WindowBuilder.wireSelection(source, target);
+        source.set(childId);
 
-    assertEquals(childId,
-        result.selectedNoteVm().selectedNoteIdProperty().get());
-  }
+        assertEquals(childId,
+                target.selectedNoteIdProperty().get());
+    }
 }

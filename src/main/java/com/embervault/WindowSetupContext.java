@@ -19,38 +19,39 @@ import com.embervault.domain.Project;
  * @param windowManager the window manager
  */
 public record WindowSetupContext(
-    SharedServices services,
-    WindowManager windowManager) {
+        SharedServices services,
+        WindowManager windowManager) {
 
-  /** Compact canonical constructor with null checks. */
-  public WindowSetupContext {
-    Objects.requireNonNull(services, "services must not be null");
-    Objects.requireNonNull(windowManager,
-        "windowManager must not be null");
-  }
+    /** Compact canonical constructor with null checks. */
+    public WindowSetupContext {
+        Objects.requireNonNull(services,
+                "services must not be null");
+        Objects.requireNonNull(windowManager,
+                "windowManager must not be null");
+    }
 
-  /** Returns the current project. */
-  public Project project() {
-    return services.project();
-  }
+    /** Returns the current project. */
+    public Project project() {
+        return services.project();
+    }
 
-  /** Returns the note service. */
-  public NoteService noteService() {
-    return services.noteService();
-  }
+    /** Returns the note service. */
+    public NoteService noteService() {
+        return services.noteService();
+    }
 
-  /** Returns the link service. */
-  public LinkService linkService() {
-    return services.linkService();
-  }
+    /** Returns the link service. */
+    public LinkService linkService() {
+        return services.linkService();
+    }
 
-  /** Returns the stamp service. */
-  public StampService stampService() {
-    return services.stampService();
-  }
+    /** Returns the stamp service. */
+    public StampService stampService() {
+        return services.stampService();
+    }
 
-  /** Returns the attribute schema registry. */
-  public AttributeSchemaRegistry schemaRegistry() {
-    return services.schemaRegistry();
-  }
+    /** Returns the attribute schema registry. */
+    public AttributeSchemaRegistry schemaRegistry() {
+        return services.schemaRegistry();
+    }
 }
