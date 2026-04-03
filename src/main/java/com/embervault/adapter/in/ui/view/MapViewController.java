@@ -181,7 +181,7 @@ public class MapViewController {
         zoomToolbar.setPadding(new Insets(4));
         zoomToolbar.setStyle("-fx-background-color: rgba(245,245,245,0.9);");
         zoomToolbar.setLayoutX(BACK_BUTTON_PADDING);
-        zoomToolbar.setLayoutY(BACK_BUTTON_PADDING);
+        zoomToolbar.setLayoutY(BACK_BUTTON_PADDING + 24);
         zoomToolbar.setMouseTransparent(false);
         zoomToolbar.setId("zoomToolbar");
 
