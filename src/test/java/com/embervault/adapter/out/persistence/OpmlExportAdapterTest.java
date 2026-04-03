@@ -33,8 +33,8 @@ class OpmlExportAdapterTest {
         OpmlExportAdapter adapter = new OpmlExportAdapter();
         Path outputFile = tempDir.resolve("export.opml");
 
-        adapter.export(List.of(note), "Test Project",
-                outputFile);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Test Project", outputFile);
 
         assertTrue(Files.exists(outputFile));
         String opml = Files.readString(outputFile,
@@ -60,8 +60,8 @@ class OpmlExportAdapterTest {
         OpmlExportAdapter adapter = new OpmlExportAdapter();
         Path outputFile = tempDir.resolve("export.opml");
 
-        adapter.export(List.of(note1, note2), "Project",
-                outputFile);
+        adapter.export(List.of(note1, note2), List.of(),
+                List.of(), "Project", outputFile);
 
         String opml = Files.readString(outputFile,
                 StandardCharsets.UTF_8);
@@ -79,8 +79,8 @@ class OpmlExportAdapterTest {
         OpmlExportAdapter adapter = new OpmlExportAdapter();
         Path outputFile = tempDir.resolve("export.opml");
 
-        adapter.export(List.of(note), "Project",
-                outputFile);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Project", outputFile);
 
         String opml = Files.readString(outputFile,
                 StandardCharsets.UTF_8);
@@ -98,8 +98,8 @@ class OpmlExportAdapterTest {
         OpmlExportAdapter adapter = new OpmlExportAdapter();
         Path outputFile = tempDir.resolve("export.opml");
 
-        adapter.export(List.of(note), "Project",
-                outputFile);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Project", outputFile);
 
         String opml = Files.readString(outputFile,
                 StandardCharsets.UTF_8);
@@ -117,8 +117,8 @@ class OpmlExportAdapterTest {
         OpmlExportAdapter adapter = new OpmlExportAdapter();
         Path outputFile = tempDir.resolve("export.opml");
 
-        adapter.export(List.of(note), "Project",
-                outputFile);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Project", outputFile);
 
         String opml = Files.readString(outputFile,
                 StandardCharsets.UTF_8);

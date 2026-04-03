@@ -40,7 +40,7 @@ class JsonExportAdapterTest {
         Path outputFile = tempDir.resolve("export.json");
 
         adapter.export(List.of(note), List.of(), List.of(),
-                outputFile);
+                "Test", outputFile);
 
         assertTrue(Files.exists(outputFile));
         String json = Files.readString(outputFile,
@@ -66,7 +66,7 @@ class JsonExportAdapterTest {
         Path outputFile = tempDir.resolve("export.json");
 
         adapter.export(List.of(note1, note2), List.of(link),
-                List.of(), outputFile);
+                List.of(), "Test", outputFile);
 
         String json = Files.readString(outputFile,
                 StandardCharsets.UTF_8);
@@ -89,7 +89,7 @@ class JsonExportAdapterTest {
         Path outputFile = tempDir.resolve("export.json");
 
         adapter.export(List.of(note), List.of(),
-                List.of(stamp), outputFile);
+                List.of(stamp), "Test", outputFile);
 
         String json = Files.readString(outputFile,
                 StandardCharsets.UTF_8);
@@ -115,7 +115,7 @@ class JsonExportAdapterTest {
         Path outputFile = tempDir.resolve("export.json");
 
         adapter.export(List.of(note), List.of(), List.of(),
-                outputFile);
+                "Test", outputFile);
 
         String json = Files.readString(outputFile,
                 StandardCharsets.UTF_8);
@@ -134,7 +134,7 @@ class JsonExportAdapterTest {
         Path outputFile = tempDir.resolve("export.json");
 
         adapter.export(List.of(note), List.of(), List.of(),
-                outputFile);
+                "Test", outputFile);
 
         String json = Files.readString(outputFile,
                 StandardCharsets.UTF_8);

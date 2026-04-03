@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import com.embervault.application.port.out.ExportPort;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Link;
 import com.embervault.domain.Note;
@@ -21,19 +22,12 @@ import com.embervault.domain.Stamp;
  * {@code "links"}, and {@code "stamps"}, preserving all typed
  * attribute values for round-trip fidelity.</p>
  */
-public final class JsonExportAdapter {
+public final class JsonExportAdapter implements ExportPort {
 
-    /**
-     * Exports notes, links, and stamps to a JSON file.
-     *
-     * @param notes   the notes to export
-     * @param links   the links to export
-     * @param stamps  the stamps to export
-     * @param output  the output file path
-     * @throws IOException if writing fails
-     */
+    @Override
     public void export(List<Note> notes, List<Link> links,
-            List<Stamp> stamps, Path output) throws IOException {
+            List<Stamp> stamps, String projectName,
+            Path output) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("{\n");
         sb.append("  \"notes\": [\n");

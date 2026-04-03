@@ -37,7 +37,8 @@ class MarkdownExportAdapterTest {
 
         MarkdownExportAdapter adapter =
                 new MarkdownExportAdapter();
-        adapter.export(List.of(note), tempDir);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Test", tempDir);
 
         Path expectedFile = tempDir.resolve("My Note.md");
         assertTrue(Files.exists(expectedFile));
@@ -61,7 +62,8 @@ class MarkdownExportAdapterTest {
 
         MarkdownExportAdapter adapter =
                 new MarkdownExportAdapter();
-        adapter.export(List.of(note1, note2), tempDir);
+        adapter.export(List.of(note1, note2), List.of(),
+                List.of(), "Test", tempDir);
 
         assertTrue(Files.exists(tempDir.resolve("Alpha.md")));
         assertTrue(Files.exists(tempDir.resolve("Beta.md")));
@@ -79,7 +81,8 @@ class MarkdownExportAdapterTest {
 
         MarkdownExportAdapter adapter =
                 new MarkdownExportAdapter();
-        adapter.export(List.of(note), tempDir);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Test", tempDir);
 
         String content = Files.readString(
                 tempDir.resolve("Colored.md"),
@@ -97,7 +100,8 @@ class MarkdownExportAdapterTest {
 
         MarkdownExportAdapter adapter =
                 new MarkdownExportAdapter();
-        adapter.export(List.of(note), tempDir);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Test", tempDir);
 
         // File should exist with sanitized name
         long mdCount;
@@ -119,7 +123,8 @@ class MarkdownExportAdapterTest {
 
         MarkdownExportAdapter adapter =
                 new MarkdownExportAdapter();
-        adapter.export(List.of(note), tempDir);
+        adapter.export(List.of(note), List.of(), List.of(),
+                "Test", tempDir);
 
         String content = Files.readString(
                 tempDir.resolve("Consistent.md"),
