@@ -43,11 +43,11 @@ final class HyperbolicLayout {
      * @param viewportRadius the viewport radius in pixels
      * @return the list of positioned nodes
      */
-    static List<HyperbolicNode> layout(UUID focusId,
+    static List<PositionedNode> layout(UUID focusId,
             Map<UUID, Set<UUID>> adjacency, double viewportRadius) {
 
         if (!adjacency.containsKey(focusId)) {
-            return List.of(new HyperbolicNode(focusId, 0, 0,
+            return List.of(new PositionedNode(focusId, 0, 0,
                     viewportRadius * BASE_RADIUS_FRACTION, 0));
         }
 
@@ -85,11 +85,11 @@ final class HyperbolicLayout {
                     .add(entry.getKey());
         }
 
-        List<HyperbolicNode> result = new ArrayList<>();
+        List<PositionedNode> result = new ArrayList<>();
 
         // Place focus node at center
         double focusRadius = viewportRadius * BASE_RADIUS_FRACTION;
-        result.add(new HyperbolicNode(focusId, 0, 0, focusRadius, 0));
+        result.add(new PositionedNode(focusId, 0, 0, focusRadius, 0));
 
         // Compute positions for each node by parent
         Map<UUID, double[]> positions = new HashMap<>();
@@ -127,7 +127,7 @@ final class HyperbolicLayout {
             Map<UUID, UUID> parentMap,
             Map<UUID, double[]> positions,
             double ringRadius, double nodeRadius, int level,
-            List<HyperbolicNode> result) {
+            List<PositionedNode> result) {
 
         // Collect distinct parents for nodes at this level
         Set<UUID> parents = new HashSet<>();
@@ -168,7 +168,7 @@ final class HyperbolicLayout {
             double ringRadius, double nodeRadius, int level,
             double startAngle, double endAngle,
             Map<UUID, double[]> positions,
-            List<HyperbolicNode> result) {
+            List<PositionedNode> result) {
 
         int count = children.size();
         for (int i = 0; i < count; i++) {
@@ -185,7 +185,7 @@ final class HyperbolicLayout {
             // Clamp to Poincare disk (within 0.95 of a reasonable viewport)
             UUID nodeId = children.get(i);
             positions.put(nodeId, new double[]{nodeX, nodeY});
-            result.add(new HyperbolicNode(nodeId, nodeX, nodeY, nodeRadius, level));
+            result.add(new PositionedNode(nodeId, nodeX, nodeY, nodeRadius, level));
         }
     }
 }
