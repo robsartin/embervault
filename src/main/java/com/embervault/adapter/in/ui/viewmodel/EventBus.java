@@ -41,6 +41,7 @@ public class EventBus {
      * @param handler   the handler to invoke when an event of this type
      *                  is published
      * @param <T>       the event type
+     * @return a {@link Subscription} that can be used to unsubscribe
      */
     public <T> Subscription subscribe(Class<T> eventType,
             Consumer<T> handler) {
