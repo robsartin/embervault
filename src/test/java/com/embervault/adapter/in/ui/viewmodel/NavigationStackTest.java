@@ -165,6 +165,104 @@ class NavigationStackTest {
     }
 
     @Test
+    @DisplayName("getBreadcrumbs returns empty list when no current id is set")
+    void getBreadcrumbs_shouldBeEmptyWhenNoCurrentId() {
+        assertTrue(stack.getBreadcrumbs().isEmpty());
+    }
+
+    @Test
+    @DisplayName("getBreadcrumbs returns single entry for root note")
+    void getBreadcrumbs_shouldReturnSingleEntryForRoot() {
+        UUID root = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+
+        assertEquals(1, stack.getBreadcrumbs().size());
+        assertEquals(root, stack.getBreadcrumbs().get(0).noteId());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+    }
+
+    @Test
+    @DisplayName("getBreadcrumbs returns full path after drill-down")
+    void getBreadcrumbs_shouldReturnFullPathAfterDrillDown() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        UUID grandchild = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+        stack.push(grandchild, "Grandchild");
+
+        assertEquals(3, stack.getBreadcrumbs().size());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+        assertEquals("Child", stack.getBreadcrumbs().get(1).displayName());
+        assertEquals("Grandchild", stack.getBreadcrumbs().get(2).displayName());
+    }
+
+    @Test
+    @DisplayName("getBreadcrumbs shrinks after pop")
+    void getBreadcrumbs_shouldShrinkAfterPop() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+
+        stack.pop();
+
+        assertEquals(1, stack.getBreadcrumbs().size());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+    }
+
+    @Test
+    @DisplayName("navigateTo jumps to ancestor by index")
+    void navigateTo_shouldJumpToAncestorByIndex() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        UUID grandchild = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+        stack.push(grandchild, "Grandchild");
+
+        stack.navigateTo(0);
+
+        assertEquals(root, stack.getCurrentId());
+        assertEquals(1, stack.getBreadcrumbs().size());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+        assertFalse(stack.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateTo middle ancestor keeps correct path")
+    void navigateTo_shouldKeepCorrectPathForMiddleAncestor() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        UUID grandchild = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+        stack.push(grandchild, "Grandchild");
+
+        stack.navigateTo(1);
+
+        assertEquals(child, stack.getCurrentId());
+        assertEquals(2, stack.getBreadcrumbs().size());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+        assertEquals("Child", stack.getBreadcrumbs().get(1).displayName());
+        assertTrue(stack.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateTo current index is a no-op")
+    void navigateTo_shouldBeNoOpForCurrentIndex() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+
+        stack.navigateTo(1);
+
+        assertEquals(child, stack.getCurrentId());
+        assertEquals(2, stack.getBreadcrumbs().size());
+    }
+
+    @Test
     @DisplayName("canNavigateBack property is observable and updates on pop")
     void canNavigateBackProperty_shouldUpdateOnPop() {
         UUID first = UUID.randomUUID();

@@ -155,11 +155,14 @@ class OutlineViewControllerTest {
     }
 
     @Test
-    @DisplayName("back button is inserted into outlineRoot")
-    void backButton_insertedIntoRoot() {
-        // The back button is added at index 0
+    @DisplayName("breadcrumb bar is inserted into outlineRoot")
+    void breadcrumbBar_insertedIntoRoot() {
+        // The breadcrumb bar is added at index 0
         assertTrue(outlineRoot.getChildren().size() >= 1,
-                "outlineRoot should contain back button");
+                "outlineRoot should contain breadcrumb bar");
+        assertTrue(outlineRoot.getChildren().get(0)
+                instanceof BreadcrumbBar,
+                "First child should be BreadcrumbBar");
     }
 
     @Test

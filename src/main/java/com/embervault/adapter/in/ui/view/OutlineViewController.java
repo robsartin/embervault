@@ -10,7 +10,6 @@ import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
@@ -37,7 +36,7 @@ public class OutlineViewController {
     @FXML private VBox outlineRoot;
 
     private OutlineViewModel viewModel;
-    private Button backButton;
+    private BreadcrumbBar breadcrumbBar;
     private Consumer<String> onViewSwitch;
     private UUID pendingEditNoteId;
 
@@ -50,13 +49,11 @@ public class OutlineViewController {
     public void initViewModel(OutlineViewModel viewModel) {
         this.viewModel = viewModel;
 
-        // Back navigation button
-        backButton = new Button("\u2190 Back");
-        backButton.setVisible(false);
-        backButton.setOnAction(e -> viewModel.navigateBack());
-        viewModel.canNavigateBackProperty().addListener(
-                (obs, oldVal, newVal) -> backButton.setVisible(newVal));
-        outlineRoot.getChildren().add(0, backButton);
+        // Breadcrumb navigation bar
+        breadcrumbBar = new BreadcrumbBar(
+                viewModel.getBreadcrumbs(),
+                viewModel::navigateToBreadcrumb);
+        outlineRoot.getChildren().add(0, breadcrumbBar);
 
         outlineTreeView.setEditable(false);
         outlineTreeView.setCellFactory(tv -> new OutlineNoteTreeCell());

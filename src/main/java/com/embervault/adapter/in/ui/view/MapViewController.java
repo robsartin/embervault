@@ -51,7 +51,7 @@ public class MapViewController {
     @FXML private Pane mapCanvas;
 
     private MapViewModel viewModel;
-    private Button backButton;
+    private BreadcrumbBar breadcrumbBar;
     private HBox zoomToolbar;
     private final Map<UUID, StackPane> nodeMap = new HashMap<>();
     private Scale zoomScale;
@@ -72,13 +72,11 @@ public class MapViewController {
         this.viewModel = viewModel;
         setupZoom();
 
-        backButton = new Button("\u2190 Back");
-        backButton.setVisible(false);
-        backButton.setOnAction(e -> viewModel.navigateBack());
-        backButton.setLayoutX(BACK_BUTTON_PADDING);
-        backButton.setLayoutY(BACK_BUTTON_PADDING);
-        viewModel.canNavigateBackProperty().addListener(
-                (obs, oldVal, newVal) -> backButton.setVisible(newVal));
+        breadcrumbBar = new BreadcrumbBar(
+                viewModel.getBreadcrumbs(),
+                viewModel::navigateToBreadcrumb);
+        breadcrumbBar.setLayoutX(BACK_BUTTON_PADDING);
+        breadcrumbBar.setLayoutY(BACK_BUTTON_PADDING);
 
         viewModel.loadNotes();
         renderAllNotes();
@@ -183,7 +181,7 @@ public class MapViewController {
         zoomToolbar.setPadding(new Insets(4));
         zoomToolbar.setStyle("-fx-background-color: rgba(245,245,245,0.9);");
         zoomToolbar.setLayoutX(BACK_BUTTON_PADDING);
-        zoomToolbar.setLayoutY(BACK_BUTTON_PADDING);
+        zoomToolbar.setLayoutY(BACK_BUTTON_PADDING + 24);
         zoomToolbar.setMouseTransparent(false);
         zoomToolbar.setId("zoomToolbar");
 
@@ -202,7 +200,7 @@ public class MapViewController {
                 nodeMap.put(item.getId(), n);
                 mapCanvas.getChildren().add(n);
             }
-            mapCanvas.getChildren().addAll(backButton, zoomToolbar);
+            mapCanvas.getChildren().addAll(breadcrumbBar, zoomToolbar);
         } finally {
             interactionState.endRender();
         }
@@ -250,7 +248,7 @@ public class MapViewController {
                     }
                 }
                 if (change.wasAdded()) {
-                    int backIdx = mapCanvas.getChildren().indexOf(backButton);
+                    int backIdx = mapCanvas.getChildren().indexOf(breadcrumbBar);
                     if (backIdx < 0) {
                         backIdx = mapCanvas.getChildren().size();
                     }
