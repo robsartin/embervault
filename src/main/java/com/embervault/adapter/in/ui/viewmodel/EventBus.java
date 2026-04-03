@@ -45,4 +45,20 @@ public class EventBus {
     subscribers.computeIfAbsent(eventType, k -> new CopyOnWriteArrayList<>())
         .add(handler);
   }
+
+  /**
+   * Unsubscribes a previously registered handler for the given event type.
+   *
+   * <p>If the handler was not subscribed, this method does nothing.</p>
+   *
+   * @param eventType the class of the event to unsubscribe from
+   * @param handler   the handler to remove
+   * @param <T>       the event type
+   */
+  public <T> void unsubscribe(Class<T> eventType, Consumer<T> handler) {
+    List<Consumer<?>> handlers = subscribers.get(eventType);
+    if (handlers != null) {
+      handlers.remove(handler);
+    }
+  }
 }
