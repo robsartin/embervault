@@ -36,6 +36,7 @@ public final class OutlineViewModel {
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
+    private final EventBus eventBus;
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from the given note title property.
@@ -46,11 +47,26 @@ public final class OutlineViewModel {
      */
     public OutlineViewModel(StringProperty noteTitle, NoteService noteService,
             AppState appState) {
+        this(noteTitle, noteService, appState, new EventBus());
+    }
+
+    /**
+     * Constructs an OutlineViewModel with an explicit EventBus.
+     *
+     * @param noteTitle   the observable note title
+     * @param noteService the note service for creating and querying notes
+     * @param appState    the shared application state for data-change notification
+     * @param eventBus    the event bus for publishing domain events
+     */
+    public OutlineViewModel(StringProperty noteTitle, NoteService noteService,
+            AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
@@ -130,7 +146,7 @@ public final class OutlineViewModel {
         if (parentId.equals(navigationStack.getCurrentId())) {
             rootItems.add(item);
         }
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -145,7 +161,7 @@ public final class OutlineViewModel {
         Note sibling = noteService.createSiblingNote(siblingId, title);
         NoteDisplayItem item = toDisplayItem(sibling);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(sibling.getId()));
         return item;
     }
 
@@ -157,7 +173,7 @@ public final class OutlineViewModel {
     public void indentNote(UUID noteId) {
         noteService.indentNote(noteId);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -168,7 +184,7 @@ public final class OutlineViewModel {
     public void outdentNote(UUID noteId) {
         noteService.outdentNote(noteId);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -183,7 +199,7 @@ public final class OutlineViewModel {
         noteService.moveNoteToPosition(noteId, newParentId,
                 position);
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -210,7 +226,7 @@ public final class OutlineViewModel {
                 break;
             }
         }
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
         return true;
     }
 
@@ -229,7 +245,7 @@ public final class OutlineViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -247,7 +263,7 @@ public final class OutlineViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(previous));
     }
 
     /**
@@ -282,7 +298,7 @@ public final class OutlineViewModel {
         boolean deleted = noteService.deleteNoteIfLeaf(noteId);
         if (deleted) {
             loadNotes();
-            appState.notifyDataChanged();
+            eventBus.publish(new NoteDeletedEvent(noteId));
         }
         return deleted;
     }

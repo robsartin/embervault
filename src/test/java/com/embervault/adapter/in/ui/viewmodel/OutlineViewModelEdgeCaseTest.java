@@ -28,6 +28,7 @@ class OutlineViewModelEdgeCaseTest {
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -35,7 +36,10 @@ class OutlineViewModelEdgeCaseTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("Root Title");
         appState = new AppState();
-        viewModel = new OutlineViewModel(noteTitle, noteService, appState);
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
+        viewModel = new OutlineViewModel(
+                noteTitle, noteService, appState, eventBus);
     }
 
     @Nested
