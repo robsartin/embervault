@@ -603,4 +603,76 @@ class OutlineViewModelTest {
         NoteDisplayItem item = viewModel.getRootItems().get(0);
         assertEquals("", item.getBadge());
     }
+
+    // --- Sequential selection tests (arrow key navigation) ---
+
+    @Test
+    @DisplayName("sequential selectNote() calls update selectedNoteId correctly")
+    void selectNote_sequential_shouldUpdateSelectedNoteId() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child1 = noteService.createChildNote(parent.getId(), "Child1");
+        Note child2 = noteService.createChildNote(parent.getId(), "Child2");
+        Note child3 = noteService.createChildNote(parent.getId(), "Child3");
+        viewModel.setBaseNoteId(parent.getId());
+        viewModel.loadNotes();
+
+        // Simulate arrow-down navigation through items
+        viewModel.selectNote(child1.getId());
+        assertEquals(child1.getId(), viewModel.selectedNoteIdProperty().get());
+
+        viewModel.selectNote(child2.getId());
+        assertEquals(child2.getId(), viewModel.selectedNoteIdProperty().get());
+
+        viewModel.selectNote(child3.getId());
+        assertEquals(child3.getId(), viewModel.selectedNoteIdProperty().get());
+
+        // Simulate arrow-up navigation back
+        viewModel.selectNote(child2.getId());
+        assertEquals(child2.getId(), viewModel.selectedNoteIdProperty().get());
+
+        viewModel.selectNote(child1.getId());
+        assertEquals(child1.getId(), viewModel.selectedNoteIdProperty().get());
+    }
+
+    @Test
+    @DisplayName("selectNote() fires property change for each sequential selection")
+    void selectNote_sequential_shouldFirePropertyChange() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child1 = noteService.createChildNote(parent.getId(), "Child1");
+        Note child2 = noteService.createChildNote(parent.getId(), "Child2");
+        viewModel.setBaseNoteId(parent.getId());
+        viewModel.loadNotes();
+
+        java.util.List<UUID> observedIds = new java.util.ArrayList<>();
+        viewModel.selectedNoteIdProperty().addListener(
+                (obs, oldVal, newVal) -> observedIds.add(newVal));
+
+        viewModel.selectNote(child1.getId());
+        viewModel.selectNote(child2.getId());
+        viewModel.selectNote(child1.getId());
+
+        assertEquals(3, observedIds.size());
+        assertEquals(child1.getId(), observedIds.get(0));
+        assertEquals(child2.getId(), observedIds.get(1));
+        assertEquals(child1.getId(), observedIds.get(2));
+    }
+
+    @Test
+    @DisplayName("selectNote() with same id twice does not fire duplicate change")
+    void selectNote_sameIdTwice_shouldNotFireDuplicateChange() {
+        Note parent = noteService.createNote("Parent", "");
+        Note child1 = noteService.createChildNote(parent.getId(), "Child1");
+        viewModel.setBaseNoteId(parent.getId());
+        viewModel.loadNotes();
+
+        java.util.List<UUID> observedIds = new java.util.ArrayList<>();
+        viewModel.selectedNoteIdProperty().addListener(
+                (obs, oldVal, newVal) -> observedIds.add(newVal));
+
+        viewModel.selectNote(child1.getId());
+        viewModel.selectNote(child1.getId());
+
+        // JavaFX property only fires when value actually changes
+        assertEquals(1, observedIds.size());
+    }
 }
