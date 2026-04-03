@@ -12,7 +12,6 @@ import com.embervault.adapter.in.ui.viewmodel.PositionedNode;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -43,7 +42,7 @@ public class HyperbolicViewController {
     @FXML private Pane hyperbolicCanvas;
 
     private HyperbolicViewModel viewModel;
-    private Button backButton;
+    private BreadcrumbBar breadcrumbBar;
     private Consumer<String> onViewSwitch;
     private double dragStartX;
     private double dragStartY;
@@ -68,14 +67,12 @@ public class HyperbolicViewController {
     public void initViewModel(HyperbolicViewModel viewModel) {
         this.viewModel = viewModel;
 
-        // Back navigation button
-        backButton = new Button("\u2190 Back");
-        backButton.setVisible(false);
-        backButton.setOnAction(e -> viewModel.navigateBack());
-        backButton.setLayoutX(BACK_BUTTON_PADDING);
-        backButton.setLayoutY(BACK_BUTTON_PADDING);
-        viewModel.canNavigateBackProperty().addListener(
-                (obs, oldVal, newVal) -> backButton.setVisible(newVal));
+        // Breadcrumb navigation bar
+        breadcrumbBar = new BreadcrumbBar(
+                viewModel.getBreadcrumbs(),
+                viewModel::navigateToBreadcrumb);
+        breadcrumbBar.setLayoutX(BACK_BUTTON_PADDING);
+        breadcrumbBar.setLayoutY(BACK_BUTTON_PADDING);
 
         // Update viewport radius when canvas resizes
         hyperbolicCanvas.widthProperty().addListener((obs, oldVal, newVal) -> {
@@ -238,7 +235,7 @@ public class HyperbolicViewController {
         }
 
         // Keep back button on top
-        hyperbolicCanvas.getChildren().add(backButton);
+        hyperbolicCanvas.getChildren().add(breadcrumbBar);
     }
 
     private ContextMenu createNodeContextMenu(UUID noteId) {
