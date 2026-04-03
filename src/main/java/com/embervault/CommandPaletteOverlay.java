@@ -54,14 +54,16 @@ final class CommandPaletteOverlay {
         root = new StackPane(palette);
         root.setAlignment(Pos.TOP_CENTER);
         root.setPadding(new Insets(80, 0, 0, 0));
-        root.setPickOnBounds(false);
         root.visibleProperty().bind(viewModel.visibleProperty());
         root.managedProperty().bind(viewModel.visibleProperty());
 
         // Focus search field when shown
         viewModel.visibleProperty().addListener((obs, was, is) -> {
             if (is) {
+                root.setPickOnBounds(true);
                 searchField.requestFocus();
+            } else {
+                root.setPickOnBounds(false);
             }
         });
 
