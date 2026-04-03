@@ -126,6 +126,38 @@ public final class NavigationStack {
     }
 
     /**
+     * Navigates to a specific ancestor in the breadcrumb trail by index.
+     *
+     * <p>Index 0 is the root, and the last index is the current note.
+     * Navigating to the current index is a no-op. Navigating to an earlier
+     * index truncates the history and breadcrumb trail accordingly.</p>
+     *
+     * @param index the zero-based index in the breadcrumb trail
+     * @throws IndexOutOfBoundsException if index is out of range
+     */
+    public void navigateTo(int index) {
+        if (index < 0 || index >= breadcrumbPath.size()) {
+            throw new IndexOutOfBoundsException(
+                    "Index " + index + " out of range for breadcrumb size "
+                    + breadcrumbPath.size());
+        }
+        if (index == breadcrumbPath.size() - 1) {
+            return; // already at this position
+        }
+        // Truncate to keep entries 0..index
+        int toRemove = breadcrumbPath.size() - 1 - index;
+        for (int i = 0; i < toRemove; i++) {
+            breadcrumbPath.removeLast();
+            if (!history.isEmpty()) {
+                history.pop();
+            }
+        }
+        currentId = breadcrumbPath.get(index).noteId();
+        canNavigateBack.set(!history.isEmpty());
+        rebuildBreadcrumbs();
+    }
+
+    /**
      * Returns an observable list of breadcrumb entries representing the
      * full drill-down path from root to the current note.
      *

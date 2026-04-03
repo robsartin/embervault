@@ -212,6 +212,57 @@ class NavigationStackTest {
     }
 
     @Test
+    @DisplayName("navigateTo jumps to ancestor by index")
+    void navigateTo_shouldJumpToAncestorByIndex() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        UUID grandchild = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+        stack.push(grandchild, "Grandchild");
+
+        stack.navigateTo(0);
+
+        assertEquals(root, stack.getCurrentId());
+        assertEquals(1, stack.getBreadcrumbs().size());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+        assertFalse(stack.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateTo middle ancestor keeps correct path")
+    void navigateTo_shouldKeepCorrectPathForMiddleAncestor() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        UUID grandchild = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+        stack.push(grandchild, "Grandchild");
+
+        stack.navigateTo(1);
+
+        assertEquals(child, stack.getCurrentId());
+        assertEquals(2, stack.getBreadcrumbs().size());
+        assertEquals("Root", stack.getBreadcrumbs().get(0).displayName());
+        assertEquals("Child", stack.getBreadcrumbs().get(1).displayName());
+        assertTrue(stack.canNavigateBackProperty().get());
+    }
+
+    @Test
+    @DisplayName("navigateTo current index is a no-op")
+    void navigateTo_shouldBeNoOpForCurrentIndex() {
+        UUID root = UUID.randomUUID();
+        UUID child = UUID.randomUUID();
+        stack.setCurrentId(root, "Root");
+        stack.push(child, "Child");
+
+        stack.navigateTo(1);
+
+        assertEquals(child, stack.getCurrentId());
+        assertEquals(2, stack.getBreadcrumbs().size());
+    }
+
+    @Test
     @DisplayName("canNavigateBack property is observable and updates on pop")
     void canNavigateBackProperty_shouldUpdateOnPop() {
         UUID first = UUID.randomUUID();
