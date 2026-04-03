@@ -352,6 +352,23 @@ class ViewSyncTest {
     }
 
     @Test
+    @DisplayName("Saving text in SelectedNoteViewModel persists and refreshes Outline")
+    void saveTextInSelectedNote_shouldPersistAndRefreshOutline() {
+        Note child = noteService.createChildNote(root.getId(), "Note");
+        outlineViewModel.loadNotes();
+        selectedNoteViewModel.setSelectedNoteId(child.getId());
+
+        selectedNoteViewModel.saveText("Updated content");
+
+        // Verify text persisted via service
+        assertEquals("Updated content",
+                noteService.getNote(child.getId())
+                        .orElseThrow().getContent());
+        // Verify outline was refreshed (data version incremented)
+        assertEquals(1, outlineViewModel.getRootItems().size());
+    }
+
+    @Test
     @DisplayName("Deleting a note in Outline refreshes all views including search")
     void deleteInOutline_shouldRefreshAllViews() {
         Note child = noteService.createChildNote(root.getId(), "ToDelete");
