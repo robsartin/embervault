@@ -19,6 +19,7 @@ public interface NoteService extends
         RenameNoteUseCase,
         MoveNoteUseCase,
         UpdateNoteUseCase,
+        UpdateNoteTextUseCase,
         SearchNotesQuery,
         GetOutlineNavigationQuery {
 }

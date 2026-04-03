@@ -32,7 +32,8 @@ class SelectedNoteViewModelTest {
         eventBus = new EventBus();
         new AppStateEventBridge(eventBus, appState);
         viewModel = new SelectedNoteViewModel(
-                noteService, noteService, appState, eventBus);
+                noteService, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test
@@ -40,8 +41,8 @@ class SelectedNoteViewModelTest {
     void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
                 () -> new SelectedNoteViewModel(
-                        null, noteService, appState,
-                        new EventBus()));
+                        null, noteService, noteService,
+                        appState, new EventBus()));
     }
 
     @Test
@@ -49,8 +50,17 @@ class SelectedNoteViewModelTest {
     void constructor_shouldRejectNullRenameNoteUseCase() {
         assertThrows(NullPointerException.class,
                 () -> new SelectedNoteViewModel(
-                        noteService, null, appState,
-                        new EventBus()));
+                        noteService, null, noteService,
+                        appState, new EventBus()));
+    }
+
+    @Test
+    @DisplayName("Constructor rejects null updateNoteTextUseCase")
+    void constructor_shouldRejectNullUpdateNoteTextUseCase() {
+        assertThrows(NullPointerException.class,
+                () -> new SelectedNoteViewModel(
+                        noteService, noteService, null,
+                        appState, new EventBus()));
     }
 
     @Test

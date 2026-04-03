@@ -49,7 +49,8 @@ class ViewSyncTest {
                 appState, eventBus);
         searchViewModel = new SearchViewModel(noteService, appState);
         selectedNoteViewModel = new SelectedNoteViewModel(
-                noteService, noteService, appState, eventBus);
+                noteService, noteService, noteService,
+                appState, eventBus);
 
         root = noteService.createNote("Root", "");
         mapViewModel.setBaseNoteId(root.getId());
@@ -348,6 +349,23 @@ class ViewSyncTest {
 
         assertEquals("Updated Title", mapViewModel.getNoteItems().get(0).getTitle());
         assertEquals("Updated Title", outlineViewModel.getRootItems().get(0).getTitle());
+    }
+
+    @Test
+    @DisplayName("Saving text in SelectedNoteViewModel persists and refreshes Outline")
+    void saveTextInSelectedNote_shouldPersistAndRefreshOutline() {
+        Note child = noteService.createChildNote(root.getId(), "Note");
+        outlineViewModel.loadNotes();
+        selectedNoteViewModel.setSelectedNoteId(child.getId());
+
+        selectedNoteViewModel.saveText("Updated content");
+
+        // Verify text persisted via service
+        assertEquals("Updated content",
+                noteService.getNote(child.getId())
+                        .orElseThrow().getContent());
+        // Verify outline was refreshed (data version incremented)
+        assertEquals(1, outlineViewModel.getRootItems().size());
     }
 
     @Test

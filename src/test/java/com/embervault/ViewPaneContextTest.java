@@ -63,8 +63,8 @@ class ViewPaneContextTest {
         schemaRegistry = new AttributeSchemaRegistry();
         AppState appState = new AppState();
         selectedNoteVm = new SelectedNoteViewModel(
-                noteService, noteService, appState,
-                new EventBus());
+                noteService, noteService, noteService,
+                appState, new EventBus());
         rootNoteTitle = new SimpleStringProperty("Root");
 
         rootNote = noteService.createNote("Root", "");

@@ -30,7 +30,8 @@ class SelectedNoteViewModelEventBusTest {
         AppState appState = new AppState();
         eventBus = new EventBus();
         viewModel = new SelectedNoteViewModel(
-                noteService, noteService, appState, eventBus);
+                noteService, noteService, noteService,
+                appState, eventBus);
     }
 
     @Test
