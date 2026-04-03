@@ -34,7 +34,8 @@ class MapViewModelEdgeCaseTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("Root Title");
         appState = new AppState();
-        viewModel = new MapViewModel(noteTitle, noteService, appState);
+        viewModel = new MapViewModel(noteTitle, noteService,
+                noteService, noteService, appState);
     }
 
     @Nested

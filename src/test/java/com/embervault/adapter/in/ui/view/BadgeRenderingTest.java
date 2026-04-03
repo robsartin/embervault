@@ -77,6 +77,7 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         MapViewModel vm = new MapViewModel(title, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
 
@@ -104,6 +105,7 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         MapViewModel vm = new MapViewModel(title, noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
 

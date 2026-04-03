@@ -36,7 +36,8 @@ class ViewSyncTest {
         StringProperty noteTitle = new SimpleStringProperty("Root");
 
         AppState appState = new AppState();
-        mapViewModel = new MapViewModel(noteTitle, noteService, appState);
+        mapViewModel = new MapViewModel(noteTitle, noteService,
+                noteService, noteService, appState);
         outlineViewModel = new OutlineViewModel(
                 noteTitle, noteService, appState);
         treemapViewModel = new TreemapViewModel(

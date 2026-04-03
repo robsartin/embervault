@@ -79,6 +79,7 @@ class ViewSwitchContextMenuTest {
 
         MapViewModel vm = new MapViewModel(
                 new SimpleStringProperty("Test"), noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);
@@ -103,6 +104,7 @@ class ViewSwitchContextMenuTest {
 
         MapViewModel vm = new MapViewModel(
                 new SimpleStringProperty("Test"), noteService,
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);

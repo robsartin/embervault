@@ -70,7 +70,8 @@ class ViewPaneContextTest {
         noteService.createChildNote(rootNote.getId(), "Child1");
 
         mapViewModel = new MapViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService,
+                noteService, noteService, appState);
         mapViewModel.setBaseNoteId(rootNote.getId());
         mapViewModel.loadNotes();
 

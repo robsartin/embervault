@@ -60,7 +60,8 @@ public final class WindowFactory {
         AppState appState = new AppState();
         EventBus eventBus = new EventBus();
         MapViewModel mapVm = new MapViewModel(
-                rootNoteTitle, noteService, appState);
+                rootNoteTitle, noteService,
+                noteService, noteService, appState);
         mapVm.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent mapView = loadView("MapView.fxml", c -> {

@@ -11,7 +11,10 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
@@ -34,7 +37,11 @@ class MapViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        viewModel = new MapViewModel(noteTitle, noteService, appState);
+        GetNoteQuery getNoteQuery = noteService;
+        CreateNoteUseCase createNoteUseCase = noteService;
+        RenameNoteUseCase renameNoteUseCase = noteService;
+        viewModel = new MapViewModel(noteTitle, getNoteQuery,
+                createNoteUseCase, renameNoteUseCase, appState);
     }
 
     @Test
@@ -71,21 +78,24 @@ class MapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(null, noteService, appState));
+                () -> new MapViewModel(null, noteService,
+                        noteService, noteService, appState));
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(noteTitle, null, appState));
+                () -> new MapViewModel(noteTitle, null,
+                        noteService, noteService, appState));
     }
 
     @Test
     @DisplayName("Constructor rejects null appState")
     void constructor_shouldRejectNullAppState() {
         assertThrows(NullPointerException.class,
-                () -> new MapViewModel(noteTitle, noteService, null));
+                () -> new MapViewModel(noteTitle, noteService,
+                        noteService, noteService, null));
     }
 
     @Test

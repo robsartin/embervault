@@ -244,7 +244,8 @@ class DevGuideExampleTest {
 
             AppState appState = new AppState();
             MapViewModel mapVm = new MapViewModel(
-                    titleProp, noteService, appState);
+                    titleProp, noteService,
+                    noteService, noteService, appState);
             mapVm.setBaseNoteId(rootId);
             mapVm.loadNotes();
 
@@ -328,7 +329,8 @@ class DevGuideExampleTest {
                     new SimpleStringProperty(rootNote.getTitle());
             AppState appState = new AppState();
             MapViewModel mapVm = new MapViewModel(
-                    titleProp, noteService, appState);
+                    titleProp, noteService,
+                    noteService, noteService, appState);
             mapVm.setBaseNoteId(rootId);
 
             int[] callCount = {0};
