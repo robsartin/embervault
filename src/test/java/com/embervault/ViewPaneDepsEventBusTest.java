@@ -19,22 +19,23 @@ import org.junit.jupiter.api.Test;
  */
 class ViewPaneDepsEventBusTest {
 
-  @Test
-  @DisplayName("ViewPaneDeps provides EventBus accessor")
-  void viewPaneDeps_providesEventBus() {
-    InMemoryNoteRepository noteRepo = new InMemoryNoteRepository();
-    NoteService noteService = new NoteServiceImpl(noteRepo);
-    AppState appState = new AppState();
-    EventBus eventBus = new EventBus();
-    SelectedNoteViewModel selectedNoteVm =
-        new SelectedNoteViewModel(noteService, appState);
+    @Test
+    @DisplayName("ViewPaneDeps provides EventBus accessor")
+    void viewPaneDeps_providesEventBus() {
+        InMemoryNoteRepository noteRepo =
+                new InMemoryNoteRepository();
+        NoteService noteService = new NoteServiceImpl(noteRepo);
+        AppState appState = new AppState();
+        EventBus eventBus = new EventBus();
+        SelectedNoteViewModel selectedNoteVm =
+                new SelectedNoteViewModel(noteService, appState);
 
-    ViewPaneDeps deps = new ViewPaneDeps(
-        noteService, null, new AttributeSchemaRegistry(),
-        appState, eventBus, selectedNoteVm,
-        new SimpleStringProperty("Root"));
+        ViewPaneDeps deps = new ViewPaneDeps(
+                noteService, null, new AttributeSchemaRegistry(),
+                appState, eventBus, selectedNoteVm,
+                new SimpleStringProperty("Root"));
 
-    assertNotNull(deps.eventBus());
-    assertSame(eventBus, deps.eventBus());
-  }
+        assertNotNull(deps.eventBus());
+        assertSame(eventBus, deps.eventBus());
+    }
 }

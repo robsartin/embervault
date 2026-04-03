@@ -16,50 +16,50 @@ import org.junit.jupiter.api.Test;
  */
 class EventBusTypedEventsTest {
 
-  private EventBus eventBus;
+    private EventBus eventBus;
 
-  @BeforeEach
-  void setUp() {
-    eventBus = new EventBus();
-  }
+    @BeforeEach
+    void setUp() {
+        eventBus = new EventBus();
+    }
 
-  @Test
-  @DisplayName("NoteDeletedEvent carries note ID through EventBus")
-  void noteDeletedEvent_carriesNoteId() {
-    UUID noteId = UUID.randomUUID();
-    List<UUID> deletedIds = new ArrayList<>();
-    eventBus.subscribe(NoteDeletedEvent.class,
-        e -> deletedIds.add(e.noteId()));
+    @Test
+    @DisplayName("NoteDeletedEvent carries note ID through EventBus")
+    void noteDeletedEvent_carriesNoteId() {
+        UUID noteId = UUID.randomUUID();
+        List<UUID> deletedIds = new ArrayList<>();
+        eventBus.subscribe(NoteDeletedEvent.class,
+                e -> deletedIds.add(e.noteId()));
 
-    eventBus.publish(new NoteDeletedEvent(noteId));
+        eventBus.publish(new NoteDeletedEvent(noteId));
 
-    assertEquals(List.of(noteId), deletedIds);
-  }
+        assertEquals(List.of(noteId), deletedIds);
+    }
 
-  @Test
-  @DisplayName("ViewRefreshedEvent carries view type name through EventBus")
-  void viewRefreshedEvent_carriesViewType() {
-    List<String> refreshedViews = new ArrayList<>();
-    eventBus.subscribe(ViewRefreshedEvent.class,
-        e -> refreshedViews.add(e.viewTypeName()));
+    @Test
+    @DisplayName("ViewRefreshedEvent carries view type name through EventBus")
+    void viewRefreshedEvent_carriesViewType() {
+        List<String> refreshedViews = new ArrayList<>();
+        eventBus.subscribe(ViewRefreshedEvent.class,
+                e -> refreshedViews.add(e.viewTypeName()));
 
-    eventBus.publish(new ViewRefreshedEvent("Map"));
+        eventBus.publish(new ViewRefreshedEvent("Map"));
 
-    assertEquals(List.of("Map"), refreshedViews);
-  }
+        assertEquals(List.of("Map"), refreshedViews);
+    }
 
-  @Test
-  @DisplayName("different event types do not interfere")
-  void differentEventTypes_doNotInterfere() {
-    List<NoteDeletedEvent> deleted = new ArrayList<>();
-    List<ViewRefreshedEvent> refreshed = new ArrayList<>();
-    eventBus.subscribe(NoteDeletedEvent.class, deleted::add);
-    eventBus.subscribe(ViewRefreshedEvent.class, refreshed::add);
+    @Test
+    @DisplayName("different event types do not interfere")
+    void differentEventTypes_doNotInterfere() {
+        List<NoteDeletedEvent> deleted = new ArrayList<>();
+        List<ViewRefreshedEvent> refreshed = new ArrayList<>();
+        eventBus.subscribe(NoteDeletedEvent.class, deleted::add);
+        eventBus.subscribe(ViewRefreshedEvent.class, refreshed::add);
 
-    UUID noteId = UUID.randomUUID();
-    eventBus.publish(new NoteDeletedEvent(noteId));
+        UUID noteId = UUID.randomUUID();
+        eventBus.publish(new NoteDeletedEvent(noteId));
 
-    assertEquals(1, deleted.size());
-    assertTrue(refreshed.isEmpty());
-  }
+        assertEquals(1, deleted.size());
+        assertTrue(refreshed.isEmpty());
+    }
 }
