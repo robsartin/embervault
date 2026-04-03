@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.AttributeValue;
@@ -36,13 +37,14 @@ class AttributeBrowserViewModelTest {
         noteService = new NoteServiceImpl(repository);
         schemaRegistry = new AttributeSchemaRegistry();
         appState = new AppState();
+        GetNoteQuery getNoteQuery = noteService;
         viewModel = new AttributeBrowserViewModel(
-                noteService, schemaRegistry, appState);
+                getNoteQuery, schemaRegistry, appState);
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
                 () -> new AttributeBrowserViewModel(
                         null, schemaRegistry, appState));

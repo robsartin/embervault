@@ -3,7 +3,7 @@ package com.embervault.adapter.in.ui.viewmodel;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.SearchNotesQuery;
 import com.embervault.domain.Note;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
@@ -18,7 +18,8 @@ import javafx.collections.ObservableList;
  * ViewModel for the search bar.
  *
  * <p>Manages the search query, results list, visibility state, and
- * result selection. Delegates searching to {@link NoteService#searchNotes}.</p>
+ * result selection. Delegates searching to
+ * {@link SearchNotesQuery#searchNotes}.</p>
  */
 public final class SearchViewModel {
 
@@ -28,18 +29,20 @@ public final class SearchViewModel {
     private final BooleanProperty visible = new SimpleBooleanProperty(false);
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
-    private final NoteService noteService;
+    private final SearchNotesQuery searchNotesQuery;
     private final AppState appState;
 
     /**
-     * Constructs a SearchViewModel backed by the given NoteService.
+     * Constructs a SearchViewModel backed by the given search query.
      *
-     * @param noteService the note service for searching
-     * @param appState    the shared application state for data-change notification
+     * @param searchNotesQuery the query interface for searching notes
+     * @param appState         the shared application state for
+     *                         data-change notification
      */
-    public SearchViewModel(NoteService noteService, AppState appState) {
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+    public SearchViewModel(SearchNotesQuery searchNotesQuery,
+            AppState appState) {
+        this.searchNotesQuery = Objects.requireNonNull(searchNotesQuery,
+                "searchNotesQuery must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
     }
@@ -83,7 +86,7 @@ public final class SearchViewModel {
      */
     public void search(String searchQuery) {
         results.setAll(
-                noteService.searchNotes(searchQuery).stream()
+                searchNotesQuery.searchNotes(searchQuery).stream()
                         .map(this::toDisplayItem)
                         .toList());
     }

@@ -51,7 +51,13 @@ public class App extends Application {
 
         // Single Outline view
         OutlineViewModel outlineViewModel = new OutlineViewModel(
-                setup.rootNoteTitle(), setup.paneDeps().noteService(),
+                setup.rootNoteTitle(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
                 setup.appState());
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];

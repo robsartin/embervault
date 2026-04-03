@@ -69,7 +69,8 @@ class TextPaneViewControllerBranchTest {
         secondNoteId = noteService.createNote(
                 "Second Note", "Second content").getId();
 
-        viewModel = new SelectedNoteViewModel(noteService,
+        viewModel = new SelectedNoteViewModel(
+                noteService, noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
 
         controller = new TextPaneViewController();

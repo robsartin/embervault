@@ -36,7 +36,8 @@ public final class WindowBuilder {
         AppState appState = new AppState();
         EventBus eventBus = new EventBus();
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(ctx.noteService(), appState);
+                new SelectedNoteViewModel(
+                        ctx.noteService(), ctx.noteService(), appState);
         StringProperty rootNoteTitle = new SimpleStringProperty(
                 ctx.project().getRootNote().getTitle());
         ViewPaneDeps paneDeps = new ViewPaneDeps(

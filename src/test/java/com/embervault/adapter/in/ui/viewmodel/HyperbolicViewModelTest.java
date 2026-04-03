@@ -13,6 +13,7 @@ import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
@@ -35,21 +36,26 @@ class HyperbolicViewModelTest {
         InMemoryLinkRepository linkRepo = new InMemoryLinkRepository();
         linkService = new LinkServiceImpl(linkRepo);
         appState = new AppState();
-        viewModel = new HyperbolicViewModel(noteService, linkService, appState);
+        GetNoteQuery getNoteQuery = noteService;
+        viewModel = new HyperbolicViewModel(
+                getNoteQuery, linkService, appState);
     }
 
     @Test
-    @DisplayName("constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new HyperbolicViewModel(null, linkService, appState));
+                () -> new HyperbolicViewModel(
+                        null, linkService, appState));
     }
 
     @Test
     @DisplayName("constructor rejects null linkService")
     void constructor_shouldRejectNullLinkService() {
+        GetNoteQuery query = noteService;
         assertThrows(NullPointerException.class,
-                () -> new HyperbolicViewModel(noteService, null, appState));
+                () -> new HyperbolicViewModel(
+                        query, null, appState));
     }
 
     @Test

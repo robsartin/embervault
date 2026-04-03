@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
-import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.AttributeType;
 import com.embervault.domain.AttributeValue;
@@ -47,7 +47,7 @@ public final class AttributeBrowserViewModel {
             FXCollections.observableArrayList();
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
-    private final NoteService noteService;
+    private final GetNoteQuery getNoteQuery;
     private final AttributeSchemaRegistry schemaRegistry;
     private String selectedAttribute;
     private final AppState appState;
@@ -55,15 +55,16 @@ public final class AttributeBrowserViewModel {
     /**
      * Constructs an AttributeBrowserViewModel.
      *
-     * @param noteService    the note service for querying notes
+     * @param getNoteQuery   the query interface for reading notes
      * @param schemaRegistry the attribute schema registry
-     * @param appState       the shared application state for data-change notification
+     * @param appState       the shared application state for
+     *                       data-change notification
      */
-    public AttributeBrowserViewModel(NoteService noteService,
+    public AttributeBrowserViewModel(GetNoteQuery getNoteQuery,
             AttributeSchemaRegistry schemaRegistry,
             AppState appState) {
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+        this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
+                "getNoteQuery must not be null");
         this.schemaRegistry = Objects.requireNonNull(schemaRegistry,
                 "schemaRegistry must not be null");
         this.appState = Objects.requireNonNull(appState,
@@ -130,7 +131,7 @@ public final class AttributeBrowserViewModel {
             return;
         }
 
-        List<Note> allNotes = noteService.getAllNotes();
+        List<Note> allNotes = getNoteQuery.getAllNotes();
         Map<String, List<NoteDisplayItem>> grouped = new LinkedHashMap<>();
 
         for (Note note : allNotes) {
@@ -198,7 +199,7 @@ public final class AttributeBrowserViewModel {
                 note.getId(), note.getTitle(), note.getContent(),
                 0, 0, 0, 0,
                 NoteDisplayHelper.resolveColorHex(note),
-                noteService.hasChildren(note.getId()),
+                getNoteQuery.hasChildren(note.getId()),
                 NoteDisplayHelper.resolveBadge(note));
     }
 }

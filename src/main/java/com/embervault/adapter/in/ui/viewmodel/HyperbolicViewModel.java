@@ -11,8 +11,8 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.LinkService;
-import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.Link;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -35,7 +35,7 @@ public final class HyperbolicViewModel {
     private static final double DEFAULT_VIEWPORT_RADIUS = 300.0;
     private static final Set<String> IGNORED_LINK_TYPES = Set.of("web", "prototype");
 
-    private final NoteService noteService;
+    private final GetNoteQuery getNoteQuery;
     private final LinkService linkService;
     private final ReadOnlyStringWrapper tabTitle = new ReadOnlyStringWrapper();
     private final ObservableList<PositionedNode> nodes =
@@ -55,28 +55,32 @@ public final class HyperbolicViewModel {
      * Constructs a HyperbolicViewModel with the given services and
      * default hyperbolic layout strategy.
      *
-     * @param noteService the note service for querying notes
-     * @param linkService the link service for querying links
-     * @param appState    the shared application state for data-change notification
+     * @param getNoteQuery the query interface for reading notes
+     * @param linkService  the link service for querying links
+     * @param appState     the shared application state for
+     *                     data-change notification
      */
-    public HyperbolicViewModel(NoteService noteService, LinkService linkService,
-            AppState appState) {
-        this(noteService, linkService, appState, new HyperbolicLayoutStrategy());
+    public HyperbolicViewModel(GetNoteQuery getNoteQuery,
+            LinkService linkService, AppState appState) {
+        this(getNoteQuery, linkService, appState,
+                new HyperbolicLayoutStrategy());
     }
 
     /**
      * Constructs a HyperbolicViewModel with the given services and
      * layout strategy.
      *
-     * @param noteService    the note service for querying notes
+     * @param getNoteQuery   the query interface for reading notes
      * @param linkService    the link service for querying links
-     * @param appState       the shared application state for data-change notification
+     * @param appState       the shared application state for
+     *                       data-change notification
      * @param layoutStrategy the strategy for computing node positions
      */
-    public HyperbolicViewModel(NoteService noteService, LinkService linkService,
-            AppState appState, LayoutStrategy layoutStrategy) {
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+    public HyperbolicViewModel(GetNoteQuery getNoteQuery,
+            LinkService linkService, AppState appState,
+            LayoutStrategy layoutStrategy) {
+        this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
+                "getNoteQuery must not be null");
         this.linkService = Objects.requireNonNull(linkService,
                 "linkService must not be null");
         this.appState = Objects.requireNonNull(appState,
@@ -104,7 +108,7 @@ public final class HyperbolicViewModel {
         Objects.requireNonNull(noteId, "noteId must not be null");
         focusNoteId.set(noteId);
 
-        noteService.getNote(noteId).ifPresent(note ->
+        getNoteQuery.getNote(noteId).ifPresent(note ->
                 tabTitle.set(TextUtils.tabTitle("Hyperbolic",
                         note.getTitle(), MAX_TITLE_LENGTH)));
 
@@ -199,7 +203,7 @@ public final class HyperbolicViewModel {
      * @return the note title, or empty string if not found
      */
     public String getNoteTitle(UUID noteId) {
-        return noteService.getNote(noteId)
+        return getNoteQuery.getNote(noteId)
                 .map(note -> note.getTitle())
                 .orElse("");
     }
@@ -212,7 +216,7 @@ public final class HyperbolicViewModel {
      * @return the badge symbol, or empty string
      */
     public String getNoteBadge(UUID noteId) {
-        return noteService.getNote(noteId)
+        return getNoteQuery.getNote(noteId)
                 .map(NoteDisplayHelper::resolveBadge)
                 .orElse("");
     }

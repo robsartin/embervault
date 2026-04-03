@@ -12,6 +12,8 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
@@ -35,7 +37,10 @@ class TreemapViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        viewModel = new TreemapViewModel(noteTitle, noteService, appState);
+        GetNoteQuery getNoteQuery = noteService;
+        CreateNoteUseCase createNoteUseCase = noteService;
+        viewModel = new TreemapViewModel(
+                noteTitle, getNoteQuery, createNoteUseCase, appState);
     }
 
     @Test
@@ -76,14 +81,24 @@ class TreemapViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new TreemapViewModel(null, noteService, appState));
+                () -> new TreemapViewModel(
+                        null, noteService, noteService, appState));
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new TreemapViewModel(noteTitle, null, appState));
+                () -> new TreemapViewModel(
+                        noteTitle, null, noteService, appState));
+    }
+
+    @Test
+    @DisplayName("Constructor rejects null createNoteUseCase")
+    void constructor_shouldRejectNullCreateNoteUseCase() {
+        assertThrows(NullPointerException.class,
+                () -> new TreemapViewModel(
+                        noteTitle, noteService, null, appState));
     }
 
     @Test

@@ -51,7 +51,10 @@ public final class WindowFactory {
 
         MapViewModel mapVm = new MapViewModel(
                 setup.rootNoteTitle(),
-                setup.paneDeps().noteService(), setup.appState());
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.appState());
         mapVm.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent mapView = loadView("MapView.fxml", c -> {
@@ -61,6 +64,7 @@ public final class WindowFactory {
                             ViewType.valueOf(name)));
             ctrl.initViewModel(mapVm);
         });
+
 
         FXMLLoader textPaneLoader = new FXMLLoader(
                 WindowFactory.class.getResource(

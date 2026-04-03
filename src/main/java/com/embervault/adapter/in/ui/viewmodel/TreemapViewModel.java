@@ -5,7 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.domain.Note;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyBooleanProperty;
@@ -33,22 +34,31 @@ public final class TreemapViewModel {
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
     private final NavigationStack navigationStack = new NavigationStack();
-    private final NoteService noteService;
+    private final GetNoteQuery getNoteQuery;
+    private final CreateNoteUseCase createNoteUseCase;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
 
     /**
-     * Constructs a TreemapViewModel that derives its tab title from the given note title property.
+     * Constructs a TreemapViewModel that derives its tab title from
+     * the given note title property.
      *
-     * @param noteTitle   the observable note title
-     * @param noteService the note service for creating and querying notes
-     * @param appState    the shared application state for data-change notification
+     * @param noteTitle        the observable note title
+     * @param getNoteQuery     the query interface for reading notes
+     * @param createNoteUseCase the use case for creating notes
+     * @param appState         the shared application state for
+     *                         data-change notification
      */
-    public TreemapViewModel(StringProperty noteTitle, NoteService noteService,
+    public TreemapViewModel(StringProperty noteTitle,
+            GetNoteQuery getNoteQuery,
+            CreateNoteUseCase createNoteUseCase,
             AppState appState) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+        this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
+                "getNoteQuery must not be null");
+        this.createNoteUseCase = Objects.requireNonNull(
+                createNoteUseCase,
+                "createNoteUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
         this.rootNoteTitle = noteTitle;
@@ -105,8 +115,8 @@ public final class TreemapViewModel {
             noteItems.clear();
             return;
         }
-        List<Note> children = noteService.getChildren(baseNoteId);
-        Map<UUID, Boolean> hasChildrenMap = noteService.hasChildrenBatch(
+        List<Note> children = getNoteQuery.getChildren(baseNoteId);
+        Map<UUID, Boolean> hasChildrenMap = getNoteQuery.hasChildrenBatch(
                 children.stream().map(Note::getId).toList());
         noteItems.setAll(
                 children.stream()
@@ -125,7 +135,7 @@ public final class TreemapViewModel {
         UUID baseNoteId = navigationStack.getCurrentId();
         Objects.requireNonNull(baseNoteId,
                 "baseNoteId must be set before creating children");
-        Note child = noteService.createChildNote(baseNoteId, title);
+        Note child = createNoteUseCase.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
         appState.notifyDataChanged();
@@ -144,7 +154,7 @@ public final class TreemapViewModel {
      */
     public void drillDown(UUID noteId) {
         navigationStack.push(noteId);
-        noteService.getNote(noteId).ifPresent(note ->
+        getNoteQuery.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
         appState.notifyDataChanged();
@@ -161,7 +171,7 @@ public final class TreemapViewModel {
         if (navigationStack.isAtRoot()) {
             updateTabTitle(rootNoteTitle.get());
         } else {
-            noteService.getNote(previous).ifPresent(note ->
+            getNoteQuery.getNote(previous).ifPresent(note ->
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
@@ -189,7 +199,7 @@ public final class TreemapViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        return toDisplayItem(note, noteService.hasChildren(note.getId()));
+        return toDisplayItem(note, getNoteQuery.hasChildren(note.getId()));
     }
 
     private NoteDisplayItem toDisplayItem(Note note, boolean hasChildren) {

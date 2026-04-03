@@ -5,7 +5,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
+import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Note;
@@ -48,7 +50,9 @@ public final class MapViewModel {
     private final ObjectProperty<UUID> selectedNoteId =
             new SimpleObjectProperty<>();
     private final NavigationStack navigationStack = new NavigationStack();
-    private final NoteService noteService;
+    private final GetNoteQuery getNoteQuery;
+    private final CreateNoteUseCase createNoteUseCase;
+    private final RenameNoteUseCase renameNoteUseCase;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
     private final DoubleProperty zoomLevel = new SimpleDoubleProperty(1.0);
@@ -56,17 +60,30 @@ public final class MapViewModel {
             new ReadOnlyObjectWrapper<>(ZoomTier.NORMAL);
 
     /**
-     * Constructs a MapViewModel that derives its tab title from the given note title property.
+     * Constructs a MapViewModel that derives its tab title from the
+     * given note title property.
      *
-     * @param noteTitle   the observable note title
-     * @param noteService the note service for creating and querying notes
-     * @param appState    the shared application state for data-change notification
+     * @param noteTitle        the observable note title
+     * @param getNoteQuery     the query interface for reading notes
+     * @param createNoteUseCase the use case for creating notes
+     * @param renameNoteUseCase the use case for renaming notes
+     * @param appState         the shared application state for
+     *                         data-change notification
      */
-    public MapViewModel(StringProperty noteTitle, NoteService noteService,
+    public MapViewModel(StringProperty noteTitle,
+            GetNoteQuery getNoteQuery,
+            CreateNoteUseCase createNoteUseCase,
+            RenameNoteUseCase renameNoteUseCase,
             AppState appState) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+        this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
+                "getNoteQuery must not be null");
+        this.createNoteUseCase = Objects.requireNonNull(
+                createNoteUseCase,
+                "createNoteUseCase must not be null");
+        this.renameNoteUseCase = Objects.requireNonNull(
+                renameNoteUseCase,
+                "renameNoteUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
         this.rootNoteTitle = noteTitle;
@@ -128,8 +145,8 @@ public final class MapViewModel {
             noteItems.clear();
             return;
         }
-        List<Note> children = noteService.getChildren(baseNoteId);
-        Map<UUID, Boolean> hasChildrenMap = noteService.hasChildrenBatch(
+        List<Note> children = getNoteQuery.getChildren(baseNoteId);
+        Map<UUID, Boolean> hasChildrenMap = getNoteQuery.hasChildrenBatch(
                 children.stream().map(Note::getId).toList());
         noteItems.setAll(
                 children.stream()
@@ -147,7 +164,7 @@ public final class MapViewModel {
     public NoteDisplayItem createChildNote(String title) {
         UUID baseNoteId = navigationStack.getCurrentId();
         Objects.requireNonNull(baseNoteId, "baseNoteId must be set before creating children");
-        Note child = noteService.createChildNote(baseNoteId, title);
+        Note child = createNoteUseCase.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
         appState.notifyDataChanged();
@@ -165,7 +182,7 @@ public final class MapViewModel {
     public NoteDisplayItem createChildNoteAt(String title, double xpos, double ypos) {
         UUID baseNoteId = navigationStack.getCurrentId();
         Objects.requireNonNull(baseNoteId, "baseNoteId must be set before creating children");
-        Note child = noteService.createChildNote(baseNoteId, title);
+        Note child = createNoteUseCase.createChildNote(baseNoteId, title);
         child.setAttribute(Attributes.XPOS, new AttributeValue.NumberValue(xpos / SCALE_X));
         child.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         NoteDisplayItem item = toDisplayItem(child);
@@ -182,7 +199,7 @@ public final class MapViewModel {
      * @return the display item for the created note
      */
     public NoteDisplayItem createSiblingNote(UUID siblingId, String title) {
-        Note sibling = noteService.createSiblingNote(siblingId, title);
+        Note sibling = createNoteUseCase.createSiblingNote(siblingId, title);
         // Position the new note near the original sibling
         NoteDisplayItem siblingItem = findItemById(siblingId);
         if (siblingItem != null) {
@@ -287,7 +304,7 @@ public final class MapViewModel {
         if (newTitle == null || newTitle.isBlank()) {
             return false;
         }
-        noteService.renameNote(noteId, newTitle);
+        renameNoteUseCase.renameNote(noteId, newTitle);
         for (int i = 0; i < noteItems.size(); i++) {
             NoteDisplayItem item = noteItems.get(i);
             if (item.getId().equals(noteId)) {
@@ -311,7 +328,7 @@ public final class MapViewModel {
      */
     public void drillDown(UUID noteId) {
         navigationStack.push(noteId);
-        noteService.getNote(noteId).ifPresent(note ->
+        getNoteQuery.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
         appState.notifyDataChanged();
@@ -328,7 +345,7 @@ public final class MapViewModel {
         if (navigationStack.isAtRoot()) {
             updateTabTitle(rootNoteTitle.get());
         } else {
-            noteService.getNote(previous).ifPresent(note ->
+            getNoteQuery.getNote(previous).ifPresent(note ->
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
@@ -347,7 +364,7 @@ public final class MapViewModel {
      * @param ypos   the new y position
      */
     public void updateNotePosition(UUID noteId, double xpos, double ypos) {
-        noteService.getNote(noteId).ifPresent(note -> {
+        getNoteQuery.getNote(noteId).ifPresent(note -> {
             note.setAttribute(Attributes.XPOS, new AttributeValue.NumberValue(xpos / SCALE_X));
             note.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         });
@@ -367,7 +384,7 @@ public final class MapViewModel {
     }
 
     private NoteDisplayItem toDisplayItem(Note note) {
-        return toDisplayItem(note, noteService.hasChildren(note.getId()));
+        return toDisplayItem(note, getNoteQuery.hasChildren(note.getId()));
     }
 
     private NoteDisplayItem toDisplayItem(Note note, boolean hasChildren) {

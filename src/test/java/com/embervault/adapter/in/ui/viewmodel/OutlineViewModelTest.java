@@ -11,7 +11,13 @@ import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
+import com.embervault.application.port.in.CreateNoteUseCase;
+import com.embervault.application.port.in.DeleteNoteUseCase;
+import com.embervault.application.port.in.GetNoteQuery;
+import com.embervault.application.port.in.GetOutlineNavigationQuery;
+import com.embervault.application.port.in.MoveNoteUseCase;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import javafx.beans.property.SimpleStringProperty;
@@ -35,7 +41,15 @@ class OutlineViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        viewModel = new OutlineViewModel(noteTitle, noteService, appState);
+        GetNoteQuery getNoteQuery = noteService;
+        CreateNoteUseCase createNoteUseCase = noteService;
+        RenameNoteUseCase renameNoteUseCase = noteService;
+        MoveNoteUseCase moveNoteUseCase = noteService;
+        DeleteNoteUseCase deleteNoteUseCase = noteService;
+        GetOutlineNavigationQuery outlineNavQuery = noteService;
+        viewModel = new OutlineViewModel(noteTitle, getNoteQuery,
+                createNoteUseCase, renameNoteUseCase, moveNoteUseCase,
+                deleteNoteUseCase, outlineNavQuery, appState);
     }
 
     @Test
@@ -74,14 +88,18 @@ class OutlineViewModelTest {
     @DisplayName("Constructor rejects null noteTitle")
     void constructor_shouldRejectNullNoteTitle() {
         assertThrows(NullPointerException.class,
-                () -> new OutlineViewModel(null, noteService, appState));
+                () -> new OutlineViewModel(null, noteService,
+                        noteService, noteService, noteService,
+                        noteService, noteService, appState));
     }
 
     @Test
-    @DisplayName("Constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("Constructor rejects null getNoteQuery")
+    void constructor_shouldRejectNullGetNoteQuery() {
         assertThrows(NullPointerException.class,
-                () -> new OutlineViewModel(noteTitle, null, appState));
+                () -> new OutlineViewModel(noteTitle, null,
+                        noteService, noteService, noteService,
+                        noteService, noteService, appState));
     }
 
     @Test

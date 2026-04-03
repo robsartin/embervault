@@ -5,7 +5,8 @@ import static com.embervault.domain.Attributes.TEXT;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.GetNoteQuery;
+import com.embervault.application.port.in.RenameNoteUseCase;
 import com.embervault.domain.AttributeValue;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -17,7 +18,8 @@ import javafx.beans.property.StringProperty;
  *
  * <p>Listens to all views' selection changes and loads the selected note's
  * title and text content. Provides save methods that persist changes via
- * the NoteService and notify listeners for cross-view synchronization.</p>
+ * the narrow use-case interfaces and notify listeners for cross-view
+ * synchronization.</p>
  */
 public final class SelectedNoteViewModel {
 
@@ -25,18 +27,24 @@ public final class SelectedNoteViewModel {
             new SimpleObjectProperty<>();
     private final StringProperty title = new SimpleStringProperty("");
     private final StringProperty text = new SimpleStringProperty("");
-    private final NoteService noteService;
+    private final GetNoteQuery getNoteQuery;
+    private final RenameNoteUseCase renameNoteUseCase;
     private final AppState appState;
 
     /**
      * Constructs a SelectedNoteViewModel.
      *
-     * @param noteService the note service for querying and updating notes
-     * @param appState    the shared application state for data-change notification
+     * @param getNoteQuery     the query interface for reading notes
+     * @param renameNoteUseCase the use case for renaming notes
+     * @param appState         the shared application state for
+     *                         data-change notification
      */
-    public SelectedNoteViewModel(NoteService noteService, AppState appState) {
-        this.noteService = Objects.requireNonNull(noteService,
-                "noteService must not be null");
+    public SelectedNoteViewModel(GetNoteQuery getNoteQuery,
+            RenameNoteUseCase renameNoteUseCase, AppState appState) {
+        this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
+                "getNoteQuery must not be null");
+        this.renameNoteUseCase = Objects.requireNonNull(renameNoteUseCase,
+                "renameNoteUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
     }
@@ -68,7 +76,7 @@ public final class SelectedNoteViewModel {
             text.set("");
             return;
         }
-        noteService.getNote(noteId).ifPresentOrElse(note -> {
+        getNoteQuery.getNote(noteId).ifPresentOrElse(note -> {
             title.set(note.getTitle());
             text.set(note.getContent());
         }, () -> {
@@ -87,7 +95,7 @@ public final class SelectedNoteViewModel {
         if (noteId == null || newTitle == null || newTitle.isBlank()) {
             return;
         }
-        noteService.renameNote(noteId, newTitle);
+        renameNoteUseCase.renameNote(noteId, newTitle);
         title.set(newTitle);
         appState.notifyDataChanged();
     }
@@ -102,7 +110,7 @@ public final class SelectedNoteViewModel {
         if (noteId == null || newText == null) {
             return;
         }
-        noteService.getNote(noteId).ifPresent(note -> {
+        getNoteQuery.getNote(noteId).ifPresent(note -> {
             note.setAttribute(TEXT,
                     new AttributeValue.StringValue(newText));
         });

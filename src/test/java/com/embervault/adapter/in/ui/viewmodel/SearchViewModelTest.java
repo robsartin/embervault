@@ -11,6 +11,7 @@ import java.util.UUID;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.port.in.NoteService;
+import com.embervault.application.port.in.SearchNotesQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,8 @@ class SearchViewModelTest {
         InMemoryNoteRepository repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         appState = new AppState();
-        viewModel = new SearchViewModel(noteService, appState);
+        SearchNotesQuery searchQuery = noteService;
+        viewModel = new SearchViewModel(searchQuery, appState);
     }
 
     @Test
@@ -166,8 +168,8 @@ class SearchViewModelTest {
     }
 
     @Test
-    @DisplayName("constructor rejects null noteService")
-    void constructor_shouldRejectNullNoteService() {
+    @DisplayName("constructor rejects null searchNotesQuery")
+    void constructor_shouldRejectNullSearchNotesQuery() {
         org.junit.jupiter.api.Assertions.assertThrows(
                 NullPointerException.class,
                 () -> new SearchViewModel(null, appState));

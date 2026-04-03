@@ -58,7 +58,9 @@ class OutlineViewControllerTest {
         parentId = noteService.createNote("Parent", "").getId();
         SimpleStringProperty noteTitle = new SimpleStringProperty("Parent");
         viewModel = new OutlineViewModel(
-                noteTitle, noteService, new AppState());
+                noteTitle, noteService, noteService,
+                noteService, noteService, noteService,
+                noteService, new AppState());
         viewModel.setBaseNoteId(parentId);
 
         controller = new OutlineViewController();
