@@ -50,6 +50,18 @@ public class EventBus {
     }
 
     /**
+     * Creates a new {@link SubscriptionScope} tied to this EventBus.
+     *
+     * <p>All subscriptions made through the scope are tracked and can be
+     * unsubscribed together via {@link SubscriptionScope#close()}.</p>
+     *
+     * @return a new subscription scope
+     */
+    public SubscriptionScope createScope() {
+        return new SubscriptionScope(this);
+    }
+
+    /**
      * Unsubscribes a previously registered handler for the given event type.
      *
      * <p>If the handler was not subscribed, this method does nothing.</p>

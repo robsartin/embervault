@@ -99,4 +99,38 @@ class EventBusTest {
 
         assertTrue(received.isEmpty());
     }
+
+    @Test
+    @DisplayName("scope.close() unsubscribes all handlers registered through scope")
+    void scopeClose_unsubscribesAllHandlers() {
+        SubscriptionScope scope = eventBus.createScope();
+        List<String> strings = new ArrayList<>();
+        List<Integer> ints = new ArrayList<>();
+        scope.subscribe(String.class, strings::add);
+        scope.subscribe(Integer.class, ints::add);
+
+        scope.close();
+        eventBus.publish("after");
+        eventBus.publish(42);
+
+        assertTrue(strings.isEmpty());
+        assertTrue(ints.isEmpty());
+    }
+
+    @Test
+    @DisplayName("scope.close() does not affect handlers outside the scope")
+    void scopeClose_doesNotAffectOtherHandlers() {
+        List<String> outside = new ArrayList<>();
+        eventBus.subscribe(String.class, outside::add);
+
+        SubscriptionScope scope = eventBus.createScope();
+        List<String> inside = new ArrayList<>();
+        scope.subscribe(String.class, inside::add);
+        scope.close();
+
+        eventBus.publish("test");
+
+        assertEquals(List.of("test"), outside);
+        assertTrue(inside.isEmpty());
+    }
 }
