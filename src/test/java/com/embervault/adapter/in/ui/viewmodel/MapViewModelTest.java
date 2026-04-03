@@ -27,6 +27,7 @@ class MapViewModelTest {
     private InMemoryNoteRepository repository;
     private StringProperty noteTitle;
     private AppState appState;
+    private EventBus eventBus;
 
     @BeforeEach
     void setUp() {
@@ -34,7 +35,10 @@ class MapViewModelTest {
         noteService = new NoteServiceImpl(repository);
         noteTitle = new SimpleStringProperty("My Note");
         appState = new AppState();
-        viewModel = new MapViewModel(noteTitle, noteService, appState);
+        eventBus = new EventBus();
+        new AppStateEventBridge(eventBus, appState);
+        viewModel = new MapViewModel(
+                noteTitle, noteService, appState, eventBus);
     }
 
     @Test

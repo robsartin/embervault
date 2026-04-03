@@ -51,6 +51,7 @@ public final class MapViewModel {
     private final NoteService noteService;
     private final StringProperty rootNoteTitle;
     private final AppState appState;
+    private final EventBus eventBus;
     private final DoubleProperty zoomLevel = new SimpleDoubleProperty(1.0);
     private final ReadOnlyObjectWrapper<ZoomTier> currentTier =
             new ReadOnlyObjectWrapper<>(ZoomTier.NORMAL);
@@ -64,11 +65,26 @@ public final class MapViewModel {
      */
     public MapViewModel(StringProperty noteTitle, NoteService noteService,
             AppState appState) {
+        this(noteTitle, noteService, appState, new EventBus());
+    }
+
+    /**
+     * Constructs a MapViewModel with an explicit EventBus.
+     *
+     * @param noteTitle   the observable note title
+     * @param noteService the note service for creating and querying notes
+     * @param appState    the shared application state for data-change notification
+     * @param eventBus    the event bus for publishing domain events
+     */
+    public MapViewModel(StringProperty noteTitle, NoteService noteService,
+            AppState appState, EventBus eventBus) {
         Objects.requireNonNull(noteTitle, "noteTitle must not be null");
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.eventBus = Objects.requireNonNull(eventBus,
+                "eventBus must not be null");
         this.rootNoteTitle = noteTitle;
         updateTabTitle(noteTitle.get());
         // When the root note title changes and we're at the root level, update tab title
@@ -150,7 +166,7 @@ public final class MapViewModel {
         Note child = noteService.createChildNote(baseNoteId, title);
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -170,7 +186,7 @@ public final class MapViewModel {
         child.setAttribute(Attributes.YPOS, new AttributeValue.NumberValue(ypos / SCALE_Y));
         NoteDisplayItem item = toDisplayItem(child);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
 
@@ -194,7 +210,7 @@ public final class MapViewModel {
         }
         NoteDisplayItem item = toDisplayItem(sibling);
         noteItems.add(item);
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteCreatedEvent(sibling.getId()));
         return item;
     }
 
@@ -300,7 +316,7 @@ public final class MapViewModel {
                 break;
             }
         }
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
         return true;
     }
 
@@ -314,7 +330,7 @@ public final class MapViewModel {
         noteService.getNote(noteId).ifPresent(note ->
                 updateTabTitle(note.getTitle()));
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(noteId));
     }
 
     /**
@@ -332,7 +348,7 @@ public final class MapViewModel {
                     updateTabTitle(note.getTitle()));
         }
         loadNotes();
-        appState.notifyDataChanged();
+        eventBus.publish(new NoteMovedEvent(previous));
     }
 
     private void updateTabTitle(String title) {
