@@ -7,8 +7,8 @@ import java.util.function.Consumer;
 
 import com.embervault.ViewType;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicEdge;
-import com.embervault.adapter.in.ui.viewmodel.HyperbolicNode;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
+import com.embervault.adapter.in.ui.viewmodel.PositionedNode;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
 import javafx.collections.ListChangeListener;
 import javafx.fxml.FXML;
@@ -87,7 +87,7 @@ public class HyperbolicViewController {
 
         // Re-render when nodes change
         viewModel.getNodes().addListener(
-                (ListChangeListener<HyperbolicNode>) change -> renderAll());
+                (ListChangeListener<PositionedNode>) change -> renderAll());
 
         // Drag background to pan
         hyperbolicCanvas.setOnMousePressed(event -> {
@@ -172,7 +172,7 @@ public class HyperbolicViewController {
 
         // Build position map for edge drawing
         Map<UUID, double[]> positionMap = new HashMap<>();
-        for (HyperbolicNode node : viewModel.getNodes()) {
+        for (PositionedNode node : viewModel.getNodes()) {
             positionMap.put(node.noteId(),
                     new double[]{centerX + node.x(), centerY + node.y()});
         }
@@ -189,12 +189,12 @@ public class HyperbolicViewController {
         }
 
         // Draw nodes
-        for (HyperbolicNode node : viewModel.getNodes()) {
+        for (PositionedNode node : viewModel.getNodes()) {
             double nx = centerX + node.x();
             double ny = centerY + node.y();
 
             Circle circle = HyperbolicNodeFactory.createNodeCircle(
-                    nx, ny, node.displayRadius(), "#4A90D9");
+                    nx, ny, node.size(), "#4A90D9");
             circle.setUserData(node.noteId());
 
             // Click to select
@@ -221,12 +221,12 @@ public class HyperbolicViewController {
             hyperbolicCanvas.getChildren().add(circle);
 
             // Label (only if node is large enough)
-            if (node.displayRadius() >= SMALL_NODE_THRESHOLD) {
+            if (node.size() >= SMALL_NODE_THRESHOLD) {
                 String title = noteTitle(node.noteId());
                 String badge = noteBadge(node.noteId());
                 String labelText = badge.isEmpty() ? title : badge + " " + title;
                 Label label = HyperbolicNodeFactory.createNodeLabel(
-                        labelText, nx, ny, node.displayRadius());
+                        labelText, nx, ny, node.size());
                 hyperbolicCanvas.getChildren().add(label);
             } else {
                 // Tooltip for small nodes

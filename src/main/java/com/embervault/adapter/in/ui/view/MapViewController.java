@@ -1,13 +1,13 @@
 package com.embervault.adapter.in.ui.view;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 import com.embervault.ViewType;
+import com.embervault.adapter.in.ui.viewmodel.ItemChangeProcessor;
+import com.embervault.adapter.in.ui.viewmodel.MapViewInteractionState;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteDisplayItem;
 import com.embervault.adapter.in.ui.viewmodel.ViewColorConfig;
@@ -57,7 +57,8 @@ public class MapViewController {
     private Scale zoomScale;
     private Label zoomLabel;
     private PauseTransition zoomRenderDebounce;
-    private boolean rendering;
+    private final MapViewInteractionState interactionState =
+            new MapViewInteractionState();
     private ViewColorConfig currentColors;
     private Consumer<String> onViewSwitch;
 
@@ -190,10 +191,9 @@ public class MapViewController {
     }
 
     private void renderAllNotes() {
-        if (rendering) {
+        if (!interactionState.tryBeginRender()) {
             return;
         }
-        rendering = true;
         try {
             mapCanvas.getChildren().clear();
             nodeMap.clear();
@@ -204,13 +204,13 @@ public class MapViewController {
             }
             mapCanvas.getChildren().addAll(backButton, zoomToolbar);
         } finally {
-            rendering = false;
+            interactionState.endRender();
         }
     }
 
     private void onNoteItemsChanged(
             ListChangeListener.Change<? extends NoteDisplayItem> change) {
-        if (rendering) {
+        if (interactionState.isRendering()) {
             return;
         }
         while (change.next()) {
@@ -219,25 +219,25 @@ public class MapViewController {
                 return;
             }
             if (change.wasReplaced()) {
-                // Collect added IDs so we can detect which removed items are stale
-                Set<UUID> addedIds = new HashSet<>();
-                for (NoteDisplayItem item : change.getAddedSubList()) {
-                    addedIds.add(item.getId());
+                ItemChangeProcessor.ReplacementResult result =
+                        ItemChangeProcessor.classifyReplacement(
+                                change.getAddedSubList(),
+                                change.getRemoved(),
+                                nodeMap.keySet());
+                if (result.requiresFullRender()) {
+                    renderAllNotes();
+                    return;
+                }
+                for (NoteDisplayItem item : result.updatedItems()) {
                     StackPane existing = nodeMap.get(item.getId());
                     if (existing != null) {
                         updateNoteNode(existing, item);
-                    } else {
-                        renderAllNotes();
-                        return;
                     }
                 }
-                // Remove nodes for items that were removed but not re-added
-                for (NoteDisplayItem removed : change.getRemoved()) {
-                    if (!addedIds.contains(removed.getId())) {
-                        StackPane node = nodeMap.remove(removed.getId());
-                        if (node != null) {
-                            mapCanvas.getChildren().remove(node);
-                        }
+                for (UUID staleId : result.staleIds()) {
+                    StackPane node = nodeMap.remove(staleId);
+                    if (node != null) {
+                        mapCanvas.getChildren().remove(node);
                     }
                 }
             } else {
@@ -282,11 +282,11 @@ public class MapViewController {
                 ? currentColors.borderColor() : "#000000";
         StackPane notePane = NoteNodeFactory.createRenderedNotePane(
                 item, tier, borderColor);
-        final boolean[] dragging = enableDrag(notePane, item);
+        enableDrag(notePane, item);
         notePane.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2
                     && event.getButton() == MouseButton.PRIMARY
-                    && !dragging[0]) {
+                    && !interactionState.isDragging()) {
                 if (tier.isShowTitle()
                         && notePane.getChildren().size() > 1
                         && notePane.getChildren().get(1)
@@ -325,33 +325,29 @@ public class MapViewController {
         return notePane;
     }
 
-    /** Installs drag handlers; returns flag array true during drag. */
-    private boolean[] enableDrag(StackPane notePane, NoteDisplayItem item) {
-        final double[] dragDelta = new double[2];
-        final boolean[] dragging = {false};
+    /** Installs drag handlers using the shared interaction state. */
+    private void enableDrag(StackPane notePane, NoteDisplayItem item) {
         notePane.setOnMousePressed(event -> {
-            dragDelta[0] = notePane.getLayoutX() - event.getSceneX();
-            dragDelta[1] = notePane.getLayoutY() - event.getSceneY();
-            dragging[0] = false;
+            interactionState.beginDrag(
+                    notePane.getLayoutX(), notePane.getLayoutY(),
+                    event.getSceneX(), event.getSceneY());
             notePane.toFront();
             viewModel.selectNote(item.getId());
             highlightSelected(notePane);
         });
         notePane.setOnMouseDragged(event -> {
-            dragging[0] = true;
-            double newX = Math.max(0, event.getSceneX() + dragDelta[0]);
-            double newY = Math.max(0, event.getSceneY() + dragDelta[1]);
-            notePane.setLayoutX(newX);
-            notePane.setLayoutY(newY);
+            interactionState.updateDrag(event.getSceneX(), event.getSceneY());
+            notePane.setLayoutX(interactionState.getDragX());
+            notePane.setLayoutY(interactionState.getDragY());
             event.consume();
         });
         notePane.setOnMouseReleased(event -> {
-            if (dragging[0]) {
-                viewModel.updateNotePosition(item.getId(), notePane.getLayoutX(), notePane.getLayoutY());
+            if (interactionState.isDragging()) {
+                viewModel.updateNotePosition(item.getId(),
+                        notePane.getLayoutX(), notePane.getLayoutY());
                 event.consume();
             }
         });
-        return dragging;
     }
 
 

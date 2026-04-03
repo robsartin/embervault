@@ -5,17 +5,9 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.MapViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
-import com.embervault.adapter.in.ui.viewmodel.AppState;
-import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
-import com.embervault.application.port.in.LinkService;
-import com.embervault.application.port.in.NoteService;
-import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Project;
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -51,17 +43,18 @@ public final class WindowFactory {
             WindowManager windowManager) throws IOException {
         Stage newStage = new Stage();
         Project project = services.project();
-        NoteService noteService = services.noteService();
-        LinkService linkService = services.linkService();
-        AttributeSchemaRegistry schemaRegistry =
-                services.schemaRegistry();
-        StringProperty rootNoteTitle = new SimpleStringProperty(
-                project.getRootNote().getTitle());
-        AppState appState = new AppState();
-        EventBus eventBus = new EventBus();
+
+        WindowSetupContext setupCtx = new WindowSetupContext(
+                services, windowManager);
+        WindowSetupResult setup = WindowBuilder.build(setupCtx);
+        SelectedNoteViewModel selectedNoteVm = setup.selectedNoteVm();
+
         MapViewModel mapVm = new MapViewModel(
-                rootNoteTitle, noteService,
-                noteService, noteService, appState);
+                setup.rootNoteTitle(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.paneDeps().noteService(),
+                setup.appState());
         mapVm.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent mapView = loadView("MapView.fxml", c -> {
@@ -71,9 +64,8 @@ public final class WindowFactory {
                             ViewType.valueOf(name)));
             ctrl.initViewModel(mapVm);
         });
-        SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(
-                        noteService, noteService, appState);
+
+
         FXMLLoader textPaneLoader = new FXMLLoader(
                 WindowFactory.class.getResource(
                         "/com/embervault/adapter/in/ui/view/"
@@ -81,7 +73,9 @@ public final class WindowFactory {
         Parent textPaneView = textPaneLoader.load();
         ((TextPaneViewController) textPaneLoader.getController())
                 .initViewModel(selectedNoteVm);
-        wireSelection(mapVm.selectedNoteIdProperty(), selectedNoteVm);
+        WindowBuilder.wireSelection(
+                mapVm.selectedNoteIdProperty(), selectedNoteVm);
+
         ViewPaneContext mapPane = new ViewPaneContext(
                 ViewType.MAP,
                 mapVm.tabTitleProperty(), mapView,
@@ -97,22 +91,19 @@ public final class WindowFactory {
         };
         windowManager.register(newStage);
         windowManager.addRefreshListener(localRefresh);
-        appState.dataVersionProperty().addListener(
-                (obs, oldVal, newVal) -> windowManager.notifyAllWindows());
-        ViewPaneDeps paneDeps = new ViewPaneDeps(
-                noteService, linkService, schemaRegistry,
-                appState, eventBus, selectedNoteVm, rootNoteTitle);
-        mapPane.setDeps(paneDeps);
+        mapPane.setDeps(setup.paneDeps());
+
         SplitPane mainSplitPane = new SplitPane();
         mainSplitPane.setOrientation(
                 javafx.geometry.Orientation.VERTICAL);
         mainSplitPane.getItems().addAll(
                 mapPane.getContainer(), textPaneView);
         mainSplitPane.setDividerPositions(0.6);
+
         WindowContext winCtx = new WindowContext(
                 services, windowManager,
                 mapVm.selectedNoteIdProperty(),
-                appState, newStage, null,
+                setup.appState(), newStage, null,
                 newRootId -> {
                     mapVm.setBaseNoteId(newRootId);
                     mapVm.loadNotes();
@@ -122,6 +113,7 @@ public final class WindowFactory {
         BorderPane root = new BorderPane();
         root.setTop(menuBar);
         root.setCenter(mainSplitPane);
+
         Scene scene = new Scene(root, 800, 600);
         newStage.setTitle("EmberVault - " + project.getName());
         newStage.setScene(scene);
@@ -141,12 +133,5 @@ public final class WindowFactory {
         Parent view = loader.load();
         init.accept(loader.getController());
         return view;
-    }
-
-    private static void wireSelection(
-            ObjectProperty<UUID> source,
-            SelectedNoteViewModel target) {
-        source.addListener(
-                (obs, oldVal, newVal) -> target.setSelectedNoteId(newVal));
     }
 }

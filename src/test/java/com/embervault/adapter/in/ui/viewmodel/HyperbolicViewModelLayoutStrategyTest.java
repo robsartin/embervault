@@ -48,7 +48,7 @@ class HyperbolicViewModelLayoutStrategyTest {
         List<UUID> capturedFocusIds = new ArrayList<>();
         LayoutStrategy spyStrategy = (focusId, adjacency, viewportRadius) -> {
             capturedFocusIds.add(focusId);
-            return List.of(new HyperbolicNode(focusId, 0, 0, 36.0, 0));
+            return List.of(new PositionedNode(focusId, 0, 0, 36.0, 0));
         };
 
         HyperbolicViewModel vm = new HyperbolicViewModel(
@@ -68,8 +68,8 @@ class HyperbolicViewModelLayoutStrategyTest {
         UUID fakeId = UUID.randomUUID();
         LayoutStrategy customStrategy = (focusId, adjacency, viewportRadius) ->
                 List.of(
-                        new HyperbolicNode(focusId, 0, 0, 50.0, 0),
-                        new HyperbolicNode(fakeId, 10, 20, 25.0, 1)
+                        new PositionedNode(focusId, 0, 0, 50.0, 0),
+                        new PositionedNode(fakeId, 10, 20, 25.0, 1)
                 );
 
         HyperbolicViewModel vm = new HyperbolicViewModel(
