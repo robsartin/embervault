@@ -26,7 +26,8 @@ class SelectedNoteViewModelEdgeCaseTest {
         repository = new InMemoryNoteRepository();
         noteService = new NoteServiceImpl(repository);
         appState = new AppState();
-        viewModel = new SelectedNoteViewModel(noteService, appState);
+        viewModel = new SelectedNoteViewModel(
+                noteService, noteService, appState);
     }
 
     @Nested

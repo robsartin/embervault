@@ -64,7 +64,8 @@ class ViewPaneContextRefreshTest {
                 new AttributeSchemaRegistry();
         AppState appState = new AppState();
         selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState);
         rootNoteTitle = new SimpleStringProperty("Root");
         refreshAllCount = new AtomicInteger(0);
 

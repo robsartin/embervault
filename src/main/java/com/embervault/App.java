@@ -81,7 +81,8 @@ public class App extends Application {
 
         // Text pane for selected note
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState);
         FXMLLoader textPaneLoader = new FXMLLoader(getClass().getResource(
                 "/com/embervault/adapter/in/ui/view/TextPaneView.fxml"));
         Parent textPaneView = textPaneLoader.load();

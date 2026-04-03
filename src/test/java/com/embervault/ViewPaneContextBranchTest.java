@@ -71,7 +71,8 @@ class ViewPaneContextBranchTest {
         schemaRegistry = new AttributeSchemaRegistry();
         AppState appState = new AppState();
         selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState);
         rootNoteTitle = new SimpleStringProperty("Root");
         refreshCount = new AtomicInteger(0);
 

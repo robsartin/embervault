@@ -28,7 +28,8 @@ class ViewPaneDepsEventBusTest {
         AppState appState = new AppState();
         EventBus eventBus = new EventBus();
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState);
 
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, null, new AttributeSchemaRegistry(),

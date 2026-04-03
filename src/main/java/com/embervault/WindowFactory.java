@@ -71,7 +71,8 @@ public final class WindowFactory {
             ctrl.initViewModel(mapVm);
         });
         SelectedNoteViewModel selectedNoteVm =
-                new SelectedNoteViewModel(noteService, appState);
+                new SelectedNoteViewModel(
+                        noteService, noteService, appState);
         FXMLLoader textPaneLoader = new FXMLLoader(
                 WindowFactory.class.getResource(
                         "/com/embervault/adapter/in/ui/view/"
