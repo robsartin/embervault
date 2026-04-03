@@ -58,32 +58,18 @@ public class OutlineViewController {
                 (obs, oldVal, newVal) -> backButton.setVisible(newVal));
         outlineRoot.getChildren().add(0, backButton);
 
-        // Do NOT use TreeView's built-in edit mode
         outlineTreeView.setEditable(false);
-
-        // Set up cell factory with custom click handling
         outlineTreeView.setCellFactory(tv -> new OutlineNoteTreeCell());
-
-        // Load initial data
         viewModel.loadNotes();
         buildTree();
-
-        // Re-build tree when root items change
         viewModel.getRootItems().addListener(
                 (ListChangeListener<NoteDisplayItem>) change -> buildTree());
-
-        // Selection listener
         outlineTreeView.getSelectionModel().selectedItemProperty()
                 .addListener((obs, oldVal, newVal) ->
                         handleTreeSelection(newVal));
-
-        // Event filter to intercept Tab/Shift+Tab before TreeView handles them
-        outlineTreeView.addEventFilter(KeyEvent.KEY_PRESSED, this::handleTreeKeyFilter);
-
-        // Key handling: Escape navigates back
+        outlineTreeView.addEventFilter(
+                KeyEvent.KEY_PRESSED, this::handleTreeKeyFilter);
         outlineTreeView.setOnKeyPressed(this::handleTreeKeyPress);
-
-        // Context menu
         outlineTreeView.setContextMenu(createContextMenu());
     }
 
@@ -100,15 +86,17 @@ public class OutlineViewController {
         }
     }
 
-    void handleTreeSelection(TreeItem<NoteDisplayItem> newVal) {
-        if (newVal != null && newVal.getValue() != null) {
-            viewModel.selectNote(newVal.getValue().getId());
-        } else {
-            viewModel.selectNote(null);
-        }
+    void handleTreeSelection(TreeItem<NoteDisplayItem> sel) {
+        viewModel.selectNote(sel != null && sel.getValue() != null
+                ? sel.getValue().getId() : null);
     }
 
     void handleTreeKeyFilter(KeyEvent event) {
+        if (isAnyoneEditing() && event.getCode().isArrowKey()) {
+            event.consume();
+            handleArrowDuringEdit(event.getCode());
+            return;
+        }
         if (event.getCode() == KeyCode.ENTER
                 && !isAnyoneEditing()) {
             TreeItem<NoteDisplayItem> selected =
@@ -142,6 +130,18 @@ public class OutlineViewController {
                 }
                 event.consume();
             }
+        }
+    }
+
+    private void handleArrowDuringEdit(KeyCode code) {
+        if (!(outlineTreeView.getScene().getFocusOwner()
+                instanceof TextField tf)) {
+            return;
+        }
+        if (code == KeyCode.LEFT) {
+            tf.backward();
+        } else if (code == KeyCode.RIGHT) {
+            tf.forward();
         }
     }
 
@@ -291,14 +291,6 @@ public class OutlineViewController {
             // Key handling on the text field
             textField.addEventFilter(KeyEvent.KEY_PRESSED,
                     this::handleEditKeyPress);
-            // Consume arrow keys after TextField handles them
-            // to prevent TreeView from collapsing/expanding/navigating
-            textField.addEventHandler(KeyEvent.KEY_PRESSED, e -> {
-                if (e.getCode().isArrowKey()) {
-                    e.consume();
-                }
-            });
-
             // Focus lost: always commit
             textField.focusedProperty().addListener(
                     (obs, wasFocused, isFocused) -> {
