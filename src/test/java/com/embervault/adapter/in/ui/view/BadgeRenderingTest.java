@@ -183,6 +183,7 @@ class BadgeRenderingTest {
 
         SimpleStringProperty title = new SimpleStringProperty("Parent");
         TreemapViewModel vm = new TreemapViewModel(title, noteService,
+                noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
 

@@ -183,6 +183,7 @@ class ViewSwitchContextMenuTest {
 
         TreemapViewModel vm = new TreemapViewModel(
                 new SimpleStringProperty("Test"), noteService,
+                noteService,
                 new com.embervault.adapter.in.ui.viewmodel.AppState());
         vm.setBaseNoteId(parentId);
         controller.initViewModel(vm);

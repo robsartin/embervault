@@ -277,7 +277,7 @@ class DevGuideExampleTest {
 
             TreemapViewModel treemapVm =
                     new TreemapViewModel(titleProp, noteService,
-                            new AppState());
+                            noteService, new AppState());
             treemapVm.setBaseNoteId(rootId);
             treemapVm.loadNotes();
 
