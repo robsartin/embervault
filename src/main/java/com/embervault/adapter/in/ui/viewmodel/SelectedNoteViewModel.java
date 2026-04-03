@@ -1,13 +1,11 @@
 package com.embervault.adapter.in.ui.viewmodel;
 
-import static com.embervault.domain.Attributes.TEXT;
-
 import java.util.Objects;
 import java.util.UUID;
 
 import com.embervault.application.port.in.GetNoteQuery;
 import com.embervault.application.port.in.RenameNoteUseCase;
-import com.embervault.domain.AttributeValue;
+import com.embervault.application.port.in.UpdateNoteTextUseCase;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -29,24 +27,31 @@ public final class SelectedNoteViewModel {
     private final StringProperty text = new SimpleStringProperty("");
     private final GetNoteQuery getNoteQuery;
     private final RenameNoteUseCase renameNoteUseCase;
+    private final UpdateNoteTextUseCase updateNoteTextUseCase;
     private final AppState appState;
     private final EventBus eventBus;
 
     /**
      * Constructs a SelectedNoteViewModel.
      *
-     * @param getNoteQuery     the query interface for reading notes
-     * @param renameNoteUseCase the use case for renaming notes
-     * @param appState         the shared application state for
-     *                         data-change notification
+     * @param getNoteQuery          the query interface for reading notes
+     * @param renameNoteUseCase     the use case for renaming notes
+     * @param updateNoteTextUseCase the use case for updating note text
+     * @param appState              the shared application state for
+     *                              data-change notification
+     * @param eventBus              the event bus for cross-view events
      */
     public SelectedNoteViewModel(GetNoteQuery getNoteQuery,
-            RenameNoteUseCase renameNoteUseCase, AppState appState,
-            EventBus eventBus) {
+            RenameNoteUseCase renameNoteUseCase,
+            UpdateNoteTextUseCase updateNoteTextUseCase,
+            AppState appState, EventBus eventBus) {
         this.getNoteQuery = Objects.requireNonNull(getNoteQuery,
                 "getNoteQuery must not be null");
         this.renameNoteUseCase = Objects.requireNonNull(renameNoteUseCase,
                 "renameNoteUseCase must not be null");
+        this.updateNoteTextUseCase = Objects.requireNonNull(
+                updateNoteTextUseCase,
+                "updateNoteTextUseCase must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
         this.eventBus = Objects.requireNonNull(eventBus,
@@ -114,10 +119,7 @@ public final class SelectedNoteViewModel {
         if (noteId == null || newText == null) {
             return;
         }
-        getNoteQuery.getNote(noteId).ifPresent(note -> {
-            note.setAttribute(TEXT,
-                    new AttributeValue.StringValue(newText));
-        });
+        updateNoteTextUseCase.updateNoteText(noteId, newText);
         text.set(newText);
         eventBus.publish(new NoteUpdatedEvent(noteId));
     }

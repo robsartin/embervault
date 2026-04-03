@@ -49,7 +49,8 @@ class ViewSyncTest {
                 appState, eventBus);
         searchViewModel = new SearchViewModel(noteService, appState);
         selectedNoteViewModel = new SelectedNoteViewModel(
-                noteService, noteService, appState, eventBus);
+                noteService, noteService, noteService,
+                appState, eventBus);
 
         root = noteService.createNote("Root", "");
         mapViewModel.setBaseNoteId(root.getId());

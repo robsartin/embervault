@@ -30,7 +30,8 @@ class SelectedNoteViewModelEdgeCaseTest {
         eventBus = new EventBus();
         new AppStateEventBridge(eventBus, appState);
         viewModel = new SelectedNoteViewModel(
-                noteService, noteService, appState, eventBus);
+                noteService, noteService, noteService,
+                appState, eventBus);
     }
 
     @Nested

@@ -88,6 +88,19 @@ public final class NoteServiceImpl implements NoteService {
     }
 
     @Override
+    public void updateNoteText(UUID noteId, String newText) {
+        Objects.requireNonNull(newText, "newText must not be null");
+        Note note = repository.findById(noteId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Note not found: " + noteId));
+        note.setAttribute(TEXT,
+                new AttributeValue.StringValue(newText));
+        note.setAttribute(MODIFIED,
+                new AttributeValue.DateValue(Instant.now()));
+        repository.save(note);
+    }
+
+    @Override
     public Note createChildNote(UUID parentId, String title) {
         repository.findById(parentId)
                 .orElseThrow(() -> new NoSuchElementException(
