@@ -12,7 +12,8 @@ import com.embervault.application.port.in.Command;
  * redo stack is cleared. Undoing pops from the undo stack and pushes onto
  * redo; redoing does the reverse.</p>
  */
-public class CommandHistory {
+public class CommandHistory implements
+        com.embervault.application.port.in.UndoRedoUseCase {
 
     private final Deque<Command> undoStack = new ArrayDeque<>();
     private final Deque<Command> redoStack = new ArrayDeque<>();
