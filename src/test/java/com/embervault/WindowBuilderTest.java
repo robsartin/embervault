@@ -4,9 +4,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import java.util.UUID;
+
 import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -81,5 +85,20 @@ class WindowBuilderTest {
 
     // dataVersion listener should call windowManager.notifyAllWindows()
     assertEquals(true, refreshed[0]);
+  }
+
+  @Test
+  void wireSelectionShouldForwardNoteId() {
+    WindowSetupResult result = WindowBuilder.build(setupCtx);
+    ObjectProperty<UUID> source = new SimpleObjectProperty<>();
+
+    // Create a child note so getNote() returns a valid note
+    UUID childId = services.noteService().createChildNote(
+        services.project().getRootNote().getId(), "Test Note").getId();
+    WindowBuilder.wireSelection(source, result.selectedNoteVm());
+    source.set(childId);
+
+    assertEquals(childId,
+        result.selectedNoteVm().selectedNoteIdProperty().get());
   }
 }

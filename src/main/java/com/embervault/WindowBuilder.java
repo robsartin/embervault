@@ -1,10 +1,12 @@
 package com.embervault;
 
 import java.util.Objects;
+import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 
@@ -49,5 +51,20 @@ public final class WindowBuilder {
     return new WindowSetupResult(
         appState, eventBus, selectedNoteVm,
         paneDeps, rootNoteTitle);
+  }
+
+  /**
+   * Wires a view model's selected-note-id property to the shared
+   * {@link SelectedNoteViewModel} so that selection changes in
+   * any view are reflected in the text pane.
+   *
+   * @param source the source property (from the view's ViewModel)
+   * @param target the shared selected-note view model
+   */
+  public static void wireSelection(
+      ObjectProperty<UUID> source,
+      SelectedNoteViewModel target) {
+    source.addListener(
+        (obs, oldVal, newVal) -> target.setSelectedNoteId(newVal));
   }
 }
