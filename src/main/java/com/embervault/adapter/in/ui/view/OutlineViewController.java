@@ -109,6 +109,9 @@ public class OutlineViewController {
     }
 
     void handleTreeKeyFilter(KeyEvent event) {
+        if (event.getCode().isArrowKey()) {
+            return; // preserve TreeView navigation
+        }
         if (event.getCode() == KeyCode.ENTER
                 && !isAnyoneEditing()) {
             TreeItem<NoteDisplayItem> selected =
@@ -184,14 +187,10 @@ public class OutlineViewController {
     }
 
     private void createChildUnderSelected() {
-        TreeItem<NoteDisplayItem> selected = outlineTreeView.getSelectionModel()
-                .getSelectedItem();
-        UUID parentId;
-        if (selected != null && selected.getValue() != null) {
-            parentId = selected.getValue().getId();
-        } else {
-            parentId = viewModel.getBaseNoteId();
-        }
+        TreeItem<NoteDisplayItem> selected =
+                outlineTreeView.getSelectionModel().getSelectedItem();
+        UUID parentId = (selected != null && selected.getValue() != null)
+                ? selected.getValue().getId() : viewModel.getBaseNoteId();
         if (parentId != null) {
             viewModel.createChildNote(parentId, "Untitled");
         }
