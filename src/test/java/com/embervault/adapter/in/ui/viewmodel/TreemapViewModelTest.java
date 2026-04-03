@@ -432,6 +432,49 @@ class TreemapViewModelTest {
         assertTrue(appState.getDataVersion() > versionBefore);
     }
 
+    // --- Breadcrumb navigation tests ---
+
+    @Test
+    @DisplayName("getBreadcrumbs returns root entry after setBaseNoteId")
+    void getBreadcrumbs_shouldReturnRootAfterSetBaseNoteId() {
+        Note root = noteService.createNote("Root", "");
+        viewModel.setBaseNoteId(root.getId());
+
+        assertEquals(1, viewModel.getBreadcrumbs().size());
+        assertEquals("Root", viewModel.getBreadcrumbs().get(0).displayName());
+    }
+
+    @Test
+    @DisplayName("getBreadcrumbs grows after drillDown")
+    void getBreadcrumbs_shouldGrowAfterDrillDown() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+
+        viewModel.drillDown(child.getId());
+
+        assertEquals(2, viewModel.getBreadcrumbs().size());
+        assertEquals("Root", viewModel.getBreadcrumbs().get(0).displayName());
+        assertEquals("Child", viewModel.getBreadcrumbs().get(1).displayName());
+    }
+
+    @Test
+    @DisplayName("navigateToBreadcrumb jumps to ancestor and reloads")
+    void navigateToBreadcrumb_shouldJumpToAncestorAndReload() {
+        Note root = noteService.createNote("Root", "");
+        Note child = noteService.createChildNote(root.getId(), "Child");
+        noteService.createChildNote(child.getId(), "Grandchild");
+        viewModel.setBaseNoteId(root.getId());
+        viewModel.loadNotes();
+        viewModel.drillDown(child.getId());
+
+        viewModel.navigateToBreadcrumb(0);
+
+        assertEquals(root.getId(), viewModel.getBaseNoteId());
+        assertEquals(1, viewModel.getBreadcrumbs().size());
+    }
+
     @Test
     @DisplayName("toDisplayItem() resolves badge from $Badge attribute")
     void toDisplayItem_shouldResolveBadge() {

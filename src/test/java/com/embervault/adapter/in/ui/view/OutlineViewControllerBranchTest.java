@@ -275,41 +275,48 @@ class OutlineViewControllerBranchTest {
                 "Root with no children should be empty");
     }
 
-    // --- Back button visibility ---
+    // --- Breadcrumb bar visibility ---
 
     @Test
-    @DisplayName("back button becomes visible after drill-down")
-    void backButton_visibleAfterDrillDown(FxRobot robot) {
-        NoteDisplayItem child =
-                viewModel.createChildNote(parentId, "Container");
-        noteService.createChildNote(child.getId(), "Nested");
-
-        // Back button is at index 0 of outlineRoot
-        var backButton = outlineRoot.getChildren().get(0);
-        assertFalse(backButton.isVisible(),
-                "Back button should be hidden at root");
-
-        robot.interact(
-                () -> viewModel.drillDown(child.getId()));
-        assertTrue(backButton.isVisible(),
-                "Back button should be visible after drill-down");
+    @DisplayName("breadcrumb bar is a BreadcrumbBar at index 0")
+    void breadcrumbBar_isPresentAtIndexZero(FxRobot robot) {
+        assertTrue(
+                outlineRoot.getChildren().get(0)
+                        instanceof BreadcrumbBar,
+                "First child should be BreadcrumbBar");
     }
 
     @Test
-    @DisplayName("back button hides after navigating back")
-    void backButton_hidesAfterNavigateBack(FxRobot robot) {
+    @DisplayName("breadcrumb bar grows after drill-down")
+    void breadcrumbBar_growsAfterDrillDown(FxRobot robot) {
+        NoteDisplayItem child =
+                viewModel.createChildNote(parentId, "Container");
+        noteService.createChildNote(child.getId(), "Nested");
+
+        BreadcrumbBar bar = (BreadcrumbBar)
+                outlineRoot.getChildren().get(0);
+        int sizeBefore = viewModel.getBreadcrumbs().size();
+
+        robot.interact(
+                () -> viewModel.drillDown(child.getId()));
+        assertTrue(viewModel.getBreadcrumbs().size() > sizeBefore,
+                "Breadcrumbs should grow after drill-down");
+    }
+
+    @Test
+    @DisplayName("breadcrumb bar shrinks after navigating back")
+    void breadcrumbBar_shrinksAfterNavigateBack(FxRobot robot) {
         NoteDisplayItem child =
                 viewModel.createChildNote(parentId, "Container");
         noteService.createChildNote(child.getId(), "Nested");
 
         robot.interact(
                 () -> viewModel.drillDown(child.getId()));
-        var backButton = outlineRoot.getChildren().get(0);
-        assertTrue(backButton.isVisible());
+        int sizeAfterDrill = viewModel.getBreadcrumbs().size();
 
         robot.interact(() -> viewModel.navigateBack());
-        assertFalse(backButton.isVisible(),
-                "Back button should hide after navigating back");
+        assertTrue(viewModel.getBreadcrumbs().size() < sizeAfterDrill,
+                "Breadcrumbs should shrink after navigating back");
     }
 
     // --- buildTreeItem with hasChildren ---
