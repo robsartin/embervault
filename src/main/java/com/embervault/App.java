@@ -204,10 +204,10 @@ public class App extends Application {
             Project project) {
         registry.register("Shortcut+K", "Command Palette",
                 "Open the command palette",
-                commandPaletteVm::show);
+                commandPaletteVm::show, true);
         registry.register("Shortcut+F", "Find",
                 "Toggle the search panel",
-                searchViewModel::toggleVisible);
+                searchViewModel::toggleVisible, true);
         registry.register("Shortcut+N", "New Note",
                 "Create a new child note", () -> {
                     UUID parentId =

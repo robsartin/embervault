@@ -2,7 +2,9 @@ package com.embervault;
 
 import com.embervault.adapter.in.ui.viewmodel.ShortcutAction;
 import com.embervault.adapter.in.ui.viewmodel.ShortcutRegistry;
+import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.TextInputControl;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import org.slf4j.Logger;
@@ -31,7 +33,11 @@ final class ShortcutInstaller {
      */
     static void install(Scene scene, ShortcutRegistry registry) {
         scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+            boolean editing = isTextEditing(scene);
             for (ShortcutAction action : registry.getAll()) {
+                if (editing && !action.global()) {
+                    continue;
+                }
                 try {
                     KeyCombination combo =
                             KeyCombination.valueOf(
@@ -47,5 +53,10 @@ final class ShortcutInstaller {
                 }
             }
         });
+    }
+
+    private static boolean isTextEditing(Scene scene) {
+        Node focus = scene.getFocusOwner();
+        return focus instanceof TextInputControl;
     }
 }

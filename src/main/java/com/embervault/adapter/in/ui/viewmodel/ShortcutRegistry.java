@@ -28,9 +28,24 @@ public class ShortcutRegistry {
      */
     public void register(String keyCombination, String name,
             String description, Runnable action) {
+        register(keyCombination, name, description, action, false);
+    }
+
+    /**
+     * Registers a shortcut action with explicit global flag.
+     *
+     * @param keyCombination string key combination
+     * @param name           human-readable name
+     * @param description    longer description
+     * @param action         runnable to execute
+     * @param global         true if this shortcut should fire even
+     *                       when a text input has focus
+     */
+    public void register(String keyCombination, String name,
+            String description, Runnable action, boolean global) {
         shortcuts.put(keyCombination,
                 new ShortcutAction(keyCombination, name,
-                        description, action));
+                        description, action, global));
     }
 
     /**
