@@ -43,6 +43,15 @@ class ShortcutRegistry {
   }
 
   /**
+   * Removes a shortcut registration.
+   *
+   * @param keyCombination the key combination to unregister
+   */
+  void unregister(String keyCombination) {
+    shortcuts.remove(keyCombination);
+  }
+
+  /**
    * Returns all registered shortcut actions in insertion order.
    *
    * @return unmodifiable list of all actions
@@ -66,7 +75,9 @@ class ShortcutRegistry {
     List<ShortcutAction> results = new ArrayList<>();
     for (ShortcutAction action : shortcuts.values()) {
       if (action.name().toLowerCase().contains(lowerQuery)
-          || action.description().toLowerCase().contains(lowerQuery)) {
+          || action.description().toLowerCase().contains(lowerQuery)
+          || action.keyCombination().toLowerCase()
+              .contains(lowerQuery)) {
         results.add(action);
       }
     }

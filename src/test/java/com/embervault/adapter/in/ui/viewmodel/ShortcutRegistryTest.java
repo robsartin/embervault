@@ -100,4 +100,39 @@ class ShortcutRegistryTest {
 
     assertEquals(2, results.size());
   }
+
+  @Test
+  @DisplayName("registering duplicate key replaces previous action")
+  void register_shouldReplaceDuplicateKey() {
+    registry.register("Shortcut+N", "Old Action",
+        "Old description", () -> { });
+    registry.register("Shortcut+N", "New Action",
+        "New description", () -> { });
+
+    assertEquals(1, registry.getAll().size());
+    assertEquals("New Action",
+        registry.lookup("Shortcut+N").get().name());
+  }
+
+  @Test
+  @DisplayName("unregister removes a shortcut by key combination")
+  void unregister_shouldRemoveShortcut() {
+    registry.register("Shortcut+N", "New Note",
+        "Create note", () -> { });
+    registry.unregister("Shortcut+N");
+
+    assertTrue(registry.lookup("Shortcut+N").isEmpty());
+    assertEquals(0, registry.getAll().size());
+  }
+
+  @Test
+  @DisplayName("search also matches key combination string")
+  void search_shouldMatchKeyCombination() {
+    registry.register("Shortcut+N", "New Note",
+        "Create note", () -> { });
+
+    List<ShortcutAction> results = registry.search("Shortcut+N");
+
+    assertEquals(1, results.size());
+  }
 }
