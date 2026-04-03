@@ -1,6 +1,7 @@
 package com.embervault;
 
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
@@ -15,6 +16,7 @@ import javafx.beans.property.StringProperty;
  * @param linkService    the link service
  * @param schemaRegistry the attribute schema registry
  * @param appState       the shared application state for data-change notification
+ * @param eventBus       the shared event bus for fire-and-forget events
  * @param selectedNoteVm the shared selected-note view model
  * @param rootNoteTitle  the root note title property
  */
@@ -23,6 +25,7 @@ public record ViewPaneDeps(
         LinkService linkService,
         AttributeSchemaRegistry schemaRegistry,
         AppState appState,
+        EventBus eventBus,
         SelectedNoteViewModel selectedNoteVm,
         StringProperty rootNoteTitle) {
 }

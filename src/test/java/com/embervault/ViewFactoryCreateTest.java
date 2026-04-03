@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
@@ -51,7 +52,8 @@ class ViewFactoryCreateTest {
 
         deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                appState, selectedNoteVm, rootNoteTitle);
+                appState, new EventBus(), selectedNoteVm,
+                rootNoteTitle);
         registry = new ViewFactoryRegistry();
     }
 
