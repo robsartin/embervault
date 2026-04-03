@@ -8,9 +8,11 @@ import com.embervault.adapter.in.ui.view.OutlineViewController;
 import com.embervault.adapter.in.ui.view.SearchViewController;
 import com.embervault.adapter.in.ui.view.TextPaneViewController;
 import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
+import com.embervault.adapter.in.ui.viewmodel.CommandPaletteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
+import com.embervault.adapter.in.ui.viewmodel.ShortcutRegistry;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Project;
@@ -21,6 +23,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -143,7 +146,22 @@ public class App extends Application {
         root.setTop(topArea);
         root.setCenter(mainSplitPane);
 
-        Scene scene = new Scene(root, 1024, 768);
+        // Shortcut registry and command palette
+        ShortcutRegistry shortcutRegistry = new ShortcutRegistry();
+        CommandPaletteViewModel commandPaletteVm =
+                new CommandPaletteViewModel(shortcutRegistry);
+        CommandPaletteOverlay overlay =
+                new CommandPaletteOverlay(commandPaletteVm);
+
+        StackPane layeredRoot =
+                new StackPane(root, overlay.getNode());
+
+        registerShortcuts(shortcutRegistry, commandPaletteVm,
+                winCtx, searchViewModel, outlineViewModel,
+                setup, project);
+
+        Scene scene = new Scene(layeredRoot, 1024, 768);
+        ShortcutInstaller.install(scene, shortcutRegistry);
         stage.setTitle("EmberVault - " + project.getName());
         stage.setScene(scene);
         stage.show();
@@ -174,6 +192,53 @@ public class App extends Application {
             stampService.createStamp("Badge:" + b,
                     Attributes.BADGE + "=" + b);
         }
+    }
+
+    private void registerShortcuts(
+            ShortcutRegistry registry,
+            CommandPaletteViewModel commandPaletteVm,
+            WindowContext winCtx,
+            SearchViewModel searchViewModel,
+            OutlineViewModel outlineViewModel,
+            WindowSetupResult setup,
+            Project project) {
+        registry.register("Shortcut+K", "Command Palette",
+                "Open the command palette",
+                commandPaletteVm::show);
+        registry.register("Shortcut+F", "Find",
+                "Toggle the search panel",
+                searchViewModel::toggleVisible);
+        registry.register("Shortcut+N", "New Note",
+                "Create a new child note", () -> {
+                    UUID parentId =
+                            winCtx.selectedNoteId().get();
+                    if (parentId != null) {
+                        sharedServices.noteService()
+                                .createChildNote(parentId,
+                                        "Untitled");
+                        setup.appState().notifyDataChanged();
+                    }
+                });
+        registry.register("Shortcut+Shift+N", "New Window",
+                "Open a new window", () -> {
+                    try {
+                        WindowFactory.openNewWindow(
+                                sharedServices, windowManager);
+                    } catch (java.io.IOException ex) {
+                        LOG.error("Failed to open new window", ex);
+                    }
+                });
+        registry.register("Shortcut+D", "Delete Note",
+                "Delete the selected note", () -> {
+                    UUID noteId =
+                            winCtx.selectedNoteId().get();
+                    if (noteId != null && !noteId.equals(
+                            project.getRootNote().getId())) {
+                        sharedServices.noteService()
+                                .deleteNote(noteId);
+                        setup.appState().notifyDataChanged();
+                    }
+                });
     }
 
     public static void main(String[] args) {
