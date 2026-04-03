@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.NoteServiceImpl;

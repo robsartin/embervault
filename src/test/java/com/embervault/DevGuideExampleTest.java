@@ -11,7 +11,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import com.embervault.adapter.in.ui.viewmodel.AppState;
+import com.embervault.adapter.in.ui.viewmodel.AppStateEventBridge;
 import com.embervault.adapter.in.ui.viewmodel.AttributeBrowserViewModel;
+import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.HyperbolicViewModel;
 import com.embervault.adapter.in.ui.viewmodel.MapViewModel;
 import com.embervault.adapter.in.ui.viewmodel.NoteEditorViewModel;
@@ -327,8 +329,10 @@ class DevGuideExampleTest {
             StringProperty titleProp =
                     new SimpleStringProperty(rootNote.getTitle());
             AppState appState = new AppState();
+            EventBus eventBus = new EventBus();
+            new AppStateEventBridge(eventBus, appState);
             MapViewModel mapVm = new MapViewModel(
-                    titleProp, noteService, appState);
+                    titleProp, noteService, appState, eventBus);
             mapVm.setBaseNoteId(rootId);
 
             int[] callCount = {0};

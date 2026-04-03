@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
