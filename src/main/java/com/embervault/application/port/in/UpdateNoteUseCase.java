@@ -9,13 +9,13 @@ import com.embervault.domain.Note;
  */
 public interface UpdateNoteUseCase {
 
-  /**
-   * Updates an existing note's title and content.
-   *
-   * @param id      the note id
-   * @param title   the new title
-   * @param content the new content
-   * @return the updated note
-   */
-  Note updateNote(UUID id, String title, String content);
+    /**
+     * Updates an existing note's title and content.
+     *
+     * @param id      the note id
+     * @param title   the new title
+     * @param content the new content
+     * @return the updated note
+     */
+    Note updateNote(UUID id, String title, String content);
 }

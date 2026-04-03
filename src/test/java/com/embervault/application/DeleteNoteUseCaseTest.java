@@ -16,63 +16,63 @@ import org.junit.jupiter.api.Test;
 
 class DeleteNoteUseCaseTest {
 
-  private DeleteNoteUseCase deleteUseCase;
-  private CreateNoteUseCase creator;
-  private GetNoteQuery query;
+    private DeleteNoteUseCase deleteUseCase;
+    private CreateNoteUseCase creator;
+    private GetNoteQuery query;
 
-  @BeforeEach
-  void setUp() {
-    InMemoryNoteRepository repository = new InMemoryNoteRepository();
-    NoteServiceImpl service = new NoteServiceImpl(repository);
-    deleteUseCase = service;
-    creator = service;
-    query = service;
-  }
+    @BeforeEach
+    void setUp() {
+        InMemoryNoteRepository repository = new InMemoryNoteRepository();
+        NoteServiceImpl service = new NoteServiceImpl(repository);
+        deleteUseCase = service;
+        creator = service;
+        query = service;
+    }
 
-  @Test
-  @DisplayName("NoteServiceImpl implements DeleteNoteUseCase")
-  void noteServiceImpl_shouldImplementDeleteNoteUseCase() {
-    assertTrue(deleteUseCase instanceof DeleteNoteUseCase);
-  }
+    @Test
+    @DisplayName("NoteServiceImpl implements DeleteNoteUseCase")
+    void noteServiceImpl_shouldImplementDeleteNoteUseCase() {
+        assertTrue(deleteUseCase instanceof DeleteNoteUseCase);
+    }
 
-  @Test
-  @DisplayName("deleteNote() removes the note")
-  void deleteNote_shouldRemoveNote() {
-    Note note = creator.createNote("Title", "Content");
+    @Test
+    @DisplayName("deleteNote() removes the note")
+    void deleteNote_shouldRemoveNote() {
+        Note note = creator.createNote("Title", "Content");
 
-    deleteUseCase.deleteNote(note.getId());
+        deleteUseCase.deleteNote(note.getId());
 
-    assertTrue(query.getNote(note.getId()).isEmpty());
-  }
+        assertTrue(query.getNote(note.getId()).isEmpty());
+    }
 
-  @Test
-  @DisplayName("deleteNoteIfLeaf() deletes leaf note and returns true")
-  void deleteNoteIfLeaf_shouldDeleteLeaf() {
-    Note parent = creator.createNote("Parent", "");
-    Note child = creator.createChildNote(parent.getId(), "Child");
+    @Test
+    @DisplayName("deleteNoteIfLeaf() deletes leaf note and returns true")
+    void deleteNoteIfLeaf_shouldDeleteLeaf() {
+        Note parent = creator.createNote("Parent", "");
+        Note child = creator.createChildNote(parent.getId(), "Child");
 
-    boolean result = deleteUseCase.deleteNoteIfLeaf(child.getId());
+        boolean result = deleteUseCase.deleteNoteIfLeaf(child.getId());
 
-    assertTrue(result);
-    assertTrue(query.getNote(child.getId()).isEmpty());
-  }
+        assertTrue(result);
+        assertTrue(query.getNote(child.getId()).isEmpty());
+    }
 
-  @Test
-  @DisplayName("deleteNoteIfLeaf() does not delete note with children")
-  void deleteNoteIfLeaf_shouldNotDeleteParent() {
-    Note parent = creator.createNote("Parent", "");
-    Note child = creator.createChildNote(parent.getId(), "Child");
-    creator.createChildNote(child.getId(), "Grandchild");
+    @Test
+    @DisplayName("deleteNoteIfLeaf() does not delete note with children")
+    void deleteNoteIfLeaf_shouldNotDeleteParent() {
+        Note parent = creator.createNote("Parent", "");
+        Note child = creator.createChildNote(parent.getId(), "Child");
+        creator.createChildNote(child.getId(), "Grandchild");
 
-    boolean result = deleteUseCase.deleteNoteIfLeaf(child.getId());
+        boolean result = deleteUseCase.deleteNoteIfLeaf(child.getId());
 
-    assertFalse(result);
-    assertTrue(query.getNote(child.getId()).isPresent());
-  }
+        assertFalse(result);
+        assertTrue(query.getNote(child.getId()).isPresent());
+    }
 
-  @Test
-  @DisplayName("deleteNoteIfLeaf() returns false for missing note")
-  void deleteNoteIfLeaf_shouldReturnFalseForMissing() {
-    assertFalse(deleteUseCase.deleteNoteIfLeaf(UUID.randomUUID()));
-  }
+    @Test
+    @DisplayName("deleteNoteIfLeaf() returns false for missing note")
+    void deleteNoteIfLeaf_shouldReturnFalseForMissing() {
+        assertFalse(deleteUseCase.deleteNoteIfLeaf(UUID.randomUUID()));
+    }
 }

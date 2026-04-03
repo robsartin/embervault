@@ -17,46 +17,46 @@ import org.junit.jupiter.api.Test;
 
 class RenameNoteUseCaseTest {
 
-  private RenameNoteUseCase renameUseCase;
-  private CreateNoteUseCase creator;
+    private RenameNoteUseCase renameUseCase;
+    private CreateNoteUseCase creator;
 
-  @BeforeEach
-  void setUp() {
-    InMemoryNoteRepository repository = new InMemoryNoteRepository();
-    NoteServiceImpl service = new NoteServiceImpl(repository);
-    renameUseCase = service;
-    creator = service;
-  }
+    @BeforeEach
+    void setUp() {
+        InMemoryNoteRepository repository = new InMemoryNoteRepository();
+        NoteServiceImpl service = new NoteServiceImpl(repository);
+        renameUseCase = service;
+        creator = service;
+    }
 
-  @Test
-  @DisplayName("NoteServiceImpl implements RenameNoteUseCase")
-  void noteServiceImpl_shouldImplementRenameNoteUseCase() {
-    assertTrue(renameUseCase instanceof RenameNoteUseCase);
-  }
+    @Test
+    @DisplayName("NoteServiceImpl implements RenameNoteUseCase")
+    void noteServiceImpl_shouldImplementRenameNoteUseCase() {
+        assertTrue(renameUseCase instanceof RenameNoteUseCase);
+    }
 
-  @Test
-  @DisplayName("renameNote() updates the note title")
-  void renameNote_shouldUpdateTitle() {
-    Note note = creator.createNote("Old Title", "Content");
+    @Test
+    @DisplayName("renameNote() updates the note title")
+    void renameNote_shouldUpdateTitle() {
+        Note note = creator.createNote("Old Title", "Content");
 
-    Note renamed = renameUseCase.renameNote(note.getId(), "New Title");
+        Note renamed = renameUseCase.renameNote(note.getId(), "New Title");
 
-    assertEquals("New Title", renamed.getTitle());
-  }
+        assertEquals("New Title", renamed.getTitle());
+    }
 
-  @Test
-  @DisplayName("renameNote() throws for missing note")
-  void renameNote_shouldThrowForMissing() {
-    assertThrows(NoSuchElementException.class,
-        () -> renameUseCase.renameNote(UUID.randomUUID(), "Title"));
-  }
+    @Test
+    @DisplayName("renameNote() throws for missing note")
+    void renameNote_shouldThrowForMissing() {
+        assertThrows(NoSuchElementException.class,
+                () -> renameUseCase.renameNote(UUID.randomUUID(), "Title"));
+    }
 
-  @Test
-  @DisplayName("renameNote() rejects blank title")
-  void renameNote_shouldRejectBlankTitle() {
-    Note note = creator.createNote("Title", "Content");
+    @Test
+    @DisplayName("renameNote() rejects blank title")
+    void renameNote_shouldRejectBlankTitle() {
+        Note note = creator.createNote("Title", "Content");
 
-    assertThrows(IllegalArgumentException.class,
-        () -> renameUseCase.renameNote(note.getId(), "   "));
-  }
+        assertThrows(IllegalArgumentException.class,
+                () -> renameUseCase.renameNote(note.getId(), "   "));
+    }
 }

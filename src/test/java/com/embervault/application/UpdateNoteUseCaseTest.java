@@ -17,40 +17,40 @@ import org.junit.jupiter.api.Test;
 
 class UpdateNoteUseCaseTest {
 
-  private UpdateNoteUseCase updateUseCase;
-  private CreateNoteUseCase creator;
+    private UpdateNoteUseCase updateUseCase;
+    private CreateNoteUseCase creator;
 
-  @BeforeEach
-  void setUp() {
-    InMemoryNoteRepository repository = new InMemoryNoteRepository();
-    NoteServiceImpl service = new NoteServiceImpl(repository);
-    updateUseCase = service;
-    creator = service;
-  }
+    @BeforeEach
+    void setUp() {
+        InMemoryNoteRepository repository = new InMemoryNoteRepository();
+        NoteServiceImpl service = new NoteServiceImpl(repository);
+        updateUseCase = service;
+        creator = service;
+    }
 
-  @Test
-  @DisplayName("NoteServiceImpl implements UpdateNoteUseCase")
-  void noteServiceImpl_shouldImplementUpdateNoteUseCase() {
-    assertTrue(updateUseCase instanceof UpdateNoteUseCase);
-  }
+    @Test
+    @DisplayName("NoteServiceImpl implements UpdateNoteUseCase")
+    void noteServiceImpl_shouldImplementUpdateNoteUseCase() {
+        assertTrue(updateUseCase instanceof UpdateNoteUseCase);
+    }
 
-  @Test
-  @DisplayName("updateNote() updates title and content")
-  void updateNote_shouldModifyNote() {
-    Note created = creator.createNote("Old", "Old");
+    @Test
+    @DisplayName("updateNote() updates title and content")
+    void updateNote_shouldModifyNote() {
+        Note created = creator.createNote("Old", "Old");
 
-    Note updated = updateUseCase.updateNote(
-        created.getId(), "New", "New");
+        Note updated = updateUseCase.updateNote(
+                created.getId(), "New", "New");
 
-    assertEquals("New", updated.getTitle());
-    assertEquals("New", updated.getContent());
-  }
+        assertEquals("New", updated.getTitle());
+        assertEquals("New", updated.getContent());
+    }
 
-  @Test
-  @DisplayName("updateNote() throws for missing note")
-  void updateNote_shouldThrowForMissing() {
-    assertThrows(NoSuchElementException.class,
-        () -> updateUseCase.updateNote(
-            UUID.randomUUID(), "T", "C"));
-  }
+    @Test
+    @DisplayName("updateNote() throws for missing note")
+    void updateNote_shouldThrowForMissing() {
+        assertThrows(NoSuchElementException.class,
+                () -> updateUseCase.updateNote(
+                        UUID.randomUUID(), "T", "C"));
+    }
 }

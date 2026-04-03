@@ -15,41 +15,41 @@ import org.junit.jupiter.api.Test;
 
 class SearchNotesQueryTest {
 
-  private SearchNotesQuery searchQuery;
-  private CreateNoteUseCase creator;
+    private SearchNotesQuery searchQuery;
+    private CreateNoteUseCase creator;
 
-  @BeforeEach
-  void setUp() {
-    InMemoryNoteRepository repository = new InMemoryNoteRepository();
-    NoteServiceImpl service = new NoteServiceImpl(repository);
-    searchQuery = service;
-    creator = service;
-  }
+    @BeforeEach
+    void setUp() {
+        InMemoryNoteRepository repository = new InMemoryNoteRepository();
+        NoteServiceImpl service = new NoteServiceImpl(repository);
+        searchQuery = service;
+        creator = service;
+    }
 
-  @Test
-  @DisplayName("NoteServiceImpl implements SearchNotesQuery")
-  void noteServiceImpl_shouldImplementSearchNotesQuery() {
-    assertTrue(searchQuery instanceof SearchNotesQuery);
-  }
+    @Test
+    @DisplayName("NoteServiceImpl implements SearchNotesQuery")
+    void noteServiceImpl_shouldImplementSearchNotesQuery() {
+        assertTrue(searchQuery instanceof SearchNotesQuery);
+    }
 
-  @Test
-  @DisplayName("searchNotes() finds notes by title")
-  void searchNotes_shouldFindByTitle() {
-    creator.createNote("Alpha", "content");
-    creator.createNote("Beta", "content");
+    @Test
+    @DisplayName("searchNotes() finds notes by title")
+    void searchNotes_shouldFindByTitle() {
+        creator.createNote("Alpha", "content");
+        creator.createNote("Beta", "content");
 
-    List<Note> results = searchQuery.searchNotes("Alpha");
+        List<Note> results = searchQuery.searchNotes("Alpha");
 
-    assertEquals(1, results.size());
-    assertEquals("Alpha", results.get(0).getTitle());
-  }
+        assertEquals(1, results.size());
+        assertEquals("Alpha", results.get(0).getTitle());
+    }
 
-  @Test
-  @DisplayName("searchNotes() returns empty for blank query")
-  void searchNotes_shouldReturnEmptyForBlank() {
-    creator.createNote("Note", "content");
+    @Test
+    @DisplayName("searchNotes() returns empty for blank query")
+    void searchNotes_shouldReturnEmptyForBlank() {
+        creator.createNote("Note", "content");
 
-    assertTrue(searchQuery.searchNotes("").isEmpty());
-    assertTrue(searchQuery.searchNotes(null).isEmpty());
-  }
+        assertTrue(searchQuery.searchNotes("").isEmpty());
+        assertTrue(searchQuery.searchNotes(null).isEmpty());
+    }
 }

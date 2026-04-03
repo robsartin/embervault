@@ -9,12 +9,12 @@ import com.embervault.domain.Note;
  */
 public interface RenameNoteUseCase {
 
-  /**
-   * Renames the note with the given id.
-   *
-   * @param noteId   the note id
-   * @param newTitle the new title (must not be blank)
-   * @return the updated note
-   */
-  Note renameNote(UUID noteId, String newTitle);
+    /**
+     * Renames the note with the given id.
+     *
+     * @param noteId   the note id
+     * @param newTitle the new title (must not be blank)
+     * @return the updated note
+     */
+    Note renameNote(UUID noteId, String newTitle);
 }
