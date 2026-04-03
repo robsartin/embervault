@@ -49,9 +49,11 @@ public final class HyperbolicViewModel {
     private final NavigationStack navigationStack = new NavigationStack();
     private double viewportRadius = DEFAULT_VIEWPORT_RADIUS;
     private final AppState appState;
+    private final LayoutStrategy layoutStrategy;
 
     /**
-     * Constructs a HyperbolicViewModel with the given services.
+     * Constructs a HyperbolicViewModel with the given services and
+     * default hyperbolic layout strategy.
      *
      * @param noteService the note service for querying notes
      * @param linkService the link service for querying links
@@ -59,12 +61,28 @@ public final class HyperbolicViewModel {
      */
     public HyperbolicViewModel(NoteService noteService, LinkService linkService,
             AppState appState) {
+        this(noteService, linkService, appState, new HyperbolicLayoutStrategy());
+    }
+
+    /**
+     * Constructs a HyperbolicViewModel with the given services and
+     * layout strategy.
+     *
+     * @param noteService    the note service for querying notes
+     * @param linkService    the link service for querying links
+     * @param appState       the shared application state for data-change notification
+     * @param layoutStrategy the strategy for computing node positions
+     */
+    public HyperbolicViewModel(NoteService noteService, LinkService linkService,
+            AppState appState, LayoutStrategy layoutStrategy) {
         this.noteService = Objects.requireNonNull(noteService,
                 "noteService must not be null");
         this.linkService = Objects.requireNonNull(linkService,
                 "linkService must not be null");
         this.appState = Objects.requireNonNull(appState,
                 "appState must not be null");
+        this.layoutStrategy = Objects.requireNonNull(layoutStrategy,
+                "layoutStrategy must not be null");
         tabTitle.set("Hyperbolic");
     }
 
@@ -236,7 +254,7 @@ public final class HyperbolicViewModel {
             }
         }
 
-        List<HyperbolicNode> layoutNodes = HyperbolicLayout.layout(
+        List<HyperbolicNode> layoutNodes = layoutStrategy.layout(
                 focus, adjacency, viewportRadius);
 
         nodes.setAll(layoutNodes);
