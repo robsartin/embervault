@@ -134,17 +134,23 @@ final class MenuBarFactory {
 
     private static void doExport(WindowContext ctx,
             ExportFormat format, String desc, String ext) {
+        String suffix = ext.replace("*", "");
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Export as " + desc);
+        chooser.setInitialFileName("export" + suffix);
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(desc, ext));
         File file = chooser.showSaveDialog(ctx.ownerStage());
         if (file != null) {
+            if (!file.getName().endsWith(suffix)) {
+                file = new File(file.getPath() + suffix);
+            }
             try {
                 createExportService(ctx)
                         .exportProject(format, file.toPath());
+                LOG.info("Exported {} to {}", desc, file);
             } catch (IOException ex) {
-                LOG.error("Export failed", ex);
+                LOG.error("Export to {} failed", file, ex);
             }
         }
     }
@@ -158,8 +164,9 @@ final class MenuBarFactory {
             try {
                 createExportService(ctx)
                         .exportProject(format, dir.toPath());
+                LOG.info("Exported Markdown to {}", dir);
             } catch (IOException ex) {
-                LOG.error("Export failed", ex);
+                LOG.error("Export to {} failed", dir, ex);
             }
         }
     }
