@@ -13,6 +13,7 @@ import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ShortcutRegistry;
+import com.embervault.application.CommandHistory;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Project;
@@ -52,6 +53,7 @@ public class App extends Application {
                 sharedServices, windowManager);
         WindowSetupResult setup = WindowBuilder.build(setupCtx);
         new AppStateEventBridge(setup.eventBus(), setup.appState());
+        CommandHistory commandHistory = new CommandHistory();
         SelectedNoteViewModel selectedNoteVm = setup.selectedNoteVm();
 
         // Single Outline view
@@ -135,7 +137,7 @@ public class App extends Application {
                 sharedServices, windowManager,
                 outlineViewModel.selectedNoteIdProperty(),
                 setup.appState(), stage,
-                searchViewModel::toggleVisible, null,
+                searchViewModel::toggleVisible, commandHistory,
                 newRootId -> {
                     outlineViewModel.setBaseNoteId(newRootId);
                     outlineViewModel.loadNotes();

@@ -135,8 +135,6 @@ final class MenuBarFactory {
                         KeyCombination.SHIFT_DOWN));
         if (ctx.commandHistory() != null) {
             var history = ctx.commandHistory();
-            undoItem.setDisable(!history.canUndo());
-            redoItem.setDisable(!history.canRedo());
             undoItem.setOnAction(e -> {
                 history.undo();
                 ctx.appState().notifyDataChanged();
@@ -145,10 +143,9 @@ final class MenuBarFactory {
                 history.redo();
                 ctx.appState().notifyDataChanged();
             });
-        } else {
-            undoItem.setDisable(true);
-            redoItem.setDisable(true);
         }
+        undoItem.setDisable(true);
+        redoItem.setDisable(true);
 
         MenuItem findItem = new MenuItem("Find");
         findItem.setAccelerator(
@@ -162,6 +159,13 @@ final class MenuBarFactory {
         Menu menu = new Menu("Edit");
         menu.getItems().addAll(undoItem, redoItem,
                 new SeparatorMenuItem(), findItem);
+        if (ctx.commandHistory() != null) {
+            var history = ctx.commandHistory();
+            menu.setOnShowing(e -> {
+                undoItem.setDisable(!history.canUndo());
+                redoItem.setDisable(!history.canRedo());
+            });
+        }
         return menu;
     }
 
