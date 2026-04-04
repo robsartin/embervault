@@ -137,7 +137,7 @@ final class MenuBarFactory {
         String suffix = ext.replace("*", "");
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Export as " + desc);
-        chooser.setInitialFileName("export" + suffix);
+        chooser.setInitialFileName("export");
         chooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter(desc, ext));
         File file = chooser.showSaveDialog(ctx.ownerStage());
