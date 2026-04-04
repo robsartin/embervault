@@ -17,6 +17,16 @@ public class CommandHistory implements
 
     private final Deque<Command> undoStack = new ArrayDeque<>();
     private final Deque<Command> redoStack = new ArrayDeque<>();
+    private Runnable onChanged;
+
+    /**
+     * Sets a callback invoked after any execute, undo, or redo.
+     *
+     * @param callback the callback, or null to clear
+     */
+    public void setOnChanged(Runnable callback) {
+        this.onChanged = callback;
+    }
 
     /**
      * Executes the given command and records it for undo.
@@ -27,6 +37,7 @@ public class CommandHistory implements
         command.execute();
         undoStack.push(command);
         redoStack.clear();
+        fireChanged();
     }
 
     /**
@@ -41,6 +52,7 @@ public class CommandHistory implements
         Command command = undoStack.pop();
         command.undo();
         redoStack.push(command);
+        fireChanged();
     }
 
     /**
@@ -55,6 +67,13 @@ public class CommandHistory implements
         Command command = redoStack.pop();
         command.execute();
         undoStack.push(command);
+        fireChanged();
+    }
+
+    private void fireChanged() {
+        if (onChanged != null) {
+            onChanged.run();
+        }
     }
 
     /**

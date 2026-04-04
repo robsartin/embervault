@@ -56,7 +56,7 @@ public class App extends Application {
         CommandHistory commandHistory = new CommandHistory();
         SelectedNoteViewModel selectedNoteVm = setup.selectedNoteVm();
 
-        // Single Outline view
+        // Outline view (declared before commandHistory callback)
         OutlineViewModel outlineViewModel = new OutlineViewModel(
                 setup.rootNoteTitle(),
                 setup.paneDeps().noteService(),
@@ -67,6 +67,11 @@ public class App extends Application {
                 setup.paneDeps().noteService(),
                 setup.appState(), setup.eventBus());
         outlineViewModel.setCommandHistory(commandHistory);
+        commandHistory.setOnChanged(() -> {
+            outlineViewModel.loadNotes();
+            selectedNoteVm.setSelectedNoteId(
+                    selectedNoteVm.selectedNoteIdProperty().get());
+        });
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {

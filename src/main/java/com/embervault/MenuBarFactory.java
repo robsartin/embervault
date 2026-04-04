@@ -215,20 +215,8 @@ final class MenuBarFactory {
                         KeyCombination.SHIFT_DOWN));
         if (ctx.commandHistory() != null) {
             var history = ctx.commandHistory();
-            undoItem.setOnAction(e -> {
-                if (history.canUndo()) {
-                    history.undo();
-                    ctx.appState().notifyDataChanged();
-                    ctx.windowManager().notifyAllWindows();
-                }
-            });
-            redoItem.setOnAction(e -> {
-                if (history.canRedo()) {
-                    history.redo();
-                    ctx.appState().notifyDataChanged();
-                    ctx.windowManager().notifyAllWindows();
-                }
-            });
+            undoItem.setOnAction(e -> history.undo());
+            redoItem.setOnAction(e -> history.redo());
         }
 
         MenuItem findItem = new MenuItem("Find");
