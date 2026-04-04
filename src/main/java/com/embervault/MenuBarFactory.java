@@ -215,8 +215,20 @@ final class MenuBarFactory {
                         KeyCombination.SHIFT_DOWN));
         if (ctx.commandHistory() != null) {
             var history = ctx.commandHistory();
-            undoItem.setOnAction(e -> history.undo());
-            redoItem.setOnAction(e -> history.redo());
+            undoItem.setOnAction(e -> {
+                try {
+                    history.undo();
+                } catch (Exception ex) {
+                    LOG.warn("Undo failed", ex);
+                }
+            });
+            redoItem.setOnAction(e -> {
+                try {
+                    history.redo();
+                } catch (Exception ex) {
+                    LOG.warn("Redo failed", ex);
+                }
+            });
         }
 
         MenuItem findItem = new MenuItem("Find");

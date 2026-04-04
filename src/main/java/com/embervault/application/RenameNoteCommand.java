@@ -44,7 +44,10 @@ public final class RenameNoteCommand implements Command {
 
     @Override
     public void undo() {
-        renameUseCase.renameNote(noteId, previousTitle);
+        String restoreTitle = (previousTitle == null
+                || previousTitle.isBlank())
+                ? "Untitled" : previousTitle;
+        renameUseCase.renameNote(noteId, restoreTitle);
     }
 
     @Override
