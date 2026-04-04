@@ -47,6 +47,7 @@ public final class OutlineViewModel {
     private final StringProperty rootNoteTitle;
     private final AppState appState;
     private final EventBus eventBus;
+    private com.embervault.application.CommandHistory commandHistory;
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from
@@ -100,6 +101,16 @@ public final class OutlineViewModel {
                 updateTabTitle(newVal);
             }
         });
+    }
+
+    /**
+     * Sets an optional command history for undo/redo support.
+     *
+     * @param history the command history, or null to disable
+     */
+    public void setCommandHistory(
+            com.embervault.application.CommandHistory history) {
+        this.commandHistory = history;
     }
 
     /** Returns the tab title property. */
@@ -240,7 +251,14 @@ public final class OutlineViewModel {
         if (newTitle == null || newTitle.isBlank()) {
             return false;
         }
-        renameNoteUseCase.renameNote(noteId, newTitle);
+        if (commandHistory != null) {
+            commandHistory.execute(
+                    new com.embervault.application.RenameNoteCommand(
+                            renameNoteUseCase, getNoteQuery,
+                            noteId, newTitle));
+        } else {
+            renameNoteUseCase.renameNote(noteId, newTitle);
+        }
         for (int i = 0; i < rootItems.size(); i++) {
             NoteDisplayItem item = rootItems.get(i);
             if (item.getId().equals(noteId)) {

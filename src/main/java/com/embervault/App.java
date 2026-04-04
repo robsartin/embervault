@@ -66,6 +66,7 @@ public class App extends Application {
                 setup.paneDeps().noteService(),
                 setup.paneDeps().noteService(),
                 setup.appState(), setup.eventBus());
+        outlineViewModel.setCommandHistory(commandHistory);
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {
