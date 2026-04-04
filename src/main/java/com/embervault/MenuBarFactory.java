@@ -8,8 +8,14 @@ import java.util.UUID;
 
 import com.embervault.adapter.in.ui.view.StampEditorViewController;
 import com.embervault.adapter.in.ui.viewmodel.StampEditorViewModel;
+import com.embervault.adapter.out.persistence.JsonExportAdapter;
+import com.embervault.adapter.out.persistence.MarkdownExportAdapter;
+import com.embervault.adapter.out.persistence.OpmlExportAdapter;
 import com.embervault.adapter.out.persistence.ProjectFileManager;
+import com.embervault.application.ExportServiceImpl;
+import com.embervault.application.port.in.ExportProjectUseCase;
 import com.embervault.application.port.in.StampService;
+import com.embervault.domain.ExportFormat;
 import com.embervault.domain.Stamp;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -22,6 +28,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.stage.DirectoryChooser;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,9 +107,82 @@ final class MenuBarFactory {
             }
         });
 
+        Menu exportMenu = buildExportMenu(ctx);
+
         Menu menu = new Menu("File");
-        menu.getItems().addAll(openItem, saveItem);
+        menu.getItems().addAll(openItem, saveItem,
+                new SeparatorMenuItem(), exportMenu);
         return menu;
+    }
+
+    private static Menu buildExportMenu(WindowContext ctx) {
+        MenuItem jsonItem = new MenuItem("JSON...");
+        jsonItem.setOnAction(e ->
+                doExport(ctx, ExportFormat.JSON, "JSON",
+                        "*.json"));
+        MenuItem mdItem = new MenuItem("Markdown...");
+        mdItem.setOnAction(e ->
+                doExportDir(ctx, ExportFormat.MARKDOWN));
+        MenuItem opmlItem = new MenuItem("OPML...");
+        opmlItem.setOnAction(e ->
+                doExport(ctx, ExportFormat.OPML, "OPML",
+                        "*.opml"));
+        Menu menu = new Menu("Export");
+        menu.getItems().addAll(jsonItem, mdItem, opmlItem);
+        return menu;
+    }
+
+    private static void doExport(WindowContext ctx,
+            ExportFormat format, String desc, String ext) {
+        String suffix = ext.replace("*", "");
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export as " + desc);
+        chooser.setInitialFileName("export");
+        chooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter(desc, ext));
+        File file = chooser.showSaveDialog(ctx.ownerStage());
+        if (file != null) {
+            if (!file.getName().endsWith(suffix)) {
+                file = new File(file.getPath() + suffix);
+            }
+            try {
+                createExportService(ctx)
+                        .exportProject(format, file.toPath());
+                LOG.info("Exported {} to {}", desc, file);
+            } catch (IOException ex) {
+                LOG.error("Export to {} failed", file, ex);
+            }
+        }
+    }
+
+    private static void doExportDir(WindowContext ctx,
+            ExportFormat format) {
+        DirectoryChooser chooser = new DirectoryChooser();
+        chooser.setTitle("Export as Markdown");
+        File dir = chooser.showDialog(ctx.ownerStage());
+        if (dir != null) {
+            try {
+                createExportService(ctx)
+                        .exportProject(format, dir.toPath());
+                LOG.info("Exported Markdown to {}", dir);
+            } catch (IOException ex) {
+                LOG.error("Export to {} failed", dir, ex);
+            }
+        }
+    }
+
+    private static ExportProjectUseCase createExportService(
+            WindowContext ctx) {
+        SharedServices svc = ctx.sharedServices();
+        return new ExportServiceImpl(
+                svc.project(), svc.noteService(),
+                svc.linkService(), svc.stampService(),
+                Map.of(ExportFormat.JSON,
+                        new JsonExportAdapter(),
+                        ExportFormat.MARKDOWN,
+                        new MarkdownExportAdapter(),
+                        ExportFormat.OPML,
+                        new OpmlExportAdapter()));
     }
 
     private static Menu buildNoteMenu(WindowContext ctx) {
