@@ -21,61 +21,62 @@ import java.util.Map;
  */
 public final class SearchQueryParser {
 
-  private static final Map<String, String> FILTER_KEY_MAP = Map.ofEntries(
-      Map.entry("color", Attributes.COLOR),
-      Map.entry("badge", Attributes.BADGE),
-      Map.entry("checked", Attributes.CHECKED),
-      Map.entry("name", Attributes.NAME),
-      Map.entry("shape", Attributes.SHAPE),
-      Map.entry("text", Attributes.TEXT),
-      Map.entry("url", Attributes.URL),
-      Map.entry("prototype", Attributes.PROTOTYPE)
-  );
+    private static final Map<String, String> FILTER_KEY_MAP = Map.ofEntries(
+            Map.entry("color", Attributes.COLOR),
+            Map.entry("badge", Attributes.BADGE),
+            Map.entry("checked", Attributes.CHECKED),
+            Map.entry("name", Attributes.NAME),
+            Map.entry("shape", Attributes.SHAPE),
+            Map.entry("text", Attributes.TEXT),
+            Map.entry("url", Attributes.URL),
+            Map.entry("prototype", Attributes.PROTOTYPE)
+    );
 
-  private SearchQueryParser() {
-    // utility class
-  }
-
-  /**
-   * Parses a search query string into a {@link SearchFilter}.
-   *
-   * @param input the raw search string (may be null)
-   * @return the parsed filter
-   */
-  public static SearchFilter parse(String input) {
-    if (input == null || input.isBlank()) {
-      return new SearchFilter("", Map.of(), List.of());
+    private SearchQueryParser() {
+        // utility class
     }
 
-    String[] tokens = input.trim().split("\\s+");
-    List<String> textParts = new ArrayList<>();
-    Map<String, String> attributeFilters = new HashMap<>();
-    List<String> relationshipFilters = new ArrayList<>();
-
-    for (String token : tokens) {
-      int colonIndex = token.indexOf(':');
-      if (colonIndex > 0 && colonIndex < token.length() - 1) {
-        String key = token.substring(0, colonIndex)
-            .toLowerCase(Locale.ROOT);
-        String value = token.substring(colonIndex + 1);
-
-        if ("has".equals(key)) {
-          relationshipFilters.add(value.toLowerCase(Locale.ROOT));
-        } else {
-          String attrName = FILTER_KEY_MAP.get(key);
-          if (attrName != null) {
-            attributeFilters.put(attrName, value);
-          } else {
-            textParts.add(token);
-          }
+    /**
+     * Parses a search query string into a {@link SearchFilter}.
+     *
+     * @param input the raw search string (may be null)
+     * @return the parsed filter
+     */
+    public static SearchFilter parse(String input) {
+        if (input == null || input.isBlank()) {
+            return new SearchFilter("", Map.of(), List.of());
         }
-      } else {
-        textParts.add(token);
-      }
-    }
 
-    String textQuery = String.join(" ", textParts);
-    return new SearchFilter(textQuery, attributeFilters,
-        relationshipFilters);
-  }
+        String[] tokens = input.trim().split("\\s+");
+        List<String> textParts = new ArrayList<>();
+        Map<String, String> attributeFilters = new HashMap<>();
+        List<String> relationshipFilters = new ArrayList<>();
+
+        for (String token : tokens) {
+            int colonIndex = token.indexOf(':');
+            if (colonIndex > 0 && colonIndex < token.length() - 1) {
+                String key = token.substring(0, colonIndex)
+                        .toLowerCase(Locale.ROOT);
+                String value = token.substring(colonIndex + 1);
+
+                if ("has".equals(key)) {
+                    relationshipFilters.add(
+                            value.toLowerCase(Locale.ROOT));
+                } else {
+                    String attrName = FILTER_KEY_MAP.get(key);
+                    if (attrName != null) {
+                        attributeFilters.put(attrName, value);
+                    } else {
+                        textParts.add(token);
+                    }
+                }
+            } else {
+                textParts.add(token);
+            }
+        }
+
+        String textQuery = String.join(" ", textParts);
+        return new SearchFilter(textQuery, attributeFilters,
+                relationshipFilters);
+    }
 }

@@ -16,30 +16,30 @@ import java.util.Map;
  * @param relationshipFilters relationship checks (e.g., "children")
  */
 public record SearchFilter(
-    String textQuery,
-    Map<String, String> attributeFilters,
-    List<String> relationshipFilters) {
+        String textQuery,
+        Map<String, String> attributeFilters,
+        List<String> relationshipFilters) {
 
-  /**
-   * Constructs a SearchFilter with defensive copies of collections.
-   */
-  public SearchFilter {
-    textQuery = textQuery == null ? "" : textQuery;
-    attributeFilters = attributeFilters == null
-        ? Map.of() : Map.copyOf(attributeFilters);
-    relationshipFilters = relationshipFilters == null
-        ? List.of() : List.copyOf(relationshipFilters);
-  }
+    /**
+     * Constructs a SearchFilter with defensive copies of collections.
+     */
+    public SearchFilter {
+        textQuery = textQuery == null ? "" : textQuery;
+        attributeFilters = attributeFilters == null
+                ? Map.of() : Map.copyOf(attributeFilters);
+        relationshipFilters = relationshipFilters == null
+                ? List.of() : List.copyOf(relationshipFilters);
+    }
 
-  /**
-   * Returns true if this filter has no text query, attribute filters,
-   * or relationship filters.
-   *
-   * @return true if empty
-   */
-  public boolean isEmpty() {
-    return textQuery.isBlank()
-        && attributeFilters.isEmpty()
-        && relationshipFilters.isEmpty();
-  }
+    /**
+     * Returns true if this filter has no text query, attribute filters,
+     * or relationship filters.
+     *
+     * @return true if empty
+     */
+    public boolean isEmpty() {
+        return textQuery.isBlank()
+                && attributeFilters.isEmpty()
+                && relationshipFilters.isEmpty();
+    }
 }
