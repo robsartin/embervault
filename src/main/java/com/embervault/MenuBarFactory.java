@@ -218,10 +218,12 @@ final class MenuBarFactory {
             undoItem.setOnAction(e -> {
                 history.undo();
                 ctx.appState().notifyDataChanged();
+                ctx.windowManager().notifyAllWindows();
             });
             redoItem.setOnAction(e -> {
                 history.redo();
                 ctx.appState().notifyDataChanged();
+                ctx.windowManager().notifyAllWindows();
             });
         }
         undoItem.setDisable(true);
