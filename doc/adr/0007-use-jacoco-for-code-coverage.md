@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-As we adopt a TDD development process (ADR-0001), we need visibility into how much of the
+As we adopt a TDD development process (ADR-0020), we need visibility into how much of the
 codebase is exercised by our test suite. Without a code coverage tool, it is difficult to identify
 untested code paths, and coverage can silently regress over time. We need an automated mechanism
 integrated into the Maven build that measures coverage, generates reports, and enforces minimum

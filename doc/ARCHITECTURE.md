@@ -1,6 +1,6 @@
 # EmberVault Architecture
 
-EmberVault is a Tinderbox-inspired note-taking application built with JavaFX, following hexagonal architecture (ports and adapters) with MVVM for the UI layer.
+EmberVault is a Tinderbox-inspired note-taking application built with JavaFX, following [hexagonal architecture](adr/0009-use-hexagonal-architecture.md) (ports and adapters) with [MVVM](adr/0013-use-mvvm-design-pattern.md) for the UI layer.
 
 ## System Overview
 
@@ -350,4 +350,16 @@ graph TD
     Root --> TopLevel["App (wiring)<br/>ViewPaneContext<br/>ViewPaneDeps<br/>ViewType (enum)"]
 ```
 
-Dependency flow is strictly inward: `adapter` depends on `application` ports, `application` depends on `domain`. ArchUnit tests enforce these boundaries at build time.
+Dependency flow is strictly inward: `adapter` depends on `application` ports, `application` depends on `domain`. [ArchUnit tests](adr/0008-use-archunit-to-enforce-architecture.md) enforce these boundaries at build time.
+
+---
+
+## See Also
+
+- [Developer Guide](DEVELOPER_GUIDE.md) — code-first walkthrough with compilable examples
+- [Contributing](../CONTRIBUTING.md) — TDD workflow and PR checklist
+- Key ADRs:
+  - [ADR-0009](adr/0009-use-hexagonal-architecture.md) — Hexagonal Architecture
+  - [ADR-0013](adr/0013-use-mvvm-design-pattern.md) — MVVM Design Pattern
+  - [ADR-0017](adr/0017-use-result-oriented-apis.md) — Result-Oriented APIs
+  - [ADR-0018](adr/0018-use-type-safe-attribute-map.md) — Type-Safe Attribute Map
