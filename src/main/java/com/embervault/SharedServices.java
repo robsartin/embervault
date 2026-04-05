@@ -3,13 +3,17 @@ package com.embervault;
 import com.embervault.adapter.out.persistence.InMemoryLinkRepository;
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.adapter.out.persistence.InMemoryStampRepository;
+import com.embervault.application.CommandHistory;
 import com.embervault.application.LinkServiceImpl;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.ProjectServiceImpl;
 import com.embervault.application.StampServiceImpl;
+import com.embervault.application.UndoRedoService;
+import com.embervault.application.port.in.CommandRecorder;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
+import com.embervault.application.port.in.UndoRedoUseCase;
 import com.embervault.application.port.out.NoteRepository;
 import com.embervault.domain.AttributeSchemaRegistry;
 import com.embervault.domain.Project;
@@ -26,6 +30,9 @@ import com.embervault.domain.Project;
  * @param linkService     the link service
  * @param stampService    the stamp service
  * @param schemaRegistry  the attribute schema registry
+ * @param undoRedoUseCase the undo/redo use case
+ * @param commandRecorder the command recorder for registering
+ *                        undoable actions
  */
 public record SharedServices(
         Project project,
@@ -33,7 +40,9 @@ public record SharedServices(
         NoteService noteService,
         LinkService linkService,
         StampService stampService,
-        AttributeSchemaRegistry schemaRegistry
+        AttributeSchemaRegistry schemaRegistry,
+        UndoRedoUseCase undoRedoUseCase,
+        CommandRecorder commandRecorder
 ) {
 
     /**
@@ -53,8 +62,11 @@ public record SharedServices(
         noteRepo.save(project.getRootNote());
         AttributeSchemaRegistry schemaRegistry =
                 new AttributeSchemaRegistry();
+        UndoRedoService undoRedoService =
+                new UndoRedoService(new CommandHistory());
         return new SharedServices(project, noteRepo,
                 noteService, linkService,
-                stampService, schemaRegistry);
+                stampService, schemaRegistry,
+                undoRedoService, undoRedoService);
     }
 }
