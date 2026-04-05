@@ -155,4 +155,4 @@ Before opening a PR, verify that:
 
 ## Why TDD?
 
-See [ADR-0001](doc/adr/0001-use-pure-tdd-as-development-process.md) for the full rationale behind adopting pure TDD as the development process for EmberVault.
+See [ADR-0020](doc/adr/0020-use-pure-tdd-as-development-process.md) for the full rationale behind adopting pure TDD as the development process for EmberVault.
