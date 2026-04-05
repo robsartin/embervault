@@ -1,4 +1,4 @@
-# 2. Use Java 25
+# 21. Use Java 25
 
 Date: 2026-03-27
 

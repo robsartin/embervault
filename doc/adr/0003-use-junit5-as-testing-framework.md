@@ -8,7 +8,7 @@ Accepted
 
 ## Context
 
-EmberVault needs a testing framework to support the TDD workflow established in ADR-0001. The project targets Java 25 and uses Maven as its build tool. We need a modern, extensible testing framework that integrates well with this stack and supports current best practices such as display names, parameterized tests, and nested test classes.
+EmberVault needs a testing framework to support the TDD workflow established in ADR-0020. The project targets Java 25 and uses Maven as its build tool. We need a modern, extensible testing framework that integrates well with this stack and supports current best practices such as display names, parameterized tests, and nested test classes.
 
 ## Decision
 
