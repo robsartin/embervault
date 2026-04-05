@@ -29,6 +29,7 @@ import com.embervault.domain.AttributeMap;
 import com.embervault.domain.AttributeValue;
 import com.embervault.domain.Note;
 import com.embervault.domain.SearchFilter;
+import com.embervault.domain.SearchFilterMatcher;
 import com.embervault.domain.UuidGenerator;
 
 /**
@@ -449,10 +450,8 @@ public final class NoteServiceImpl implements NoteService {
         }
         String lowerQuery = query.toLowerCase(Locale.ROOT);
         List<Note> allNotes = repository.findAll();
-
         List<Note> titleMatches = new ArrayList<>();
         List<Note> textOnlyMatches = new ArrayList<>();
-
         for (Note note : allNotes) {
             boolean titleMatch = note.getTitle()
                     .toLowerCase(Locale.ROOT)
@@ -477,64 +476,8 @@ public final class NoteServiceImpl implements NoteService {
 
     @Override
     public List<Note> searchWithFilters(List<SearchFilter> filters) {
-        List<Note> allNotes = repository.findAll();
-        if (filters.isEmpty()) {
-            return allNotes;
-        }
-        return allNotes.stream()
-                .filter(note -> filters.stream()
-                        .allMatch(f -> matchesFilter(note, f)))
-                .toList();
-    }
-
-    private boolean matchesFilter(Note note, SearchFilter filter) {
-        return switch (filter) {
-            case SearchFilter.SubstringFilter sf -> {
-                String lower = sf.text().toLowerCase(Locale.ROOT);
-                yield note.getTitle().toLowerCase(Locale.ROOT)
-                        .contains(lower)
-                    || note.getContent().toLowerCase(Locale.ROOT)
-                        .contains(lower);
-            }
-            case SearchFilter.AttributeFilter af -> {
-                String key = af.attributeKey();
-                String attrName = "$"
-                    + key.substring(0, 1).toUpperCase(Locale.ROOT)
-                    + key.substring(1);
-                yield note.getAttribute(attrName)
-                    .map(v -> matchesAttributeValue(v, af.value()))
-                    .orElse(false);
-            }
-            case SearchFilter.RelationFilter rf -> {
-                if ("children".equals(rf.relation())) {
-                    yield hasChildren(note.getId());
-                }
-                yield false;
-            }
-        };
-    }
-
-    private boolean matchesAttributeValue(
-            AttributeValue value, String expected) {
-        return switch (value) {
-            case AttributeValue.StringValue sv ->
-                sv.value().equalsIgnoreCase(expected);
-            case AttributeValue.BooleanValue bv ->
-                String.valueOf(bv.value()).equalsIgnoreCase(expected);
-            case AttributeValue.ColorValue cv ->
-                cv.value().toHex().equalsIgnoreCase(expected)
-                    || cv.value().getName()
-                        .map(n -> n.equalsIgnoreCase(expected))
-                        .orElse(false);
-            case AttributeValue.NumberValue nv -> {
-                try {
-                    yield nv.value() == Double.parseDouble(expected);
-                } catch (NumberFormatException e) {
-                    yield false;
-                }
-            }
-            default -> value.toString().contains(expected);
-        };
+        return new SearchFilterMatcher(note -> hasChildren(note.getId()))
+                .match(repository.findAll(), filters);
     }
 
     /**
