@@ -26,7 +26,23 @@ public sealed interface SearchFilter
     if (query == null || query.isBlank()) {
       return List.of();
     }
-    return List.of(new SubstringFilter(query.strip()));
+    String[] tokens = query.strip().split("\\s+");
+    List<SearchFilter> filters = new java.util.ArrayList<>();
+    for (String token : tokens) {
+      int colon = token.indexOf(':');
+      if (colon > 0 && colon < token.length() - 1) {
+        String key = token.substring(0, colon);
+        String value = token.substring(colon + 1);
+        if ("has".equals(key)) {
+          filters.add(new RelationFilter(value));
+        } else {
+          filters.add(new AttributeFilter(key, value));
+        }
+      } else {
+        filters.add(new SubstringFilter(token));
+      }
+    }
+    return List.copyOf(filters);
   }
 
   /**
