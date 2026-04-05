@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.embervault.application.port.in.CommandRecorder;
 import com.embervault.application.port.in.UndoRedoUseCase;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,19 +14,54 @@ import org.junit.jupiter.api.Test;
 
 class UndoRedoServiceTest {
 
+    private UndoRedoService service;
     private UndoRedoUseCase undoRedo;
     private CommandHistory history;
 
     @BeforeEach
     void setUp() {
         history = new CommandHistory();
-        undoRedo = new UndoRedoService(history);
+        service = new UndoRedoService(history);
+        undoRedo = service;
     }
 
     @Test
     @DisplayName("implements UndoRedoUseCase")
     void implementsUseCase() {
         assertTrue(undoRedo instanceof UndoRedoUseCase);
+    }
+
+    @Test
+    @DisplayName("implements CommandRecorder")
+    void implementsCommandRecorder() {
+        assertTrue(service instanceof CommandRecorder);
+    }
+
+    @Test
+    @DisplayName("record creates an undoable command")
+    void record_createsUndoableCommand() {
+        List<String> calls = new ArrayList<>();
+        service.record("test action",
+                () -> calls.add("undo"),
+                () -> calls.add("redo"));
+
+        assertTrue(undoRedo.canUndo());
+        undoRedo.undo();
+        assertEquals(List.of("undo"), calls);
+    }
+
+    @Test
+    @DisplayName("recorded command can be redone")
+    void record_canBeRedone() {
+        List<String> calls = new ArrayList<>();
+        service.record("test action",
+                () -> calls.add("undo"),
+                () -> calls.add("redo"));
+
+        undoRedo.undo();
+        calls.clear();
+        undoRedo.redo();
+        assertEquals(List.of("redo"), calls);
     }
 
     @Test
