@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import com.embervault.application.port.in.CommandRecorder;
 import com.embervault.application.port.in.CreateNoteUseCase;
 import com.embervault.application.port.in.DeleteNoteUseCase;
 import com.embervault.application.port.in.GetNoteQuery;
@@ -47,6 +48,7 @@ public final class OutlineViewModel {
     private final StringProperty rootNoteTitle;
     private final AppState appState;
     private final EventBus eventBus;
+    private CommandRecorder commandRecorder;
 
     /**
      * Constructs an OutlineViewModel that derives its tab title from
@@ -100,6 +102,15 @@ public final class OutlineViewModel {
                 updateTabTitle(newVal);
             }
         });
+    }
+
+    /**
+     * Sets the command recorder for registering undoable actions.
+     *
+     * @param recorder the command recorder (may be null to disable)
+     */
+    public void setCommandRecorder(CommandRecorder recorder) {
+        this.commandRecorder = recorder;
     }
 
     /** Returns the tab title property. */
@@ -173,6 +184,14 @@ public final class OutlineViewModel {
         if (parentId.equals(navigationStack.getCurrentId())) {
             rootItems.add(item);
         }
+        if (commandRecorder != null) {
+            UUID childId = child.getId();
+            commandRecorder.record(
+                    "Create note '" + title + "'",
+                    () -> deleteNoteUseCase.deleteNote(childId),
+                    () -> createNoteUseCase.createChildNote(
+                            parentId, title));
+        }
         eventBus.publish(new NoteCreatedEvent(child.getId()));
         return item;
     }
@@ -240,6 +259,8 @@ public final class OutlineViewModel {
         if (newTitle == null || newTitle.isBlank()) {
             return false;
         }
+        String oldTitle = getNoteQuery.getNote(noteId)
+                .map(Note::getTitle).orElse("");
         renameNoteUseCase.renameNote(noteId, newTitle);
         for (int i = 0; i < rootItems.size(); i++) {
             NoteDisplayItem item = rootItems.get(i);
@@ -252,6 +273,14 @@ public final class OutlineViewModel {
                         item.getBadge()));
                 break;
             }
+        }
+        if (commandRecorder != null) {
+            commandRecorder.record(
+                    "Rename '" + oldTitle + "' to '" + newTitle + "'",
+                    () -> renameNoteUseCase.renameNote(
+                            noteId, oldTitle),
+                    () -> renameNoteUseCase.renameNote(
+                            noteId, newTitle));
         }
         eventBus.publish(new NoteRenamedEvent(noteId, newTitle));
         return true;
