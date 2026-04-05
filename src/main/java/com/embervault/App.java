@@ -13,6 +13,7 @@ import com.embervault.adapter.in.ui.viewmodel.OutlineViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SearchViewModel;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
 import com.embervault.adapter.in.ui.viewmodel.ShortcutRegistry;
+import com.embervault.adapter.in.ui.viewmodel.UndoRedoShortcuts;
 import com.embervault.application.port.in.StampService;
 import com.embervault.domain.Attributes;
 import com.embervault.domain.Project;
@@ -64,6 +65,8 @@ public class App extends Application {
                 setup.paneDeps().noteService(),
                 setup.paneDeps().noteService(),
                 setup.appState(), setup.eventBus());
+        outlineViewModel.setCommandRecorder(
+                sharedServices.commandRecorder());
         outlineViewModel.setBaseNoteId(project.getRootNote().getId());
         var paneHolder = new ViewPaneContext[1];
         Parent outlineView = loadView("OutlineView.fxml", c -> {
@@ -228,6 +231,8 @@ public class App extends Application {
                         LOG.error("Failed to open new window", ex);
                     }
                 });
+        UndoRedoShortcuts.register(registry,
+                sharedServices.undoRedoUseCase());
         registry.register("Shortcut+D", "Delete Note",
                 "Delete the selected note", () -> {
                     UUID noteId =

@@ -44,7 +44,8 @@ public final class WindowBuilder {
         ViewPaneDeps paneDeps = new ViewPaneDeps(
                 ctx.noteService(), ctx.linkService(),
                 ctx.schemaRegistry(), appState, eventBus,
-                selectedNoteVm, rootNoteTitle);
+                selectedNoteVm, rootNoteTitle,
+                ctx.commandRecorder());
 
         appState.dataVersionProperty().addListener(
                 (obs, oldVal, newVal) ->

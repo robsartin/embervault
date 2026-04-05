@@ -7,6 +7,7 @@ import java.util.UUID;
 import com.embervault.adapter.in.ui.viewmodel.AppState;
 import com.embervault.adapter.in.ui.viewmodel.EventBus;
 import com.embervault.adapter.in.ui.viewmodel.SelectedNoteViewModel;
+import com.embervault.application.port.in.CommandRecorder;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.AttributeSchemaRegistry;
@@ -45,6 +46,7 @@ public final class ViewPaneContext {
     private EventBus eventBus;
     private SelectedNoteViewModel selectedNoteVm;
     private StringProperty rootNoteTitle;
+    private CommandRecorder commandRecorder;
 
     private final ViewFactoryRegistry registry =
             new ViewFactoryRegistry();
@@ -127,6 +129,7 @@ public final class ViewPaneContext {
         this.eventBus = deps.eventBus();
         this.selectedNoteVm = deps.selectedNoteVm();
         this.rootNoteTitle = deps.rootNoteTitle();
+        this.commandRecorder = deps.commandRecorder();
     }
 
     /**
@@ -161,7 +164,8 @@ public final class ViewPaneContext {
 
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
-                appState, eventBus, selectedNoteVm, rootNoteTitle);
+                appState, eventBus, selectedNoteVm, rootNoteTitle,
+                commandRecorder);
         ViewFactory factory = registry.getFactory(newType);
         ViewCreationResult result = factory.create(
                 deps, baseNoteId,

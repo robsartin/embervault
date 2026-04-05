@@ -92,7 +92,7 @@ class ViewPaneContextRefreshTest {
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 appState, new EventBus(), selectedNoteVm,
-                rootNoteTitle);
+                rootNoteTitle, null);
         paneContext.setDeps(deps);
     }
 

@@ -88,7 +88,7 @@ class ViewPaneContextTest {
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 new AppState(), new EventBus(), selectedNoteVm,
-                rootNoteTitle);
+                rootNoteTitle, null);
         paneContext.setDeps(deps);
     }
 
@@ -171,7 +171,7 @@ class ViewPaneContextTest {
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 new AppState(), new EventBus(), selectedNoteVm,
-                rootNoteTitle);
+                rootNoteTitle, null);
         ctx.setDeps(deps);
 
         ctx.refreshCurrentView();
