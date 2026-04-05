@@ -2,6 +2,7 @@ package com.embervault;
 
 import java.util.Objects;
 
+import com.embervault.application.port.in.CommandRecorder;
 import com.embervault.application.port.in.LinkService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.application.port.in.StampService;
@@ -53,5 +54,10 @@ public record WindowSetupContext(
     /** Returns the attribute schema registry. */
     public AttributeSchemaRegistry schemaRegistry() {
         return services.schemaRegistry();
+    }
+
+    /** Returns the command recorder for undo/redo. */
+    public CommandRecorder commandRecorder() {
+        return services.commandRecorder();
     }
 }

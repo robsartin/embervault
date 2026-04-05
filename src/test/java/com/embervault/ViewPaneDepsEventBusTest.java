@@ -35,7 +35,7 @@ class ViewPaneDepsEventBusTest {
         ViewPaneDeps deps = new ViewPaneDeps(
                 noteService, null, new AttributeSchemaRegistry(),
                 appState, eventBus, selectedNoteVm,
-                new SimpleStringProperty("Root"));
+                new SimpleStringProperty("Root"), null);
 
         assertNotNull(deps.eventBus());
         assertSame(eventBus, deps.eventBus());

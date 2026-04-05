@@ -4,13 +4,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.UUID;
+
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.CommandHistory;
 import com.embervault.application.NoteServiceImpl;
 import com.embervault.application.UndoRedoService;
 import com.embervault.application.port.in.NoteService;
 import com.embervault.domain.Note;
-import java.util.UUID;
 import javafx.beans.property.SimpleStringProperty;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

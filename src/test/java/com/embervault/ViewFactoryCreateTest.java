@@ -55,7 +55,7 @@ class ViewFactoryCreateTest {
         deps = new ViewPaneDeps(
                 noteService, linkService, schemaRegistry,
                 appState, new EventBus(), selectedNoteVm,
-                rootNoteTitle);
+                rootNoteTitle, null);
         registry = new ViewFactoryRegistry();
     }
 

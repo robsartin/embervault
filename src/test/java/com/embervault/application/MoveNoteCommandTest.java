@@ -2,10 +2,11 @@ package com.embervault.application;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.UUID;
+
 import com.embervault.adapter.out.persistence.InMemoryNoteRepository;
 import com.embervault.application.port.in.MoveNoteUseCase;
 import com.embervault.domain.Note;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
