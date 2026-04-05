@@ -2,6 +2,34 @@
 
 This project follows a **pure Test-Driven Development (TDD)** workflow. Every code change -- whether a new feature, a bug fix, or a refactoring -- begins with a test. No exceptions.
 
+## Prerequisites
+
+**Java 25** is required. Set `JAVA_HOME` before running any Maven command:
+
+```bash
+export JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home
+```
+
+> **Note:** Always use the literal path. Do **not** use `$(...)` command substitution — it may resolve to the wrong JDK.
+
+The Maven Wrapper (`./mvnw`) is included in the repository — no separate Maven installation is needed.
+
+### Common Build Commands
+
+```bash
+# Full verify (tests + checkstyle + coverage + ArchUnit):
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw verify
+
+# Single test class:
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw test -Dtest=ClassName -DfailIfNoTests=false
+
+# Single test method:
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw test -Dtest="ClassName#methodName" -DfailIfNoTests=false
+
+# Compile only (fast feedback):
+JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw compile -q
+```
+
 ## The TDD Cycle
 
 ### 1. Red -- Write a Failing Test
@@ -119,7 +147,7 @@ Good test names act as documentation. Anyone reading the test class should under
 
 Before opening a PR, verify that:
 
-- [ ] All tests pass (`./gradlew test` or equivalent).
+- [ ] All tests pass (`JAVA_HOME=/Users/sartin/Library/Java/JavaVirtualMachines/openjdk-25.0.2/Contents/Home ./mvnw verify`).
 - [ ] Every new behavior has at least one corresponding test.
 - [ ] Commit history follows the Red-Green-Commit-Refactor pattern.
 - [ ] No production code exists without a test that exercises it.
