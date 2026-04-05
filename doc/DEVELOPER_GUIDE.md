@@ -6,8 +6,9 @@ the current API. See also [ARCHITECTURE.md](ARCHITECTURE.md) and the
 [ADRs](adr/) for design rationale.
 
 > **Manual wiring** is used throughout so you can see exactly which objects
-> are created and how they connect. A future `DocumentFactory` will
-> automate this.
+> are created and how they connect. For convenience, see
+> [`DocumentFactory.createEmpty()`](../src/main/java/com/embervault/DocumentFactory.java)
+> which automates the standard setup.
 
 ---
 
@@ -312,3 +313,15 @@ linkService.deleteLink(link1.id());
 
 To visualize links, open the Hyperbolic view (Section 7) focused on a
 note that has links.
+
+---
+
+## See Also
+
+- [Architecture](ARCHITECTURE.md) — system overview, domain model, data flow diagrams
+- [ADRs](adr/) — design rationale for all major decisions
+  - [ADR-0009](adr/0009-use-hexagonal-architecture.md) — Hexagonal Architecture
+  - [ADR-0013](adr/0013-use-mvvm-design-pattern.md) — MVVM Design Pattern
+  - [ADR-0017](adr/0017-use-result-oriented-apis.md) — Result-Oriented APIs
+  - [ADR-0018](adr/0018-use-type-safe-attribute-map.md) — Type-Safe Attribute Map
+- [Contributing](../CONTRIBUTING.md) — TDD workflow and PR checklist

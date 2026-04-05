@@ -154,7 +154,7 @@ JAVA_HOME=... ./mvnw verify -Pui-tests
 
 ## PR Workflow
 
-All work is done on issue branches and submitted as PRs to main (see ADR-0001):
+All work is done on issue branches and submitted as PRs to main (see ADR-0020):
 
 - Branch from main: `issue-<number>/<short-description>` or `fix/<description>`
 - PRs require passing CI (tests, checkstyle, JaCoCo, ArchUnit)
