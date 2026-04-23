@@ -12,7 +12,7 @@ EmberVault currently uses:
 - `archunit-junit5` 1.4.1
 - `testfx-junit5` (TestFX TestFX/TestFX)
 
-JUnit 6.0.0 was released on 2025-09-30; the latest is 6.0.3 (2026-02-15). The Jupiter 5.x line continues with 5.14.2 available.
+JUnit 6.0.0 was released on 2025-09-30; the latest is 6.0.3 (2026-02-15). The Jupiter 5.x line continues, with **5.14.3** the latest stable 5.x release at the time of writing. The latest `archunit-junit5` targeting Platform 1.x / Jupiter 5.x is **1.4.2** (2026-04-18).
 
 ### Upstream blockers for a full JUnit 6 migration
 
@@ -42,7 +42,7 @@ Create three GitHub issues and execute them in order:
 
 1. Umbrella tracking issue (stays open until JUnit 6 is adopted).
 2. Bump `archunit-junit5` to its latest 5.x-compatible version.
-3. Bump JUnit Jupiter from 5.11.4 to 5.14.2.
+3. Bump JUnit Jupiter from 5.11.4 to 5.14.3.
 
 No new ADR is required — the decision is reversible, scoped to dependency versions, and fully captured by the tracking issue.
 
@@ -84,12 +84,12 @@ No new ADR is required — the decision is reversible, scoped to dependency vers
 - All tests green on both profiles.
 - No source changes required.
 
-### Issue 3 — Bump JUnit Jupiter 5.11.4 → 5.14.2
+### Issue 3 — Bump JUnit Jupiter 5.11.4 → 5.14.3
 
 **Labels:** `ready`
 **Branch:** `issue-<n>/bump-junit-jupiter`
 
-**Change:** Update `<junit-jupiter.version>` in `pom.xml` to `5.14.2`. The `junit-bom` drives the rest of the Jupiter and Platform artifacts.
+**Change:** Update `<junit-jupiter.version>` in `pom.xml` to `5.14.3`. The `junit-bom` drives the rest of the Jupiter and Platform artifacts.
 
 **Verification:**
 
@@ -123,5 +123,5 @@ No new ADR is required — the decision is reversible, scoped to dependency vers
 
 - Three GitHub issues exist with the stated labels and bodies.
 - Issue 2's PR is merged; pom carries the newer `archunit-junit5` version; full verify green.
-- Issue 3's PR is merged; pom carries Jupiter 5.14.2; full verify green; no unresolved new deprecation warnings.
+- Issue 3's PR is merged; pom carries Jupiter 5.14.3; full verify green; no unresolved new deprecation warnings.
 - Issue 1 remains open with links to the two merged PRs, ready to drive the real JUnit 6 migration when upstream publishes compatible artifacts.
